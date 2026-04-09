@@ -68,9 +68,15 @@ export function PropertyTable({
   onSort,
   onSelect,
 }: PropertyTableProps) {
-  const visibleCols = columns.filter(
-    (c) => c.column_name !== 'id_propiedad' && c.column_name !== 'created_at'
-  )
+  const visibleCols = columns
+    .filter(
+      (c) => c.column_name !== 'id_propiedad' && c.column_name !== 'created_at'
+    )
+    .map((c) =>
+      c.column_name === 'nombre_desarrollador'
+        ? { ...c, column_name: 'nombre_kibah', display_label: 'Nombre Kibah' }
+        : c
+    )
 
   if (loading && properties.length === 0) {
     return (
