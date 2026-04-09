@@ -1,0 +1,154 @@
+@import "tailwindcss";
+
+/* ============================================================
+   CSS Variables — Light (default) and Dark mode
+   ============================================================ */
+
+:root {
+  /* Brand */
+  --color-navy: #1B2A4A;
+  --color-navy-light: #243556;
+  --color-navy-dark: #111D33;
+  --color-orange: #E8872A;
+  --color-orange-hover: #D47620;
+  --color-orange-light: #F5A855;
+
+  /* Backgrounds */
+  --bg-primary: #F8FAFB;
+  --bg-secondary: #FFFFFF;
+  --bg-tertiary: #F1F5F9;
+  --bg-sidebar: #1B2A4A;
+
+  /* Text */
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-tertiary: #94A3B8;
+  --text-on-navy: #FFFFFF;
+  --text-on-navy-muted: #94A3B8;
+
+  /* Borders */
+  --border-primary: #E2E8F0;
+  --border-secondary: #CBD5E1;
+
+  /* Cards */
+  --card-bg: #FFFFFF;
+  --card-border: #E2E8F0;
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+  /* Glass (light — no glass effect, solid) */
+  --glass-bg: #FFFFFF;
+  --glass-border: #E2E8F0;
+  --glass-blur: 0px;
+
+  /* Status */
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+  --color-info: #3B82F6;
+
+  /* Inputs */
+  --input-bg: #FFFFFF;
+  --input-border: #CBD5E1;
+  --input-focus-ring: #E8872A;
+
+  /* Misc */
+  --radius-sm: 8px;
+  --radius-lg: 16px;
+  --sidebar-width: 260px;
+  --topbar-height: 64px;
+}
+
+.dark {
+  /* Backgrounds */
+  --bg-primary: #0F1923;
+  --bg-secondary: #162032;
+  --bg-tertiary: #1C2B3F;
+  --bg-sidebar: #0D1520;
+
+  /* Text */
+  --text-primary: #F1F5F9;
+  --text-secondary: #94A3B8;
+  --text-tertiary: #64748B;
+
+  /* Borders */
+  --border-primary: rgba(148, 163, 184, 0.15);
+  --border-secondary: rgba(148, 163, 184, 0.25);
+
+  /* Cards */
+  --card-bg: rgba(22, 32, 50, 0.6);
+  --card-border: rgba(148, 163, 184, 0.1);
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+
+  /* Glass (dark — backdrop blur, semi-transparent) */
+  --glass-bg: rgba(22, 32, 50, 0.6);
+  --glass-border: rgba(148, 163, 184, 0.08);
+  --glass-blur: 16px;
+
+  /* Inputs */
+  --input-bg: #162032;
+  --input-border: rgba(148, 163, 184, 0.2);
+}
+
+/* ============================================================
+   Theme tokens for Tailwind v4
+   ============================================================ */
+@theme inline {
+  --color-navy: var(--color-navy);
+  --color-navy-light: var(--color-navy-light);
+  --color-navy-dark: var(--color-navy-dark);
+  --color-orange: var(--color-orange);
+  --color-orange-hover: var(--color-orange-hover);
+  --color-orange-light: var(--color-orange-light);
+  --color-bg-primary: var(--bg-primary);
+  --color-bg-secondary: var(--bg-secondary);
+  --color-bg-tertiary: var(--bg-tertiary);
+  --color-bg-sidebar: var(--bg-sidebar);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-on-navy: var(--text-on-navy);
+  --color-text-on-navy-muted: var(--text-on-navy-muted);
+  --color-border-primary: var(--border-primary);
+  --color-border-secondary: var(--border-secondary);
+  --color-card-bg: var(--card-bg);
+  --color-card-border: var(--card-border);
+  --color-glass-bg: var(--glass-bg);
+  --color-glass-border: var(--glass-border);
+  --color-success: var(--color-success);
+  --color-warning: var(--color-warning);
+  --color-error: var(--color-error);
+  --color-info: var(--color-info);
+  --color-input-bg: var(--input-bg);
+  --color-input-border: var(--input-border);
+  --color-input-focus-ring: var(--input-focus-ring);
+  --radius-sm: var(--radius-sm);
+  --radius-lg: var(--radius-lg);
+}
+
+/* ============================================================
+   Base styles
+   ============================================================ */
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--text-tertiary);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
