@@ -1,5 +1,8 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
+import { LogOut } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 import { ThemeToggle } from './ThemeToggle'
 
 interface TopbarProps {
@@ -7,6 +10,14 @@ interface TopbarProps {
 }
 
 export function Topbar({ userName }: TopbarProps) {
+  const router = useRouter()
+
+  const handleSignOut = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
+
   return (
     <header
       className="h-[var(--topbar-height)] border-b border-border-primary bg-bg-secondary
@@ -23,6 +34,14 @@ export function Topbar({ userName }: TopbarProps) {
             {userName ? userName.charAt(0).toUpperCase() : 'U'}
           </span>
         </div>
+        <button
+          onClick={handleSignOut}
+          title="Cerrar sesión"
+          className="p-1.5 rounded-[var(--radius-sm)] text-text-tertiary hover:text-text-primary
+            hover:bg-bg-tertiary transition-colors cursor-pointer"
+        >
+          <LogOut className="w-4 h-4" strokeWidth={1.5} />
+        </button>
       </div>
     </header>
   )
