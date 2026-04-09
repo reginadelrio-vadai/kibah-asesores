@@ -241,6 +241,8 @@ export function PropiedadesView({ role }: { role: UserRole }) {
           property={selectedProperty}
           role={role}
           onClose={() => setSelectedProperty(null)}
+          onEdit={(p) => { setSelectedProperty(null); handleEdit(p) }}
+          onDelete={(p) => { setSelectedProperty(null); handleDeleteRequest(p) }}
         />
       )}
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { ArrowUpDown, ArrowUp, ArrowDown, Pencil, Trash2 } from 'lucide-react'
-import type { Property, ColumnVisibility, UserRole } from '@/types'
+import type { Property, UserRole, ColumnVisibility } from '@/types'
 import { formatPrice, formatM2, displayValue, capitalize, formatComision } from '@/lib/utils/format'
 import { DISPONIBILIDAD_COLORS, TIPO_PREVENTA_COLORS } from '@/lib/utils/constants'
 
@@ -63,10 +63,20 @@ function SkeletonRow({ cols }: { cols: number }) {
   )
 }
 
+const TABLE_COLUMNS: { column_name: string; display_label: string }[] = [
+  { column_name: 'nombre_kibah', display_label: 'Nombre Kibah' },
+  { column_name: 'unidad', display_label: 'Unidad' },
+  { column_name: 'precio_unidad', display_label: 'Precio' },
+  { column_name: 'colonia', display_label: 'Colonia' },
+  { column_name: 'num_recamaras', display_label: 'Recámaras' },
+  { column_name: 'num_banos', display_label: 'Baños' },
+  { column_name: 'm2_totales', display_label: 'M² Totales' },
+  { column_name: 'disponibilidad', display_label: 'Disponibilidad' },
+]
+
 export function PropertyTable({
   properties,
   loading,
-  columns,
   sortConfig,
   onSort,
   onSelect,
@@ -75,15 +85,7 @@ export function PropertyTable({
   onDelete,
 }: PropertyTableProps) {
   const isAdmin = role === 'admin'
-  const visibleCols = columns
-    .filter(
-      (c) => c.column_name !== 'id_propiedad' && c.column_name !== 'created_at'
-    )
-    .map((c) =>
-      c.column_name === 'nombre_desarrollador'
-        ? { ...c, column_name: 'nombre_kibah', display_label: 'Nombre Kibah' }
-        : c
-    )
+  const visibleCols = TABLE_COLUMNS
 
   if (loading && properties.length === 0) {
     return (
@@ -91,16 +93,16 @@ export function PropertyTable({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border-primary bg-bg-tertiary">
-              {visibleCols.slice(0, 8).map((col) => (
-                <th key={col.id} className="px-4 py-3 text-left text-xs font-semibold text-text-secondary">
-                  {col.display_label ?? col.column_name}
+              {visibleCols.map((col) => (
+                <th key={col.column_name} className="px-4 py-3 text-left text-xs font-semibold text-text-secondary">
+                  {col.display_label}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
             {Array.from({ length: 6 }).map((_, i) => (
-              <SkeletonRow key={i} cols={8} />
+              <SkeletonRow key={i} cols={visibleCols.length} />
             ))}
           </tbody>
         </table>
@@ -117,12 +119,12 @@ export function PropertyTable({
               const isSorted = sortConfig.column === col.column_name
               return (
                 <th
-                  key={col.id}
+                  key={col.column_name}
                   className="px-4 py-3 text-left text-xs font-semibold text-text-secondary whitespace-nowrap cursor-pointer hover:text-text-primary transition-colors select-none"
                   onClick={() => onSort(col.column_name)}
                 >
                   <span className="flex items-center gap-1">
-                    {col.display_label ?? col.column_name}
+                    {col.display_label}
                     {isSorted ? (
                       sortConfig.order === 'asc' ? (
                         <ArrowUp className="w-3 h-3" />
@@ -152,7 +154,7 @@ export function PropertyTable({
             >
               {visibleCols.map((col) => (
                 <td
-                  key={col.id}
+                  key={col.column_name}
                   className="px-4 py-3 text-text-primary whitespace-nowrap max-w-[200px] truncate"
                 >
                   {formatCell(

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useCallback } from 'react'
-import { X, Copy, ExternalLink } from 'lucide-react'
+import { X, Copy, ExternalLink, Pencil, Trash2 } from 'lucide-react'
 import type { Property, UserRole } from '@/types'
 import {
   formatPrice,
@@ -16,6 +16,8 @@ interface PropertyDetailProps {
   property: Property
   role: UserRole
   onClose: () => void
+  onEdit?: (property: Property) => void
+  onDelete?: (property: Property) => void
 }
 
 function Section({
@@ -44,7 +46,8 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
   )
 }
 
-export function PropertyDetail({ property, role, onClose }: PropertyDetailProps) {
+export function PropertyDetail({ property, role, onClose, onEdit, onDelete }: PropertyDetailProps) {
+  const isAdmin = role === 'admin'
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
@@ -118,6 +121,26 @@ export function PropertyDetail({ property, role, onClose }: PropertyDetailProps)
                 <ExternalLink className="w-3.5 h-3.5" strokeWidth={1.5} />
                 Drive
               </a>
+            )}
+            {isAdmin && onEdit && (
+              <button
+                onClick={() => { onClose(); onEdit(property) }}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-text-secondary
+                  bg-bg-tertiary rounded-[var(--radius-sm)] hover:text-orange hover:bg-orange/10 transition-colors cursor-pointer"
+              >
+                <Pencil className="w-3.5 h-3.5" strokeWidth={1.5} />
+                Editar
+              </button>
+            )}
+            {isAdmin && onDelete && (
+              <button
+                onClick={() => { onClose(); onDelete(property) }}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-text-secondary
+                  bg-bg-tertiary rounded-[var(--radius-sm)] hover:text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
+                Eliminar
+              </button>
             )}
             <button
               onClick={onClose}
