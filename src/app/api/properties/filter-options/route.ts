@@ -1,6 +1,44 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
+async function fetchAllDistinct(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  column: string
+): Promise<string[]> {
+  const values = new Set<string>()
+  const pageSize = 1000
+  let offset = 0
+  let hasMore = true
+
+  while (hasMore) {
+    const { data } = await supabase
+      .from('propiedades_view')
+      .select(column)
+      .not(column, 'is', null)
+      .range(offset, offset + pageSize - 1)
+
+    if (!data || data.length === 0) {
+      hasMore = false
+      break
+    }
+
+    for (const row of data) {
+      const val = (row as unknown as Record<string, unknown>)[column]
+      if (val !== null && val !== undefined && String(val).trim() !== '') {
+        values.add(String(val))
+      }
+    }
+
+    if (data.length < pageSize) {
+      hasMore = false
+    } else {
+      offset += pageSize
+    }
+  }
+
+  return [...values].sort()
+}
+
 export async function GET() {
   const supabase = await createClient()
 
@@ -14,22 +52,19 @@ export async function GET() {
 
   const [colonias, alcaldias, disponibilidades, tiposPreventa, tiposEntrega] =
     await Promise.all([
-      supabase.from('propiedades_view').select('colonia').not('colonia', 'is', null),
-      supabase.from('propiedades_view').select('alcaldia').not('alcaldia', 'is', null),
-      supabase.from('propiedades_view').select('disponibilidad').not('disponibilidad', 'is', null),
-      supabase.from('propiedades_view').select('tipo_preventa').not('tipo_preventa', 'is', null),
-      supabase.from('propiedades_view').select('tipo_entrega').not('tipo_entrega', 'is', null),
+      fetchAllDistinct(supabase, 'colonia'),
+      fetchAllDistinct(supabase, 'alcaldia'),
+      fetchAllDistinct(supabase, 'disponibilidad'),
+      fetchAllDistinct(supabase, 'tipo_preventa'),
+      fetchAllDistinct(supabase, 'tipo_entrega'),
     ])
 
-  const unique = (arr: Record<string, unknown>[] | null, key: string): string[] =>
-    [...new Set((arr ?? []).map((r) => String(r[key])).filter(Boolean))].sort()
-
   const response = NextResponse.json({
-    colonias: unique(colonias.data, 'colonia'),
-    alcaldias: unique(alcaldias.data, 'alcaldia'),
-    disponibilidades: unique(disponibilidades.data, 'disponibilidad'),
-    tipos_preventa: unique(tiposPreventa.data, 'tipo_preventa'),
-    tipos_entrega: unique(tiposEntrega.data, 'tipo_entrega'),
+    colonias,
+    alcaldias,
+    disponibilidades,
+    tipos_preventa: tiposPreventa,
+    tipos_entrega: tiposEntrega,
   })
 
   // Cache for 5 minutes

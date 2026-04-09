@@ -53,6 +53,8 @@ export async function GET(request: NextRequest) {
     'precio_unidad',
     'm2_totales',
     'm2_habitables',
+    'm2_exteriores',
+    'm2_roof_garden',
     'num_recamaras',
     'num_banos',
     'estacionamiento',

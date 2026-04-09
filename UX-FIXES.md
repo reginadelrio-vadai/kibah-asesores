@@ -1,0 +1,47 @@
+# UX/UI Fixes — Kibah Asesores
+
+Anotar aquí todo lo que queremos cambiar visualmente. Se arregla en M7 (Design Polish).
+NO arreglar diseño durante milestones funcionales (M2-M6).
+
+---
+
+## 1. Filtros demasiado amontonados
+- La barra de filtros se ve amontonada en desktop, demasiados inputs visibles al mismo tiempo
+- Necesita más espaciado, mejor organización visual
+- Considerar agrupar filtros por categoría, usar accordions, o mostrar solo los filtros más usados con botón "Más filtros"
+- En mobile: drawer/bottom sheet, no barra horizontal
+
+## 2. Contraste demasiado alto en tarjetas
+- El texto blanco sobre fondo oscuro es incómodo de leer por periodos largos
+- Los asesores van a estar horas viendo estas pantallas — debe ser cómodo
+- Bajar el contraste: usar grises claros en vez de blanco puro para texto secundario
+- Precio y nombre pueden ser más brillantes, el resto más suave
+
+## 3. Jerarquía visual en tarjetas — todo compite
+- No es obvio qué ver primero, todo tiene el mismo peso visual
+- **Nombre Kibah debe ser lo más prominente** (no el nombre del desarrollador)
+- Los asesores NO deben ver el "Desarrollo" (nombre desarrollador), solo el Nombre Kibah — políticas de seguridad y transparencia de Kibah
+- Jerarquía propuesta: Nombre Kibah (grande, bold) → Precio → Ubicación (colonia) → Specs (recámaras, baños, m²) → Badges
+- Badges de disponibilidad/preventa más sutiles, no tan grandes
+
+## 4. Popup de detalle — características difíciles de digerir
+- La sección de características es un bloque de texto plano, difícil de escanear
+- Usar iconos para cada característica (cama, ducha, carro, ruler, etc.)
+- Dividir en sub-secciones visuales con separadores
+- Formato de grid más espaciado
+- Incluir decimales en metros (65.5 m², no 65 m²) y en baños (1.5, 2.5)
+- Amenidades: si es "Si", mostrar lista real si existe. Si solo dice "Si", mostrar ícono de check
+
+## 5. Nombre Desarrollador — ocultar para asesores
+- REGLA DE NEGOCIO: Los asesores NO deben ver el nombre del desarrollador
+- Solo el admin puede ver esta columna
+- Verificar que `column_visibility` tenga `nombre_desarrollador` como `visible_to_asesores = false`
+- En las tarjetas, mostrar Nombre Kibah como título principal
+
+---
+
+## Notas generales de diseño
+- La plataforma debe verse premium: glassmorphism, gradientes sutiles, detalles de diseñador gráfico
+- No debe parecer creada por AI — evitar layouts genéricos
+- Usar los colores de Kibah: navy, naranja, blanco/crema
+- Referencia: kibah.com.mx (elegante, oscuro, profesional)
