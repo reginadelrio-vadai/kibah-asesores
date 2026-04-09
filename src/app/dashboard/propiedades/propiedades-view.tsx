@@ -1,8 +1,9 @@
 'use client'
 
 import { useCallback, useState } from 'react'
-import { Building2, AlertCircle } from 'lucide-react'
+import { Building2, AlertCircle, Plus } from 'lucide-react'
 import type { Property, UserRole } from '@/types'
+import type { ToastType } from '@/components/ui/Toast'
 import { useProperties } from '@/hooks/useProperties'
 import { useFilters } from '@/hooks/useFilters'
 import { useColumnVisibility } from '@/hooks/useColumnVisibility'
@@ -10,13 +11,29 @@ import { PropertyFilters } from '@/components/properties/PropertyFilters'
 import { PropertyGrid } from '@/components/properties/PropertyGrid'
 import { PropertyTable } from '@/components/properties/PropertyTable'
 import { PropertyDetail } from '@/components/properties/PropertyDetail'
+import { PropertyForm } from '@/components/properties/PropertyForm'
 import { ViewToggle } from '@/components/properties/ViewToggle'
+import { Toast } from '@/components/ui/Toast'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 
 type ViewMode = 'grid' | 'list'
 
+interface ToastState {
+  message: string
+  type: ToastType
+}
+
 export function PropiedadesView({ role }: { role: UserRole }) {
+  const isAdmin = role === 'admin'
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
+
+  // CRUD state
+  const [formOpen, setFormOpen] = useState(false)
+  const [editingProperty, setEditingProperty] = useState<Property | null>(null)
+  const [deletingProperty, setDeletingProperty] = useState<Property | null>(null)
+  const [deleteLoading, setDeleteLoading] = useState(false)
+  const [toast, setToast] = useState<ToastState | null>(null)
 
   const {
     activeFilters,
@@ -37,6 +54,7 @@ export function PropiedadesView({ role }: { role: UserRole }) {
     sortConfig,
     setSortConfig,
     retry,
+    refetch,
   } = useProperties(debouncedFilters)
 
   const { visibleColumns, filterableColumns } = useColumnVisibility(role)
@@ -58,6 +76,45 @@ export function PropiedadesView({ role }: { role: UserRole }) {
     setViewMode(mode)
   }, [])
 
+  const showToast = useCallback((message: string, type: ToastType) => {
+    setToast({ message, type })
+  }, [])
+
+  // CRUD handlers
+  const handleCreate = useCallback(() => {
+    setEditingProperty(null)
+    setFormOpen(true)
+  }, [])
+
+  const handleEdit = useCallback((property: Property) => {
+    setEditingProperty(property)
+    setFormOpen(true)
+  }, [])
+
+  const handleDeleteRequest = useCallback((property: Property) => {
+    setDeletingProperty(property)
+  }, [])
+
+  const handleDeleteConfirm = useCallback(async () => {
+    if (!deletingProperty) return
+    setDeleteLoading(true)
+    try {
+      const res = await fetch(`/api/properties/${deletingProperty.id}`, { method: 'DELETE' })
+      if (!res.ok && res.status !== 204) {
+        const body = await res.json().catch(() => ({}))
+        showToast(body.error || 'Error al eliminar', 'error')
+        return
+      }
+      showToast('Propiedad eliminada', 'success')
+      setDeletingProperty(null)
+      refetch()
+    } catch {
+      showToast('Error de conexión', 'error')
+    } finally {
+      setDeleteLoading(false)
+    }
+  }, [deletingProperty, refetch, showToast])
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -72,7 +129,19 @@ export function PropiedadesView({ role }: { role: UserRole }) {
             </p>
           )}
         </div>
-        <ViewToggle onChange={handleViewChange} />
+        <div className="flex items-center gap-3">
+          {isAdmin && (
+            <button
+              onClick={handleCreate}
+              className="flex items-center gap-2 h-9 px-4 text-sm font-medium rounded-[var(--radius-sm)]
+                bg-orange text-white hover:bg-orange-hover transition-colors cursor-pointer"
+            >
+              <Plus className="w-4 h-4" strokeWidth={1.5} />
+              Agregar Propiedad
+            </button>
+          )}
+          <ViewToggle onChange={handleViewChange} />
+        </div>
       </div>
 
       {/* Filters */}
@@ -107,6 +176,9 @@ export function PropiedadesView({ role }: { role: UserRole }) {
               properties={properties}
               loading={loading}
               onSelect={setSelectedProperty}
+              role={role}
+              onEdit={handleEdit}
+              onDelete={handleDeleteRequest}
             />
           ) : (
             <PropertyTable
@@ -116,6 +188,9 @@ export function PropiedadesView({ role }: { role: UserRole }) {
               sortConfig={sortConfig}
               onSort={handleSort}
               onSelect={setSelectedProperty}
+              role={role}
+              onEdit={handleEdit}
+              onDelete={handleDeleteRequest}
             />
           )}
 
@@ -166,6 +241,38 @@ export function PropiedadesView({ role }: { role: UserRole }) {
           property={selectedProperty}
           role={role}
           onClose={() => setSelectedProperty(null)}
+        />
+      )}
+
+      {/* Property form modal */}
+      {formOpen && (
+        <PropertyForm
+          property={editingProperty}
+          onClose={() => setFormOpen(false)}
+          onSuccess={refetch}
+          onToast={showToast}
+        />
+      )}
+
+      {/* Delete confirmation */}
+      {deletingProperty && (
+        <ConfirmDialog
+          title="Eliminar Propiedad"
+          message={`¿Estás seguro de eliminar "${deletingProperty.nombre_kibah || deletingProperty.nombre_desarrollador || 'esta propiedad'}"? Esta acción no se puede deshacer.`}
+          confirmLabel="Eliminar"
+          variant="danger"
+          loading={deleteLoading}
+          onConfirm={handleDeleteConfirm}
+          onCancel={() => setDeletingProperty(null)}
+        />
+      )}
+
+      {/* Toast */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
         />
       )}
     </div>

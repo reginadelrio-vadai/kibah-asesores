@@ -1,7 +1,7 @@
 'use client'
 
-import { Bed, Bath, Ruler } from 'lucide-react'
-import type { Property } from '@/types'
+import { Bed, Bath, Ruler, Pencil, Trash2 } from 'lucide-react'
+import type { Property, UserRole } from '@/types'
 import { formatPrice, displayValue } from '@/lib/utils/format'
 import { DISPONIBILIDAD_COLORS, TIPO_PREVENTA_COLORS } from '@/lib/utils/constants'
 import { capitalize } from '@/lib/utils/format'
@@ -9,9 +9,13 @@ import { capitalize } from '@/lib/utils/format'
 interface PropertyCardProps {
   property: Property
   onClick: (property: Property) => void
+  role?: UserRole
+  onEdit?: (property: Property) => void
+  onDelete?: (property: Property) => void
 }
 
-export function PropertyCard({ property, onClick }: PropertyCardProps) {
+export function PropertyCard({ property, onClick, role, onEdit, onDelete }: PropertyCardProps) {
+  const isAdmin = role === 'admin'
   const disponibilidadStyle =
     DISPONIBILIDAD_COLORS[property.disponibilidad ?? '']
   const tipoPreventaStyle =
@@ -20,13 +24,33 @@ export function PropertyCard({ property, onClick }: PropertyCardProps) {
   return (
     <button
       onClick={() => onClick(property)}
-      className="w-full text-left group rounded-[var(--radius-lg)] border border-card-border
+      className="w-full text-left rounded-[var(--radius-lg)] border border-card-border group
         bg-card-bg dark:bg-glass-bg dark:border-glass-border
         dark:backdrop-blur-[var(--glass-blur)]
         shadow-sm hover:shadow-md dark:shadow-none
         hover:-translate-y-0.5 transition-all duration-200
         p-5 cursor-pointer"
     >
+      {/* Admin actions */}
+      {isAdmin && (
+        <div className="flex items-center justify-end gap-1 mb-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+          <button
+            onClick={(e) => { e.stopPropagation(); onEdit?.(property) }}
+            className="p-1.5 rounded-[var(--radius-sm)] text-text-secondary hover:text-orange hover:bg-orange/10 transition-colors cursor-pointer"
+            title="Editar"
+          >
+            <Pencil className="w-3.5 h-3.5" strokeWidth={1.5} />
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onDelete?.(property) }}
+            className="p-1.5 rounded-[var(--radius-sm)] text-text-secondary hover:text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
+            title="Eliminar"
+          >
+            <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
+          </button>
+        </div>
+      )}
+
       {/* Badges */}
       <div className="flex items-center gap-2 mb-3 flex-wrap">
         {disponibilidadStyle && property.disponibilidad && (

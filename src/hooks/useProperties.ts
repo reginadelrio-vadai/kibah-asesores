@@ -18,6 +18,7 @@ interface UsePropertiesReturn {
   sortConfig: SortConfig
   setSortConfig: (config: SortConfig) => void
   retry: () => void
+  refetch: () => void
 }
 
 export function useProperties(
@@ -109,5 +110,6 @@ export function useProperties(
     sortConfig,
     setSortConfig,
     retry: fetchProperties,
+    refetch: fetchProperties,
   }
 }

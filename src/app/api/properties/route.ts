@@ -1,5 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { ZodError } from 'zod'
+import { createPropertySchema } from '@/lib/validations/property'
+import * as propertyService from '@/lib/services/property-service'
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient()
@@ -98,4 +101,43 @@ export async function GET(request: NextRequest) {
       has_more: hasMore,
     },
   })
+}
+
+export async function POST(request: NextRequest) {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  // Verify admin role
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile || profile.role !== 'admin') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  try {
+    const body = await request.json()
+    const validated = createPropertySchema.parse(body)
+    const property = await propertyService.createProperty(validated)
+    return NextResponse.json({ data: property }, { status: 201 })
+  } catch (err) {
+    if (err instanceof ZodError) {
+      return NextResponse.json(
+        { error: 'Validation failed', details: err.issues },
+        { status: 400 }
+      )
+    }
+    const message = err instanceof Error ? err.message : 'Error creating property'
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
 }

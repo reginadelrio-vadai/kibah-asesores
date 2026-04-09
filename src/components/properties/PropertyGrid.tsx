@@ -1,12 +1,15 @@
 'use client'
 
-import type { Property } from '@/types'
+import type { Property, UserRole } from '@/types'
 import { PropertyCard } from './PropertyCard'
 
 interface PropertyGridProps {
   properties: Property[]
   loading: boolean
   onSelect: (property: Property) => void
+  role?: UserRole
+  onEdit?: (property: Property) => void
+  onDelete?: (property: Property) => void
 }
 
 function SkeletonCard() {
@@ -28,7 +31,7 @@ function SkeletonCard() {
   )
 }
 
-export function PropertyGrid({ properties, loading, onSelect }: PropertyGridProps) {
+export function PropertyGrid({ properties, loading, onSelect, role, onEdit, onDelete }: PropertyGridProps) {
   if (loading && properties.length === 0) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -46,6 +49,9 @@ export function PropertyGrid({ properties, loading, onSelect }: PropertyGridProp
           key={property.id}
           property={property}
           onClick={onSelect}
+          role={role}
+          onEdit={onEdit}
+          onDelete={onDelete}
         />
       ))}
     </div>

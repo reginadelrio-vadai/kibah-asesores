@@ -1,7 +1,7 @@
 'use client'
 
-import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
-import type { Property, ColumnVisibility } from '@/types'
+import { ArrowUpDown, ArrowUp, ArrowDown, Pencil, Trash2 } from 'lucide-react'
+import type { Property, ColumnVisibility, UserRole } from '@/types'
 import { formatPrice, formatM2, displayValue, capitalize, formatComision } from '@/lib/utils/format'
 import { DISPONIBILIDAD_COLORS, TIPO_PREVENTA_COLORS } from '@/lib/utils/constants'
 
@@ -12,6 +12,9 @@ interface PropertyTableProps {
   sortConfig: { column: string; order: 'asc' | 'desc' }
   onSort: (column: string) => void
   onSelect: (property: Property) => void
+  role?: UserRole
+  onEdit?: (property: Property) => void
+  onDelete?: (property: Property) => void
 }
 
 function formatCell(columnName: string, value: unknown, property: Property): React.ReactNode {
@@ -67,7 +70,11 @@ export function PropertyTable({
   sortConfig,
   onSort,
   onSelect,
+  role,
+  onEdit,
+  onDelete,
 }: PropertyTableProps) {
+  const isAdmin = role === 'admin'
   const visibleCols = columns
     .filter(
       (c) => c.column_name !== 'id_propiedad' && c.column_name !== 'created_at'
@@ -129,6 +136,11 @@ export function PropertyTable({
                 </th>
               )
             })}
+            {isAdmin && (
+              <th className="px-4 py-3 text-right text-xs font-semibold text-text-secondary w-24">
+                Acciones
+              </th>
+            )}
           </tr>
         </thead>
         <tbody>
@@ -136,7 +148,7 @@ export function PropertyTable({
             <tr
               key={property.id}
               onClick={() => onSelect(property)}
-              className="border-b border-border-primary hover:bg-bg-tertiary/50 cursor-pointer transition-colors"
+              className="border-b border-border-primary hover:bg-bg-tertiary/50 cursor-pointer transition-colors group"
             >
               {visibleCols.map((col) => (
                 <td
@@ -150,6 +162,26 @@ export function PropertyTable({
                   )}
                 </td>
               ))}
+              {isAdmin && (
+                <td className="px-4 py-3 text-right whitespace-nowrap">
+                  <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 md:transition-opacity">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onEdit?.(property) }}
+                      className="p-1.5 rounded-[var(--radius-sm)] text-text-secondary hover:text-orange hover:bg-orange/10 transition-colors cursor-pointer"
+                      title="Editar"
+                    >
+                      <Pencil className="w-3.5 h-3.5" strokeWidth={1.5} />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onDelete?.(property) }}
+                      className="p-1.5 rounded-[var(--radius-sm)] text-text-secondary hover:text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
+                      title="Eliminar"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
+                    </button>
+                  </div>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>

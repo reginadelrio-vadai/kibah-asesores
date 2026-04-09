@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import type { Property } from '@/types'
 
 interface PropertyFilters {
@@ -157,5 +158,56 @@ export async function getFilterOptions(): Promise<{
         (tipos_entrega.data ?? []).map((r) => r.tipo_entrega as string)
       ),
     ].sort(),
+  }
+}
+
+export async function insertProperty(
+  dbData: Record<string, unknown>
+): Promise<Property> {
+  const supabase = createAdminClient()
+  const { data, error } = await supabase
+    .from('base_kibah')
+    .insert(dbData)
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error inserting property:', error.message)
+    throw new Error(error.message)
+  }
+
+  return data as Property
+}
+
+export async function updateProperty(
+  id: number,
+  dbData: Record<string, unknown>
+): Promise<Property> {
+  const supabase = createAdminClient()
+  const { data, error } = await supabase
+    .from('base_kibah')
+    .update(dbData)
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error updating property:', error.message)
+    throw new Error(error.message)
+  }
+
+  return data as Property
+}
+
+export async function deleteProperty(id: number): Promise<void> {
+  const supabase = createAdminClient()
+  const { error } = await supabase
+    .from('base_kibah')
+    .delete()
+    .eq('id', id)
+
+  if (error) {
+    console.error('Error deleting property:', error.message)
+    throw new Error(error.message)
   }
 }
