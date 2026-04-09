@@ -58,3 +58,81 @@ export async function updateThemePreference(
     console.error('Error updating theme preference:', error.message)
   }
 }
+
+export async function getAllAsesores(): Promise<Profile[]> {
+  const supabase = createAdminClient()
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('role', 'asesor')
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('Error fetching asesores:', error.message)
+    throw new Error(error.message)
+  }
+  return data as Profile[]
+}
+
+export async function createAsesor(
+  email: string,
+  fullName: string,
+  password: string
+): Promise<Profile> {
+  const supabase = createAdminClient()
+
+  const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+  })
+
+  if (authError) {
+    throw new Error(authError.message)
+  }
+
+  const userId = authData.user.id
+
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .insert({
+      id: userId,
+      email,
+      full_name: fullName,
+      role: 'asesor',
+    })
+    .select()
+    .single()
+
+  if (profileError) {
+    // Rollback: delete auth user if profile creation fails
+    await supabase.auth.admin.deleteUser(userId)
+    throw new Error(profileError.message)
+  }
+
+  return profile as Profile
+}
+
+export async function toggleAsesorActive(
+  id: string,
+  isActive: boolean
+): Promise<void> {
+  const supabase = createAdminClient()
+  const { error } = await supabase
+    .from('profiles')
+    .update({ is_active: isActive, updated_at: new Date().toISOString() })
+    .eq('id', id)
+
+  if (error) {
+    throw new Error(error.message)
+  }
+}
+
+export async function deleteAsesor(id: string): Promise<void> {
+  const supabase = createAdminClient()
+  const { error } = await supabase.auth.admin.deleteUser(id)
+
+  if (error) {
+    throw new Error(error.message)
+  }
+}

@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import {
   Building2,
   MessageSquare,
+  Users,
   Columns3,
   Webhook,
   Key,
@@ -34,6 +35,11 @@ const asesorNav: NavItem[] = [
 ]
 
 const adminNav: NavItem[] = [
+  {
+    label: 'Asesores',
+    href: '/dashboard/admin/asesores',
+    icon: <Users className="w-5 h-5" strokeWidth={1.5} />,
+  },
   {
     label: 'Columnas',
     href: '/dashboard/admin/columnas',

@@ -62,3 +62,8 @@ NO arreglar diseño durante milestones funcionales (M2-M6).
 - Al hacer scroll dentro del popup, los campos de abajo se ven por debajo del header (nombre + badges + botones)
 - El header del popup debe tener fondo sólido (no transparente) para que el contenido no se vea detrás al hacer scroll
 - Aplicar el mismo color de fondo del modal al header, con un borde sutil abajo para separar
+
+## 9. Whaapy iframe — no está centrado
+- El iframe de Whaapy no está centrado en el espacio disponible
+- Debe estar centrado horizontal y verticalmente en el área de contenido
+- Sin scroll de la página, el iframe ocupa todo el espacio disponible

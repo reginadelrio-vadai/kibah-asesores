@@ -19,24 +19,31 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
 
-    // /dashboard/admin/* → verify role = 'admin'
-    if (pathname.startsWith('/dashboard/admin')) {
-      try {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single()
+    // Check is_active and role
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role, is_active')
+        .eq('id', user.id)
+        .single()
 
+      // Deactivated user → sign out and redirect to login
+      if (profile && profile.is_active === false) {
+        await supabase.auth.signOut()
+        return NextResponse.redirect(new URL('/login', request.url))
+      }
+
+      // /dashboard/admin/* → verify role = 'admin'
+      if (pathname.startsWith('/dashboard/admin')) {
         if (!profile || profile.role !== 'admin') {
           return NextResponse.redirect(
             new URL('/dashboard/propiedades', request.url)
           )
         }
-      } catch (error) {
-        console.error('Error checking admin role in middleware:', error)
-        return NextResponse.redirect(new URL('/login', request.url))
       }
+    } catch (error) {
+      console.error('Error checking profile in middleware:', error)
+      return NextResponse.redirect(new URL('/login', request.url))
     }
   }
 
