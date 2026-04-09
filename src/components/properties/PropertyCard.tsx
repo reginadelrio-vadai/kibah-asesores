@@ -47,7 +47,7 @@ export function PropertyCard({ property, onClick }: PropertyCardProps) {
 
       {/* Title */}
       <h3 className="text-sm font-semibold text-text-primary mb-0.5 line-clamp-1">
-        {displayValue(property.nombre_desarrollador)}
+        {displayValue(property.nombre_kibah || property.nombre_desarrollador)}
       </h3>
       {property.unidad && (
         <p className="text-xs text-text-tertiary mb-1">

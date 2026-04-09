@@ -14,10 +14,12 @@ interface PropertyTableProps {
   onSelect: (property: Property) => void
 }
 
-function formatCell(columnName: string, value: unknown): React.ReactNode {
+function formatCell(columnName: string, value: unknown, property: Property): React.ReactNode {
   const str = value as string | number | null
 
   switch (columnName) {
+    case 'nombre_kibah':
+      return displayValue((property.nombre_kibah || property.nombre_desarrollador) as string | null)
     case 'precio_unidad':
       return formatPrice(str)
     case 'm2_totales':
@@ -137,7 +139,8 @@ export function PropertyTable({
                 >
                   {formatCell(
                     col.column_name,
-                    property[col.column_name as keyof Property]
+                    property[col.column_name as keyof Property],
+                    property
                   )}
                 </td>
               ))}

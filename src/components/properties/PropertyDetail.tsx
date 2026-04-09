@@ -92,7 +92,7 @@ export function PropertyDetail({ property, role, onClose }: PropertyDetailProps)
         <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-border-primary bg-bg-secondary/80 dark:bg-glass-bg/80 backdrop-blur-md">
           <div>
             <h2 className="text-lg font-semibold text-text-primary">
-              {displayValue(property.nombre_desarrollador)}
+              {displayValue(property.nombre_kibah || property.nombre_desarrollador)}
             </h2>
             {property.unidad && (
               <p className="text-sm text-text-secondary">{property.unidad}</p>
@@ -155,8 +155,10 @@ export function PropertyDetail({ property, role, onClose }: PropertyDetailProps)
 
           {/* Info General */}
           <Section title="Información General">
-            <Field label="Desarrollo" value={displayValue(property.nombre_desarrollador)} />
             <Field label="Nombre Kibah" value={displayValue(property.nombre_kibah)} />
+            {role === 'admin' && (
+              <Field label="Desarrollo" value={displayValue(property.nombre_desarrollador)} />
+            )}
             <Field label="Unidad" value={displayValue(property.unidad)} />
             <Field label="Disponibilidad" value={displayValue(property.disponibilidad)} />
           </Section>
