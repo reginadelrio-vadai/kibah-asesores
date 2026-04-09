@@ -17,3 +17,15 @@
 - **Causa:** Project uses Zod v4 which has a simplified API compared to v3 docs.
 - **Fix:** Changed to `z.enum(values, { message })`, `z.number({ error })`, and `err.issues`.
 - **Regla:** This project uses Zod v4. Use `{ message }` for enums, `{ error }` for number/string, and `.issues` not `.errors` on ZodError.
+
+## 4. Supabase JS client doesn't need SQL-escaped quotes in column names (M3)
+- **Error:** `Could not find '% Comisión' column of 'base_kibah' in the schema cache` — insert/update failed.
+- **Causa:** COLUMN_MAP had column names wrapped in escaped double quotes (`'"Nombre Kibah"'`). Supabase JS client handles quoting automatically — the object keys should be plain strings (`'Nombre Kibah'`).
+- **Fix:** Removed all escaped double quotes from COLUMN_MAP values.
+- **Regla:** When using Supabase JS `.insert()` / `.update()`, column names go as plain strings WITHOUT SQL quotes. The client handles quoting internally.
+
+## 5. Campos numéricos no deben usar .int() si aceptan decimales (M3)
+- **Error:** num_banos rechazaba 2.5 (medio baño) porque tenía `.int()` en el schema Zod.
+- **Causa:** Se asumió que baños/recámaras/estacionamiento eran siempre enteros.
+- **Fix:** Removido `.int()` de num_banos, num_recamaras, estacionamiento en el schema Zod.
+- **Regla:** Solo usar `.int()` cuando el campo sea ESTRICTAMENTE entero. Baños/recámaras/estacionamiento pueden ser decimales (2.5 baños = medio baño).

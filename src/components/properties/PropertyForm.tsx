@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import type { Property } from '@/types'
 
@@ -15,8 +15,14 @@ const DISPONIBILIDAD_OPTIONS = ['Disponible', 'Apartado', 'Rentado']
 const TIPO_PREVENTA_OPTIONS = ['Preventa', 'Entrega Inmediata']
 const TIPO_ENTREGA_OPTIONS = ['Terminado', 'Obra blanca', 'Obra Gris', 'Obra Negra']
 const BODEGA_OPTIONS = ['Si', 'No']
+const AMENIDADES_OPTIONS = ['Si', 'No']
 
 type FormData = Record<string, string>
+
+interface FilterOptions {
+  colonias: string[]
+  alcaldias: string[]
+}
 
 function buildInitial(property?: Property | null): FormData {
   if (!property) return {}
@@ -91,6 +97,30 @@ export function PropertyForm({ property, onClose, onSuccess, onToast }: Property
   const [form, setForm] = useState<FormData>(buildInitial(property))
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
+  const [filterOptions, setFilterOptions] = useState<FilterOptions>({ colonias: [], alcaldias: [] })
+  const [coloniaCustom, setColoniaCustom] = useState(false)
+  const [alcaldiaCustom, setAlcaldiaCustom] = useState(false)
+
+  // Fetch filter options for colonia/alcaldia dropdowns
+  useEffect(() => {
+    fetch('/api/properties/filter-options')
+      .then((res) => res.json())
+      .then((data) => {
+        const opts: FilterOptions = {
+          colonias: data.colonias ?? [],
+          alcaldias: data.alcaldias ?? [],
+        }
+        setFilterOptions(opts)
+        // If editing and current value isn't in the list, show custom input
+        if (property?.colonia && !opts.colonias.includes(property.colonia)) {
+          setColoniaCustom(true)
+        }
+        if (property?.alcaldia && !opts.alcaldias.includes(property.alcaldia)) {
+          setAlcaldiaCustom(true)
+        }
+      })
+      .catch(() => {})
+  }, [property?.colonia, property?.alcaldia])
 
   const set = (key: string, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -148,9 +178,6 @@ export function PropertyForm({ property, onClose, onSuccess, onToast }: Property
   const selectClass = (key: string) =>
     `${inputClass(key)} appearance-none cursor-pointer`
 
-  const labelClass = 'block text-xs font-medium text-text-secondary mb-1'
-  const errorClass = 'text-xs text-red-500 mt-0.5'
-
   return (
     <div className="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
@@ -205,10 +232,66 @@ export function PropertyForm({ property, onClose, onSuccess, onToast }: Property
             </Field>
             <div className="grid grid-cols-2 gap-4">
               <Field label="Colonia *" error={errors.colonia}>
-                <input className={inputClass('colonia')} value={form.colonia ?? ''} onChange={(e) => set('colonia', e.target.value)} />
+                {coloniaCustom ? (
+                  <div className="flex gap-2">
+                    <input className={inputClass('colonia')} value={form.colonia ?? ''} onChange={(e) => set('colonia', e.target.value)} placeholder="Nueva colonia" />
+                    <button
+                      type="button"
+                      onClick={() => { setColoniaCustom(false); set('colonia', '') }}
+                      className="h-9 px-2 text-xs text-text-secondary hover:text-text-primary border border-border-primary rounded-[var(--radius-sm)] whitespace-nowrap cursor-pointer transition-colors"
+                    >
+                      Lista
+                    </button>
+                  </div>
+                ) : (
+                  <select
+                    className={selectClass('colonia')}
+                    value={form.colonia ?? ''}
+                    onChange={(e) => {
+                      if (e.target.value === '__other__') {
+                        setColoniaCustom(true)
+                        set('colonia', '')
+                      } else {
+                        set('colonia', e.target.value)
+                      }
+                    }}
+                  >
+                    <option value="">Seleccionar</option>
+                    {filterOptions.colonias.map((c) => <option key={c} value={c}>{c}</option>)}
+                    <option value="__other__">Otra...</option>
+                  </select>
+                )}
               </Field>
               <Field label="Alcaldía *" error={errors.alcaldia}>
-                <input className={inputClass('alcaldia')} value={form.alcaldia ?? ''} onChange={(e) => set('alcaldia', e.target.value)} />
+                {alcaldiaCustom ? (
+                  <div className="flex gap-2">
+                    <input className={inputClass('alcaldia')} value={form.alcaldia ?? ''} onChange={(e) => set('alcaldia', e.target.value)} placeholder="Nueva alcaldía" />
+                    <button
+                      type="button"
+                      onClick={() => { setAlcaldiaCustom(false); set('alcaldia', '') }}
+                      className="h-9 px-2 text-xs text-text-secondary hover:text-text-primary border border-border-primary rounded-[var(--radius-sm)] whitespace-nowrap cursor-pointer transition-colors"
+                    >
+                      Lista
+                    </button>
+                  </div>
+                ) : (
+                  <select
+                    className={selectClass('alcaldia')}
+                    value={form.alcaldia ?? ''}
+                    onChange={(e) => {
+                      if (e.target.value === '__other__') {
+                        setAlcaldiaCustom(true)
+                        set('alcaldia', '')
+                      } else {
+                        set('alcaldia', e.target.value)
+                      }
+                    }}
+                  >
+                    <option value="">Seleccionar</option>
+                    {filterOptions.alcaldias.map((a) => <option key={a} value={a}>{a}</option>)}
+                    <option value="__other__">Otra...</option>
+                  </select>
+                )}
               </Field>
             </div>
           </Section>
@@ -229,13 +312,13 @@ export function PropertyForm({ property, onClose, onSuccess, onToast }: Property
                 <input className={inputClass('m2_roof_garden')} type="number" step="any" value={form.m2_roof_garden ?? ''} onChange={(e) => set('m2_roof_garden', e.target.value)} />
               </Field>
               <Field label="Recámaras *" error={errors.num_recamaras}>
-                <input className={inputClass('num_recamaras')} type="number" step="1" value={form.num_recamaras ?? ''} onChange={(e) => set('num_recamaras', e.target.value)} />
+                <input className={inputClass('num_recamaras')} type="number" step="any" value={form.num_recamaras ?? ''} onChange={(e) => set('num_recamaras', e.target.value)} />
               </Field>
               <Field label="Baños *" error={errors.num_banos}>
-                <input className={inputClass('num_banos')} type="number" step="1" value={form.num_banos ?? ''} onChange={(e) => set('num_banos', e.target.value)} />
+                <input className={inputClass('num_banos')} type="number" step="any" value={form.num_banos ?? ''} onChange={(e) => set('num_banos', e.target.value)} />
               </Field>
               <Field label="Estacionamiento" error={errors.estacionamiento}>
-                <input className={inputClass('estacionamiento')} type="number" step="1" value={form.estacionamiento ?? ''} onChange={(e) => set('estacionamiento', e.target.value)} />
+                <input className={inputClass('estacionamiento')} type="number" step="any" value={form.estacionamiento ?? ''} onChange={(e) => set('estacionamiento', e.target.value)} />
               </Field>
               <Field label="Bodega" error={errors.bodega}>
                 <select className={selectClass('bodega')} value={form.bodega ?? ''} onChange={(e) => set('bodega', e.target.value)}>
@@ -245,11 +328,10 @@ export function PropertyForm({ property, onClose, onSuccess, onToast }: Property
               </Field>
             </div>
             <Field label="Amenidades" error={errors.amenidades}>
-              <textarea
-                className={`${inputClass('amenidades')} h-20 py-2 resize-none`}
-                value={form.amenidades ?? ''}
-                onChange={(e) => set('amenidades', e.target.value)}
-              />
+              <select className={selectClass('amenidades')} value={form.amenidades ?? ''} onChange={(e) => set('amenidades', e.target.value)}>
+                <option value="">—</option>
+                {AMENIDADES_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+              </select>
             </Field>
           </Section>
 

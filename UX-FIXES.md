@@ -45,3 +45,8 @@ NO arreglar diseño durante milestones funcionales (M2-M6).
 - No debe parecer creada por AI — evitar layouts genéricos
 - Usar los colores de Kibah: navy, naranja, blanco/crema
 - Referencia: kibah.com.mx (elegante, oscuro, profesional)
+
+## 6. Modal de PropertyForm — overlay blur se mueve al hacer scroll
+- Cuando se hace scroll dentro del formulario de crear/editar propiedad, el blur del overlay se sube en vez de quedarse fijo
+- El overlay debe ser `position: fixed` con `inset: 0` y el blur debe cubrir toda la pantalla sin moverse
+- El contenido del modal debe hacer scroll interno (overflow-y: auto en el modal, no en el body)
