@@ -1,15 +1,46 @@
-import { MessageSquare } from 'lucide-react'
+'use client'
+
+import { useState } from 'react'
+import { ExternalLink } from 'lucide-react'
+
+const WHAAPY_URL = 'https://app.whaapy.com/inbox'
 
 export default function WhaapyPage() {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-      <div className="w-20 h-20 rounded-full bg-bg-tertiary flex items-center justify-center mb-6">
-        <MessageSquare className="w-10 h-10 text-text-tertiary" strokeWidth={1.5} />
+  const [error, setError] = useState(false)
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+        <p className="text-sm text-text-secondary mb-4">No se pudo cargar Whaapy</p>
+        <a
+          href={WHAAPY_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 h-9 px-4 text-sm font-medium rounded-[var(--radius-sm)]
+            bg-orange text-white hover:bg-orange-hover transition-colors"
+        >
+          <ExternalLink className="w-4 h-4" strokeWidth={1.5} />
+          Abrir Whaapy
+        </a>
       </div>
-      <h1 className="text-xl font-semibold text-text-primary mb-2">Whaapy</h1>
-      <p className="text-text-secondary max-w-sm">
-        Proximamente: gestiona tus conversaciones de WhatsApp aqui
-      </p>
+    )
+  }
+
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      <iframe
+        src={WHAAPY_URL}
+        onError={() => setError(true)}
+        allow="clipboard-write; microphone"
+        style={{
+          border: 'none',
+          width: '125%',
+          height: '125%',
+          transform: 'scale(0.8)',
+          transformOrigin: 'top left',
+        }}
+        title="Whaapy"
+      />
     </div>
   )
 }
