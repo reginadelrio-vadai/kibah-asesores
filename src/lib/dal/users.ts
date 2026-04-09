@@ -136,3 +136,17 @@ export async function deleteAsesor(id: string): Promise<void> {
     throw new Error(error.message)
   }
 }
+
+export async function resetAsesorPassword(
+  id: string,
+  newPassword: string
+): Promise<void> {
+  const supabase = createAdminClient()
+  const { error } = await supabase.auth.admin.updateUserById(id, {
+    password: newPassword,
+  })
+
+  if (error) {
+    throw new Error(error.message)
+  }
+}

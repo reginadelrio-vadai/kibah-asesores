@@ -43,9 +43,9 @@ export default function WhaapyPage() {
           position: 'absolute',
           top: 0,
           left: 0,
-          width: '125%',
-          height: '125%',
-          transform: 'scale(0.8)',
+          width: '142.86%',
+          height: '142.86%',
+          transform: 'scale(0.7)',
           transformOrigin: 'top left',
           border: 'none',
         }}
