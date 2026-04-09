@@ -4,8 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { ExternalLink } from 'lucide-react'
 
 const WHAAPY_URL = 'https://app.whaapy.com/inbox'
-const IFRAME_W = 1440
-const IFRAME_H = 900
+const IFRAME_W = 1920
+const IFRAME_H = 1080
 
 export default function WhaapyPage() {
   const [error, setError] = useState(false)
