@@ -10,6 +10,7 @@ interface PropertyGridProps {
   role?: UserRole
   onEdit?: (property: Property) => void
   onDelete?: (property: Property) => void
+  visibleColumnNames?: Set<string>
 }
 
 function SkeletonCard() {
@@ -31,7 +32,7 @@ function SkeletonCard() {
   )
 }
 
-export function PropertyGrid({ properties, loading, onSelect, role, onEdit, onDelete }: PropertyGridProps) {
+export function PropertyGrid({ properties, loading, onSelect, role, onEdit, onDelete, visibleColumnNames }: PropertyGridProps) {
   if (loading && properties.length === 0) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -52,6 +53,7 @@ export function PropertyGrid({ properties, loading, onSelect, role, onEdit, onDe
           role={role}
           onEdit={onEdit}
           onDelete={onDelete}
+          visibleColumnNames={visibleColumnNames}
         />
       ))}
     </div>

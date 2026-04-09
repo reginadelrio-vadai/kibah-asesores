@@ -50,3 +50,15 @@ NO arreglar diseño durante milestones funcionales (M2-M6).
 - Cuando se hace scroll dentro del formulario de crear/editar propiedad, el blur del overlay se sube en vez de quedarse fijo
 - El overlay debe ser `position: fixed` con `inset: 0` y el blur debe cubrir toda la pantalla sin moverse
 - El contenido del modal debe hacer scroll interno (overflow-y: auto en el modal, no en el body)
+
+## 7. Configuración de Columnas — layout y UX
+- El toggle no funciona visualmente (parece que todos están "on" sin distinción clara)
+- El layout requiere scroll innecesario — debe caber todo sin scroll o con scroll mínimo
+- Falta jerarquía visual: todas las filas se ven iguales, no es intuitivo qué significa cada cosa
+- Propuesta: layout compacto tipo tabla/grid, toggles más claros (on=naranja, off=gris oscuro), agrupar columnas por categoría (Info, Ubicación, Características, etc.)
+- El nombre técnico (column_name) no debería ser tan prominente — es solo referencia para el admin
+
+## 8. Popup de detalle — header transparente al hacer scroll
+- Al hacer scroll dentro del popup, los campos de abajo se ven por debajo del header (nombre + badges + botones)
+- El header del popup debe tener fondo sólido (no transparente) para que el contenido no se vea detrás al hacer scroll
+- Aplicar el mismo color de fondo del modal al header, con un borde sutil abajo para separar

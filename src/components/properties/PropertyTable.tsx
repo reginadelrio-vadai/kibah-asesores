@@ -15,6 +15,7 @@ interface PropertyTableProps {
   role?: UserRole
   onEdit?: (property: Property) => void
   onDelete?: (property: Property) => void
+  visibleColumnNames?: Set<string>
 }
 
 function formatCell(columnName: string, value: unknown, property: Property): React.ReactNode {
@@ -83,9 +84,12 @@ export function PropertyTable({
   role,
   onEdit,
   onDelete,
+  visibleColumnNames,
 }: PropertyTableProps) {
   const isAdmin = role === 'admin'
-  const visibleCols = TABLE_COLUMNS
+  const visibleCols = visibleColumnNames && !isAdmin
+    ? TABLE_COLUMNS.filter((c) => visibleColumnNames.has(c.column_name))
+    : TABLE_COLUMNS
 
   if (loading && properties.length === 0) {
     return (

@@ -12,10 +12,12 @@ interface PropertyCardProps {
   role?: UserRole
   onEdit?: (property: Property) => void
   onDelete?: (property: Property) => void
+  visibleColumnNames?: Set<string>
 }
 
-export function PropertyCard({ property, onClick, role, onEdit, onDelete }: PropertyCardProps) {
+export function PropertyCard({ property, onClick, role, onEdit, onDelete, visibleColumnNames }: PropertyCardProps) {
   const isAdmin = role === 'admin'
+  const show = (col: string) => isAdmin || !visibleColumnNames || visibleColumnNames.has(col)
   const disponibilidadStyle =
     DISPONIBILIDAD_COLORS[property.disponibilidad ?? '']
   const tipoPreventaStyle =
@@ -53,14 +55,14 @@ export function PropertyCard({ property, onClick, role, onEdit, onDelete }: Prop
 
       {/* Badges */}
       <div className="flex items-center gap-2 mb-3 flex-wrap">
-        {disponibilidadStyle && property.disponibilidad && (
+        {show('disponibilidad') && disponibilidadStyle && property.disponibilidad && (
           <span
             className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${disponibilidadStyle.bg} ${disponibilidadStyle.text}`}
           >
             {property.disponibilidad}
           </span>
         )}
-        {tipoPreventaStyle && property.tipo_preventa && (
+        {show('tipo_preventa') && tipoPreventaStyle && property.tipo_preventa && (
           <span
             className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${tipoPreventaStyle.bg} ${tipoPreventaStyle.text}`}
           >
@@ -70,39 +72,45 @@ export function PropertyCard({ property, onClick, role, onEdit, onDelete }: Prop
       </div>
 
       {/* Title */}
-      <h3 className="text-sm font-semibold text-text-primary mb-0.5 line-clamp-1">
-        {displayValue(property.nombre_kibah || property.nombre_desarrollador)}
-      </h3>
-      {property.unidad && (
+      {show('nombre_kibah') && (
+        <h3 className="text-sm font-semibold text-text-primary mb-0.5 line-clamp-1">
+          {displayValue(property.nombre_kibah || property.nombre_desarrollador)}
+        </h3>
+      )}
+      {show('unidad') && property.unidad && (
         <p className="text-xs text-text-tertiary mb-1">
           {property.unidad}
         </p>
       )}
-      <p className="text-xs text-text-secondary mb-3">
-        {displayValue(property.colonia)}
-        {property.alcaldia ? `, ${property.alcaldia}` : ''}
-      </p>
+      {(show('colonia') || show('alcaldia')) && (
+        <p className="text-xs text-text-secondary mb-3">
+          {show('colonia') ? displayValue(property.colonia) : ''}
+          {show('alcaldia') && property.alcaldia ? `, ${property.alcaldia}` : ''}
+        </p>
+      )}
 
       {/* Price */}
-      <p className="text-lg font-bold text-text-primary mb-4">
-        {formatPrice(property.precio_unidad)}
-      </p>
+      {show('precio_unidad') && (
+        <p className="text-lg font-bold text-text-primary mb-4">
+          {formatPrice(property.precio_unidad)}
+        </p>
+      )}
 
       {/* Features */}
       <div className="flex items-center gap-4 text-text-secondary">
-        {property.num_recamaras && (
+        {show('num_recamaras') && property.num_recamaras && (
           <div className="flex items-center gap-1.5">
             <Bed className="w-3.5 h-3.5" strokeWidth={1.5} />
             <span className="text-xs">{property.num_recamaras}</span>
           </div>
         )}
-        {property.num_banos && (
+        {show('num_banos') && property.num_banos && (
           <div className="flex items-center gap-1.5">
             <Bath className="w-3.5 h-3.5" strokeWidth={1.5} />
             <span className="text-xs">{property.num_banos}</span>
           </div>
         )}
-        {property.m2_totales && (
+        {show('m2_totales') && property.m2_totales && (
           <div className="flex items-center gap-1.5">
             <Ruler className="w-3.5 h-3.5" strokeWidth={1.5} />
             <span className="text-xs">{property.m2_totales} m²</span>

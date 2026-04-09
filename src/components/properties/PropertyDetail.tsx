@@ -18,6 +18,7 @@ interface PropertyDetailProps {
   onClose: () => void
   onEdit?: (property: Property) => void
   onDelete?: (property: Property) => void
+  visibleColumnNames?: Set<string>
 }
 
 function Section({
@@ -46,8 +47,9 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
   )
 }
 
-export function PropertyDetail({ property, role, onClose, onEdit, onDelete }: PropertyDetailProps) {
+export function PropertyDetail({ property, role, onClose, onEdit, onDelete, visibleColumnNames }: PropertyDetailProps) {
   const isAdmin = role === 'admin'
+  const show = (col: string) => isAdmin || !visibleColumnNames || visibleColumnNames.has(col)
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
@@ -157,53 +159,57 @@ export function PropertyDetail({ property, role, onClose, onEdit, onDelete }: Pr
         <div className="px-6 divide-y divide-border-primary">
           {/* Badges */}
           <div className="py-4 flex items-center gap-2 flex-wrap">
-            {disponibilidadStyle && property.disponibilidad && (
+            {show('disponibilidad') && disponibilidadStyle && property.disponibilidad && (
               <span
                 className={`text-xs font-medium px-2.5 py-1 rounded-full ${disponibilidadStyle.bg} ${disponibilidadStyle.text}`}
               >
                 {property.disponibilidad}
               </span>
             )}
-            {tipoPreventaStyle && property.tipo_preventa && (
+            {show('tipo_preventa') && tipoPreventaStyle && property.tipo_preventa && (
               <span
                 className={`text-xs font-medium px-2.5 py-1 rounded-full ${tipoPreventaStyle.bg} ${tipoPreventaStyle.text}`}
               >
                 {capitalize(property.tipo_preventa)}
               </span>
             )}
-            <span className="text-lg font-bold text-text-primary ml-auto">
-              {formatPrice(property.precio_unidad)}
-            </span>
+            {show('precio_unidad') && (
+              <span className="text-lg font-bold text-text-primary ml-auto">
+                {formatPrice(property.precio_unidad)}
+              </span>
+            )}
           </div>
 
           {/* Info General */}
           <Section title="Información General">
-            <Field label="Nombre Kibah" value={displayValue(property.nombre_kibah)} />
-            {role === 'admin' && (
+            {show('nombre_kibah') && <Field label="Nombre Kibah" value={displayValue(property.nombre_kibah)} />}
+            {show('nombre_desarrollador') && (
               <Field label="Desarrollo" value={displayValue(property.nombre_desarrollador)} />
             )}
-            <Field label="Unidad" value={displayValue(property.unidad)} />
-            <Field label="Disponibilidad" value={displayValue(property.disponibilidad)} />
+            {show('unidad') && <Field label="Unidad" value={displayValue(property.unidad)} />}
+            {show('disponibilidad') && <Field label="Disponibilidad" value={displayValue(property.disponibilidad)} />}
           </Section>
 
           {/* Ubicacion */}
-          <Section title="Ubicación">
-            <Field label="Dirección" value={displayValue(property.direccion)} />
-            <Field label="Colonia" value={displayValue(property.colonia)} />
-            <Field label="Alcaldía" value={displayValue(property.alcaldia)} />
-          </Section>
+          {(show('direccion') || show('colonia') || show('alcaldia')) && (
+            <Section title="Ubicación">
+              {show('direccion') && <Field label="Dirección" value={displayValue(property.direccion)} />}
+              {show('colonia') && <Field label="Colonia" value={displayValue(property.colonia)} />}
+              {show('alcaldia') && <Field label="Alcaldía" value={displayValue(property.alcaldia)} />}
+            </Section>
+          )}
 
           {/* Caracteristicas */}
           <Section title="Características">
-            <Field label="M² Totales" value={formatM2(property.m2_totales)} />
-            <Field label="M² Habitables" value={formatM2(property.m2_habitables)} />
-            <Field label="M² Exteriores" value={formatM2(property.m2_exteriores)} />
-            <Field label="M² Roof/Jardín" value={formatM2(property.m2_roof_garden)} />
-            <Field label="Recámaras" value={displayValue(property.num_recamaras)} />
-            <Field label="Baños" value={displayValue(property.num_banos)} />
-            <Field label="Estacionamiento" value={displayValue(property.estacionamiento)} />
-            <Field label="Bodega" value={displayValue(property.bodega)} />
-            {property.amenidades && (
+            {show('m2_totales') && <Field label="M² Totales" value={formatM2(property.m2_totales)} />}
+            {show('m2_habitables') && <Field label="M² Habitables" value={formatM2(property.m2_habitables)} />}
+            {show('m2_exteriores') && <Field label="M² Exteriores" value={formatM2(property.m2_exteriores)} />}
+            {show('m2_roof_garden') && <Field label="M² Roof/Jardín" value={formatM2(property.m2_roof_garden)} />}
+            {show('num_recamaras') && <Field label="Recámaras" value={displayValue(property.num_recamaras)} />}
+            {show('num_banos') && <Field label="Baños" value={displayValue(property.num_banos)} />}
+            {show('estacionamiento') && <Field label="Estacionamiento" value={displayValue(property.estacionamiento)} />}
+            {show('bodega') && <Field label="Bodega" value={displayValue(property.bodega)} />}
+            {show('amenidades') && property.amenidades && (
               <div className="col-span-2">
                 <Field label="Amenidades" value={property.amenidades} />
               </div>
@@ -211,21 +217,25 @@ export function PropertyDetail({ property, role, onClose, onEdit, onDelete }: Pr
           </Section>
 
           {/* Entrega */}
-          <Section title="Entrega">
-            <Field label="Tipo" value={capitalize(property.tipo_preventa)} />
-            <Field label="Estado de Obra" value={displayValue(property.tipo_entrega)} />
-            <Field label="Fecha de Entrega" value={displayValue(property.fecha_entrega)} />
-          </Section>
+          {(show('tipo_preventa') || show('tipo_entrega') || show('fecha_entrega')) && (
+            <Section title="Entrega">
+              {show('tipo_preventa') && <Field label="Tipo" value={capitalize(property.tipo_preventa)} />}
+              {show('tipo_entrega') && <Field label="Estado de Obra" value={displayValue(property.tipo_entrega)} />}
+              {show('fecha_entrega') && <Field label="Fecha de Entrega" value={displayValue(property.fecha_entrega)} />}
+            </Section>
+          )}
 
           {/* Contacto (admin only) */}
-          {role === 'admin' && (
+          {(show('contacto_desarrollador') || show('pct_comision') || show('link_drive')) && (
             <Section title="Contacto">
-              <Field
-                label="Contacto Desarrollador"
-                value={displayValue(property.contacto_desarrollador)}
-              />
-              <Field label="Comisión" value={formatComision(property.pct_comision)} />
-              {property.link_drive && (
+              {show('contacto_desarrollador') && (
+                <Field
+                  label="Contacto Desarrollador"
+                  value={displayValue(property.contacto_desarrollador)}
+                />
+              )}
+              {show('pct_comision') && <Field label="Comisión" value={formatComision(property.pct_comision)} />}
+              {show('link_drive') && property.link_drive && (
                 <Field
                   label="Link Drive"
                   value={

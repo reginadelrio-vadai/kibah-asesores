@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Building2, AlertCircle, Plus } from 'lucide-react'
 import type { Property, UserRole } from '@/types'
 import type { ToastType } from '@/components/ui/Toast'
@@ -58,6 +58,11 @@ export function PropiedadesView({ role }: { role: UserRole }) {
   } = useProperties(debouncedFilters)
 
   const { visibleColumns, filterableColumns } = useColumnVisibility(role)
+
+  const visibleColumnNames = useMemo(
+    () => new Set(visibleColumns.map((c) => c.column_name)),
+    [visibleColumns]
+  )
 
   const handleSort = useCallback(
     (column: string) => {
@@ -179,6 +184,7 @@ export function PropiedadesView({ role }: { role: UserRole }) {
               role={role}
               onEdit={handleEdit}
               onDelete={handleDeleteRequest}
+              visibleColumnNames={visibleColumnNames}
             />
           ) : (
             <PropertyTable
@@ -191,6 +197,7 @@ export function PropiedadesView({ role }: { role: UserRole }) {
               role={role}
               onEdit={handleEdit}
               onDelete={handleDeleteRequest}
+              visibleColumnNames={visibleColumnNames}
             />
           )}
 
@@ -243,6 +250,7 @@ export function PropiedadesView({ role }: { role: UserRole }) {
           onClose={() => setSelectedProperty(null)}
           onEdit={(p) => { setSelectedProperty(null); handleEdit(p) }}
           onDelete={(p) => { setSelectedProperty(null); handleDeleteRequest(p) }}
+          visibleColumnNames={visibleColumnNames}
         />
       )}
 
