@@ -36,9 +36,14 @@ SELECT
   LOWER(TRIM("Entrega Inmediata/Preventa")) AS tipo_preventa,
   "Tipo de Entrega" AS tipo_entrega,
   CASE
-    WHEN "% Comisión" = '' OR "% Comisión" IS NULL THEN NULL
-    WHEN CAST("% Comisión" AS NUMERIC) < 1 THEN CAST("% Comisión" AS NUMERIC) * 100
-    ELSE CAST("% Comisión" AS NUMERIC)
+    WHEN "% Comisión" IS NULL OR TRIM("% Comisión") = '' THEN NULL
+    WHEN TRIM("% Comisión") ~ '^[0-9]*\.?[0-9]+$' THEN
+      CASE
+        WHEN CAST(TRIM("% Comisión") AS NUMERIC) < 1
+          THEN CAST(TRIM("% Comisión") AS NUMERIC) * 100
+        ELSE CAST(TRIM("% Comisión") AS NUMERIC)
+      END
+    ELSE NULL
   END AS pct_comision,
   "Link Drive" AS link_drive,
   "Nombre Kibah" AS nombre_kibah

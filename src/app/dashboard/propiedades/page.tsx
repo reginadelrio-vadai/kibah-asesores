@@ -1,11 +1,18 @@
-import { Building2 } from 'lucide-react'
+import { createClient } from '@/lib/supabase/server'
+import { getProfile } from '@/lib/dal/users'
+import { PropiedadesView } from './propiedades-view'
 
-export default function PropiedadesPage() {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-      <Building2 className="w-12 h-12 text-text-tertiary mb-4" strokeWidth={1.5} />
-      <h1 className="text-xl font-semibold text-text-primary mb-2">Propiedades</h1>
-      <p className="text-text-secondary">Coming in M2</p>
-    </div>
-  )
+export default async function PropiedadesPage() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  let role: 'asesor' | 'admin' = 'asesor'
+  if (user) {
+    const profile = await getProfile(user.id)
+    if (profile) role = profile.role
+  }
+
+  return <PropiedadesView role={role} />
 }

@@ -76,3 +76,13 @@ Este proyecto usa Antigravity IDE con las siguientes skills instaladas. Usarlas 
 - Cada milestone se ejecuta en una NUEVA sesión de Claude Code en Antigravity.
 - Después de cada milestone: verificar build (`npm run build`), verificar checklist, guardar con git.
 - Si algo falla: no pasar al siguiente milestone. Corregir primero.
+
+## Error Journal
+Archivo: `ERROR-JOURNAL.md` en la raíz del proyecto.
+- ANTES de ejecutar cualquier milestone, leer ERROR-JOURNAL.md completo.
+- DESPUÉS de arreglar un bug o cometer un error, agregar una entrada con:
+  - **Error:** Qué pasó
+  - **Causa:** Por qué pasó
+  - **Fix:** Cómo se arregló
+  - **Regla:** Qué hacer diferente en el futuro para evitarlo
+- NUNCA borrar entradas anteriores.

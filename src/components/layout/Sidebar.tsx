@@ -35,11 +35,6 @@ const asesorNav: NavItem[] = [
 
 const adminNav: NavItem[] = [
   {
-    label: 'Propiedades Admin',
-    href: '/dashboard/admin/propiedades',
-    icon: <Building2 className="w-5 h-5" strokeWidth={1.5} />,
-  },
-  {
     label: 'Columnas',
     href: '/dashboard/admin/columnas',
     icon: <Columns3 className="w-5 h-5" strokeWidth={1.5} />,
