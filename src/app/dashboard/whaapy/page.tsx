@@ -1,12 +1,30 @@
 'use client'
 
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ExternalLink } from 'lucide-react'
 
 const WHAAPY_URL = 'https://app.whaapy.com/inbox'
+const IFRAME_W = 1440
+const IFRAME_H = 900
 
 export default function WhaapyPage() {
   const [error, setError] = useState(false)
+  const [scale, setScale] = useState(1)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  const updateScale = useCallback(() => {
+    const el = containerRef.current
+    if (!el) return
+    const s = Math.min(el.clientWidth / IFRAME_W, el.clientHeight / IFRAME_H)
+    setScale(s)
+  }, [])
+
+  useEffect(() => {
+    updateScale()
+    const ro = new ResizeObserver(updateScale)
+    if (containerRef.current) ro.observe(containerRef.current)
+    return () => ro.disconnect()
+  }, [updateScale])
 
   if (error) {
     return (
@@ -28,6 +46,7 @@ export default function WhaapyPage() {
 
   return (
     <div
+      ref={containerRef}
       style={{
         position: 'relative',
         width: '100%',
@@ -43,9 +62,9 @@ export default function WhaapyPage() {
           position: 'absolute',
           top: 0,
           left: 0,
-          width: '166.67%',
-          height: '166.67%',
-          transform: 'scale(0.6)',
+          width: IFRAME_W,
+          height: IFRAME_H,
+          transform: `scale(${scale})`,
           transformOrigin: 'top left',
           border: 'none',
         }}
