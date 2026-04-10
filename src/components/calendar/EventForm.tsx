@@ -10,7 +10,7 @@ interface Category {
   color: string
 }
 
-const QUICK_COLORS = ['#E8872A', '#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EC4899']
+const QUICK_COLORS = ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EC4899', '#06B6D4', '#EF4444', '#F97316', '#6B7280', '#1B2A4A', '#84CC16', '#E8872A']
 
 interface EventFormProps {
   event?: CalendarEvent | null
@@ -67,8 +67,13 @@ export function EventForm({ event, defaultStart, defaultEnd, onClose, onSaved, o
         setSelectedCatId(json.data.id)
         setNewCatName('')
         setShowNewCat(false)
+      } else {
+        const body = await res.json().catch(() => ({}))
+        onToast(body.error || 'Error al crear categoria', 'error')
       }
-    } catch {}
+    } catch {
+      onToast('Error de conexion', 'error')
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {

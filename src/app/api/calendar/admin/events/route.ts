@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
   const start = params.get('start')
   const end = params.get('end')
   const filterUserId = params.get('userId')
+  const filterUserIds = params.get('userIds')
 
   if (!start || !end) return NextResponse.json({ error: 'start and end required' }, { status: 400 })
 
@@ -31,9 +32,13 @@ export async function GET(request: NextRequest) {
     const adminUser = allUsers.find((u) => u.userId === user.id)
     const asesores = allUsers.filter((u) => u.userId !== user.id)
 
-    let usersToFetch = filterUserId
-      ? allUsers.filter((u) => u.userId === filterUserId)
-      : allUsers
+    let usersToFetch = allUsers
+    if (filterUserIds) {
+      const ids = new Set(filterUserIds.split(','))
+      usersToFetch = allUsers.filter((u) => ids.has(u.userId))
+    } else if (filterUserId) {
+      usersToFetch = allUsers.filter((u) => u.userId === filterUserId)
+    }
 
     // Assign colors: admin = gray, asesores = rotating palette
     const colorMap = new Map<string, string>()

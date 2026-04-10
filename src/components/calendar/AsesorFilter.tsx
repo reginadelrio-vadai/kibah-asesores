@@ -1,11 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Check } from 'lucide-react'
 
 const ASESOR_COLORS = [
-  '#E8872A', '#3B82F6', '#10B981', '#8B5CF6',
-  '#F59E0B', '#EC4899', '#06B6D4', '#F97316',
+  '#3B82F6', '#10B981', '#8B5CF6', '#F59E0B',
+  '#EC4899', '#06B6D4', '#F97316', '#EF4444',
 ]
+const ADMIN_COLOR = '#6B7280'
 
 interface ConnectedUser {
   userId: string
@@ -14,11 +16,12 @@ interface ConnectedUser {
 }
 
 interface AsesorFilterProps {
-  value: string
-  onChange: (userId: string) => void
+  adminUserId: string
+  selectedUserIds: Set<string>
+  onToggle: (userId: string) => void
 }
 
-export function AsesorFilter({ value, onChange }: AsesorFilterProps) {
+export function AsesorFilter({ adminUserId, selectedUserIds, onToggle }: AsesorFilterProps) {
   const [users, setUsers] = useState<ConnectedUser[]>([])
 
   useEffect(() => {
@@ -28,27 +31,39 @@ export function AsesorFilter({ value, onChange }: AsesorFilterProps) {
       .catch(() => {})
   }, [])
 
+  const asesores = users.filter((u) => u.userId !== adminUserId)
+
   return (
     <div className="flex items-center gap-2 flex-wrap">
+      {/* Admin's own events */}
       <button
-        onClick={() => onChange('')}
-        className={`h-8 px-3 text-xs font-medium rounded-full border transition-colors cursor-pointer
-          ${!value ? 'bg-orange text-white border-orange' : 'border-border-primary text-text-secondary hover:text-text-primary hover:bg-bg-tertiary'}`}
+        onClick={() => onToggle(adminUserId)}
+        className={`h-7 px-2.5 text-[11px] font-medium rounded-full border transition-colors cursor-pointer flex items-center gap-1.5
+          ${selectedUserIds.has(adminUserId) ? 'border-[#6B7280]/40 bg-[#6B7280]/10 text-[#6B7280]' : 'border-border-primary text-text-tertiary opacity-50'}`}
       >
-        Todos
+        {selectedUserIds.has(adminUserId) && <Check className="w-3 h-3" strokeWidth={2} />}
+        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: ADMIN_COLOR }} />
+        Mis eventos
       </button>
-      {users.map((u, idx) => (
-        <button
-          key={u.userId}
-          onClick={() => onChange(u.userId)}
-          className={`h-8 px-3 text-xs font-medium rounded-full border transition-colors cursor-pointer flex items-center gap-1.5
-            ${value === u.userId ? 'text-white border-transparent' : 'border-border-primary text-text-secondary hover:text-text-primary hover:bg-bg-tertiary'}`}
-          style={value === u.userId ? { backgroundColor: ASESOR_COLORS[idx % ASESOR_COLORS.length], borderColor: ASESOR_COLORS[idx % ASESOR_COLORS.length] } : undefined}
-        >
-          <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: ASESOR_COLORS[idx % ASESOR_COLORS.length] }} />
-          {u.fullName}
-        </button>
-      ))}
+
+      {/* Asesores */}
+      {asesores.map((u, idx) => {
+        const color = ASESOR_COLORS[idx % ASESOR_COLORS.length]
+        const active = selectedUserIds.has(u.userId)
+        return (
+          <button
+            key={u.userId}
+            onClick={() => onToggle(u.userId)}
+            className={`h-7 px-2.5 text-[11px] font-medium rounded-full border transition-colors cursor-pointer flex items-center gap-1.5
+              ${active ? '' : 'border-border-primary text-text-tertiary opacity-50'}`}
+            style={active ? { borderColor: `${color}60`, backgroundColor: `${color}15`, color } : undefined}
+          >
+            {active && <Check className="w-3 h-3" strokeWidth={2} />}
+            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+            {u.fullName}
+          </button>
+        )
+      })}
     </div>
   )
 }

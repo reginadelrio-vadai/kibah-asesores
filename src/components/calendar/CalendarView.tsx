@@ -19,9 +19,10 @@ import interactionPlugin from '@fullcalendar/interaction'
 interface CalendarViewProps {
   mode?: 'personal' | 'admin'
   asesorUserId?: string
+  selectedUserIds?: string
 }
 
-export function CalendarView({ mode = 'personal', asesorUserId }: CalendarViewProps) {
+export function CalendarView({ mode = 'personal', asesorUserId, selectedUserIds }: CalendarViewProps) {
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [loading, setLoading] = useState(false)
   const [formOpen, setFormOpen] = useState(false)
@@ -43,22 +44,24 @@ export function CalendarView({ mode = 'personal', asesorUserId }: CalendarViewPr
       let url: string
       if (mode === 'admin') {
         url = `/api/calendar/admin/events?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`
-        if (asesorUserId) url += `&userId=${encodeURIComponent(asesorUserId)}`
+        if (selectedUserIds) url += `&userIds=${encodeURIComponent(selectedUserIds)}`
+        else if (asesorUserId) url += `&userId=${encodeURIComponent(asesorUserId)}`
       } else {
         url = `/api/calendar/events?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`
       }
       const res = await fetch(url)
       if (res.ok) { const json = await res.json(); setEvents(json.data ?? []) }
     } catch {} finally { setLoading(false) }
-  }, [mode, asesorUserId])
+  }, [mode, asesorUserId, selectedUserIds])
 
   const refetchEvents = useCallback(() => {
     if (rangeRef.current) fetchEvents(rangeRef.current.start, rangeRef.current.end)
   }, [fetchEvents])
 
-  const prevUserIdRef = useRef(asesorUserId)
-  if (prevUserIdRef.current !== asesorUserId) {
-    prevUserIdRef.current = asesorUserId
+  const prevFilterRef = useRef(asesorUserId + '|' + selectedUserIds)
+  const currentFilter = asesorUserId + '|' + selectedUserIds
+  if (prevFilterRef.current !== currentFilter) {
+    prevFilterRef.current = currentFilter
     if (rangeRef.current) fetchEvents(rangeRef.current.start, rangeRef.current.end)
   }
 
