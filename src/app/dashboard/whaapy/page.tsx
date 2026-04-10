@@ -27,17 +27,20 @@ export default function WhaapyPage() {
   }
 
   return (
-    <div style={{ width: '100%', height: 'calc(100vh - 64px)', overflow: 'hidden' }}>
+    <div style={{ width: '100%', height: 'calc(100vh - 64px)', overflow: 'hidden', position: 'relative' }}>
       <iframe
         src={WHAAPY_URL}
         onError={() => setError(true)}
         allow="clipboard-write; microphone"
         title="Whaapy"
         style={{
-          width: '125%',
-          height: '125%',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '200%',
+          height: '200%',
           border: 'none',
-          zoom: '0.8',
+          zoom: '0.5',
         }}
       />
     </div>
