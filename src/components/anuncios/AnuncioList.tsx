@@ -1,10 +1,11 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { Megaphone, Trash2, Loader2, ChevronDown, ChevronUp } from 'lucide-react'
+import { Megaphone, Loader2 } from 'lucide-react'
 import type { ToastType } from '@/components/ui/Toast'
 import { Toast } from '@/components/ui/Toast'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { AnuncioDetail } from './AnuncioDetail'
 
 interface Anuncio {
   id: string
@@ -35,7 +36,7 @@ interface AnuncioListProps {
 export function AnuncioList({ isAdmin, refreshKey }: AnuncioListProps) {
   const [anuncios, setAnuncios] = useState<Anuncio[]>([])
   const [loading, setLoading] = useState(true)
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+  const [selected, setSelected] = useState<Anuncio | null>(null)
   const [deleting, setDeleting] = useState<Anuncio | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null)
@@ -70,15 +71,6 @@ export function AnuncioList({ isAdmin, refreshKey }: AnuncioListProps) {
     }).catch(() => {})
   }, [anuncios])
 
-  const toggleExpand = (id: string) => {
-    setExpandedIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
-
   const handleDelete = async () => {
     if (!deleting) return
     setDeleteLoading(true)
@@ -87,6 +79,7 @@ export function AnuncioList({ isAdmin, refreshKey }: AnuncioListProps) {
       if (res.ok || res.status === 204) {
         setToast({ message: 'Anuncio eliminado', type: 'success' })
         setDeleting(null)
+        setSelected(null)
         fetchAnuncios()
       } else {
         setToast({ message: 'Error al eliminar', type: 'error' })
@@ -112,7 +105,7 @@ export function AnuncioList({ isAdmin, refreshKey }: AnuncioListProps) {
         <Megaphone className="w-12 h-12 text-text-tertiary mb-4" strokeWidth={1.5} />
         <h2 className="text-base font-semibold text-text-primary mb-1">No hay anuncios</h2>
         <p className="text-sm text-text-secondary">
-          {isAdmin ? 'Publica un anuncio para tus asesores' : 'Aqui aparecerán los anuncios de Kibah'}
+          {isAdmin ? 'Publica un anuncio para tus asesores' : 'Aqui apareceran los anuncios de Kibah'}
         </p>
       </div>
     )
@@ -120,68 +113,41 @@ export function AnuncioList({ isAdmin, refreshKey }: AnuncioListProps) {
 
   return (
     <>
-      <div className="space-y-3">
-        {anuncios.map((a) => {
-          const expanded = expandedIds.has(a.id)
-          const isLong = a.message.length > 200
-          return (
-            <div
-              key={a.id}
-              className={`px-4 py-3 rounded-[var(--radius-sm)] border transition-colors
-                ${!a.is_read
-                  ? 'border-blue-500/30 bg-blue-500/5'
-                  : 'border-border-primary bg-bg-secondary'
-                }`}
-            >
-              <div className="flex items-start gap-3">
-                {/* Unread dot */}
-                {!a.is_read && (
-                  <div className="w-2.5 h-2.5 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />
-                )}
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className={`text-sm text-text-primary truncate ${!a.is_read ? 'font-bold' : 'font-medium'}`}>
-                      {a.title}
-                    </h3>
-                    {a.priority === 'urgente' && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/15 text-red-600 dark:text-red-400 flex-shrink-0">
-                        Urgente
-                      </span>
-                    )}
-                  </div>
-
-                  <p className="text-sm text-text-secondary whitespace-pre-wrap">
-                    {isLong && !expanded ? a.message.slice(0, 200) + '...' : a.message}
-                  </p>
-
-                  {isLong && (
-                    <button
-                      onClick={() => toggleExpand(a.id)}
-                      className="flex items-center gap-1 text-xs text-orange hover:text-orange-hover mt-1 cursor-pointer transition-colors"
-                    >
-                      {expanded ? <><ChevronUp className="w-3 h-3" strokeWidth={1.5} /> Ver menos</> : <><ChevronDown className="w-3 h-3" strokeWidth={1.5} /> Ver mas</>}
-                    </button>
-                  )}
-
-                  <p className="text-[10px] text-text-tertiary mt-2">{timeAgo(a.created_at)}</p>
-                </div>
-
-                {/* Admin delete */}
-                {isAdmin && (
-                  <button
-                    onClick={() => setDeleting(a)}
-                    className="p-1.5 rounded-[var(--radius-sm)] text-text-secondary hover:text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer flex-shrink-0"
-                    title="Eliminar"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
-                  </button>
-                )}
-              </div>
-            </div>
-          )
-        })}
+      <div className="space-y-2">
+        {anuncios.map((a) => (
+          <button
+            key={a.id}
+            onClick={() => setSelected(a)}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-[var(--radius-sm)] border text-left transition-colors cursor-pointer
+              ${!a.is_read
+                ? 'border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/10'
+                : 'border-border-primary bg-bg-secondary hover:bg-bg-tertiary/50'
+              }`}
+          >
+            {!a.is_read && (
+              <div className="w-2.5 h-2.5 rounded-full bg-blue-500 flex-shrink-0" />
+            )}
+            <h3 className={`text-sm text-text-primary truncate flex-1 ${!a.is_read ? 'font-bold' : 'font-medium'}`}>
+              {a.title}
+            </h3>
+            {a.priority === 'urgente' && (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/15 text-red-600 dark:text-red-400 flex-shrink-0">
+                Urgente
+              </span>
+            )}
+            <span className="text-[10px] text-text-tertiary flex-shrink-0">{timeAgo(a.created_at)}</span>
+          </button>
+        ))}
       </div>
+
+      {selected && (
+        <AnuncioDetail
+          anuncio={selected}
+          isAdmin={isAdmin}
+          onClose={() => setSelected(null)}
+          onDelete={(a) => { setSelected(null); setDeleting(a) }}
+        />
+      )}
 
       {deleting && (
         <ConfirmDialog
