@@ -82,7 +82,7 @@ export function DesarrolloCard({ desarrollo, onClick, onEdit, onDelete }: Desarr
           )}
           {desarrollo.tipo_preventa && (
             <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-700 dark:text-blue-400">
-              {desarrollo.tipo_preventa}
+              {toTitleCase(desarrollo.tipo_preventa)}
             </span>
           )}
         </div>

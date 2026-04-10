@@ -102,7 +102,7 @@ export function DesarrolloTable({ desarrollos, loading, onSelect, onEdit, onDele
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${dispColors.bg} ${dispColors.text}`}>{d.disponibilidad}</span>
                   ) : (d.disponibilidad || '—')}
                 </td>
-                <td className="px-4 py-3 text-text-primary whitespace-nowrap">{d.tipo_preventa || '—'}</td>
+                <td className="px-4 py-3 text-text-primary whitespace-nowrap">{toTitleCase(d.tipo_preventa)}</td>
                 <td className="px-4 py-3 text-right whitespace-nowrap">
                   <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 md:transition-opacity">
                     <button onClick={(e) => { e.stopPropagation(); onEdit?.(d) }} className="p-1.5 rounded-[var(--radius-sm)] text-text-secondary hover:text-orange hover:bg-orange/10 transition-colors cursor-pointer" title="Editar">

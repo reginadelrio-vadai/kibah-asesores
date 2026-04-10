@@ -220,12 +220,24 @@ export function DesarrolloForm({ desarrollo, onClose, onSuccess, onToast }: Desa
               <div className="grid grid-cols-2 gap-4">
                 <F label="M² Min" error={errors.m2_totales_min}><input className={ic('m2_totales_min')} type="number" step="any" value={form.m2_totales_min ?? ''} onChange={e => set('m2_totales_min', e.target.value)} /></F>
                 <F label="M² Max" error={errors.m2_totales_max}><input className={ic('m2_totales_max')} type="number" step="any" value={form.m2_totales_max ?? ''} onChange={e => set('m2_totales_max', e.target.value)} /></F>
+              </div>
+              {rangeHint}
+              <div className="grid grid-cols-2 gap-4">
                 <F label="Recámaras Min" error={errors.recamaras_min}><input className={ic('recamaras_min')} type="number" step="any" value={form.recamaras_min ?? ''} onChange={e => set('recamaras_min', e.target.value)} /></F>
                 <F label="Recámaras Max" error={errors.recamaras_max}><input className={ic('recamaras_max')} type="number" step="any" value={form.recamaras_max ?? ''} onChange={e => set('recamaras_max', e.target.value)} /></F>
+              </div>
+              {rangeHint}
+              <div className="grid grid-cols-2 gap-4">
                 <F label="Baños Min" error={errors.banos_min}><input className={ic('banos_min')} type="number" step="any" value={form.banos_min ?? ''} onChange={e => set('banos_min', e.target.value)} /></F>
                 <F label="Baños Max" error={errors.banos_max}><input className={ic('banos_max')} type="number" step="any" value={form.banos_max ?? ''} onChange={e => set('banos_max', e.target.value)} /></F>
+              </div>
+              {rangeHint}
+              <div className="grid grid-cols-2 gap-4">
                 <F label="Estacionamientos Min" error={errors.estacionamientos_min}><input className={ic('estacionamientos_min')} type="number" step="any" value={form.estacionamientos_min ?? ''} onChange={e => set('estacionamientos_min', e.target.value)} /></F>
                 <F label="Estacionamientos Max" error={errors.estacionamientos_max}><input className={ic('estacionamientos_max')} type="number" step="any" value={form.estacionamientos_max ?? ''} onChange={e => set('estacionamientos_max', e.target.value)} /></F>
+              </div>
+              {rangeHint}
+              <div className="grid grid-cols-2 gap-4">
                 <F label="Bodega" error={errors.bodega}>
                   <select className={sc('bodega')} value={form.bodega ?? ''} onChange={e => set('bodega', e.target.value)}><option value="">—</option>{BODEGA_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}</select>
                 </F>
@@ -233,7 +245,6 @@ export function DesarrolloForm({ desarrollo, onClose, onSuccess, onToast }: Desa
                   <select className={sc('amenidades')} value={form.amenidades ?? ''} onChange={e => set('amenidades', e.target.value)}><option value="">—</option><option value="Si">Si</option><option value="No">No</option></select>
                 </F>
               </div>
-              {rangeHint}
             </Sec>
 
             {/* Entrega */}

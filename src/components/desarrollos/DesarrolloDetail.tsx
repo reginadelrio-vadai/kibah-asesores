@@ -142,7 +142,7 @@ export function DesarrolloDetail({ desarrollo, onClose, onEdit, onDelete }: Desa
               <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${dispStyle.bg} ${dispStyle.text}`}>{desarrollo.disponibilidad}</span>
             )}
             {desarrollo.tipo_preventa && (
-              <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-blue-500/15 text-blue-700 dark:text-blue-400">{desarrollo.tipo_preventa}</span>
+              <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-blue-500/15 text-blue-700 dark:text-blue-400">{toTitleCase(desarrollo.tipo_preventa)}</span>
             )}
             <span className="text-lg font-bold text-text-primary ml-auto">
               {formatPriceRange(desarrollo.precio_min, desarrollo.precio_max)}
@@ -153,7 +153,7 @@ export function DesarrolloDetail({ desarrollo, onClose, onEdit, onDelete }: Desa
             <Field label="Nombre Kibah" value={desarrollo.nombre_kibah} />
             <Field label="Desarrollo" value={desarrollo.nombre_desarrollador} />
             <Field label="Disponibilidad" value={desarrollo.disponibilidad} />
-            <Field label="Tipo Preventa" value={desarrollo.tipo_preventa} />
+            <Field label="Tipo Preventa" value={toTitleCase(desarrollo.tipo_preventa)} />
           </Section>
 
           <Section title="Ubicación">
