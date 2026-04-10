@@ -46,6 +46,12 @@ function getImageDimensions(base64: string): Promise<{ w: number; h: number }> {
   })
 }
 
+function getMonthYear(): string {
+  const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+  const now = new Date()
+  return `${months[now.getMonth()]} ${now.getFullYear()}`
+}
+
 interface PreparedProperty {
   property: Property
   imageData: string | null
@@ -64,8 +70,8 @@ export async function generatePdf(
   )
 
   const logoData = await loadImageAsBase64('/images/kibah-logo-dark.png')
-  let logoW = 30
-  let logoH = 10
+  let logoW = 45
+  let logoH = 15
   if (logoData) {
     const dims = await getImageDimensions(logoData)
     const ratio = dims.h / dims.w
@@ -85,15 +91,13 @@ export async function generatePdf(
     if (page > 0) doc.addPage()
 
     // ===== PAGE DECORATIONS =====
-    // Top navy bar
     doc.setFillColor(NAVY)
     doc.rect(0, 0, pw, 2, 'F')
 
-    // Left orange bar
     doc.setFillColor(ORANGE)
     doc.rect(0, 0, 3, ph, 'F')
 
-    // ===== HEADER (20mm) =====
+    // ===== HEADER =====
     const headerY = 6
     if (logoData) {
       doc.setFillColor(WHITE)
@@ -113,8 +117,24 @@ export async function generatePdf(
     doc.setLineWidth(0.5)
     doc.line(mx, headerLineY, pw - mx, headerLineY)
 
+    // ===== TITLE (first page only) =====
+    let startY = headerLineY + 5
+    if (page === 0) {
+      startY = headerLineY + 4
+      doc.setFontSize(18)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(NAVY)
+      doc.text('Propiedades de Interes', pw / 2, startY + 5, { align: 'center' })
+
+      doc.setFontSize(10)
+      doc.setFont('helvetica', 'normal')
+      doc.setTextColor(LABEL)
+      doc.text(getMonthYear(), pw / 2, startY + 12, { align: 'center' })
+
+      startY += 20
+    }
+
     // ===== PROPERTIES =====
-    const startY = headerLineY + 5
     const footerY = ph - 14
     const usableH = footerY - startY
     const propH = usableH / perPage
@@ -196,14 +216,6 @@ export async function generatePdf(
         doc.setFont('helvetica', 'normal')
         doc.setTextColor(BODY)
         doc.text(loc, textX, ty)
-        ty += 4
-      }
-
-      // Address
-      if (p.direccion) {
-        doc.setFontSize(8)
-        doc.setTextColor(LABEL)
-        doc.text(tc(p.direccion), textX, ty)
       }
 
       // --- SPEC CARDS (below image, full width) ---
@@ -212,19 +224,19 @@ export async function generatePdf(
       interface SpecCard { value: string; label: string }
       const cards: SpecCard[] = []
 
-      if (p.num_recamaras) cards.push({ value: String(p.num_recamaras), label: 'Recamaras' })
-      if (p.num_banos) cards.push({ value: String(p.num_banos), label: 'Banos' })
-      if (p.m2_totales) cards.push({ value: String(p.m2_totales), label: 'M2 Total' })
+      if (p.num_recamaras) cards.push({ value: String(p.num_recamaras), label: 'Rec.' })
+      if (p.num_banos) cards.push({ value: String(p.num_banos), label: 'Ba\u00F1os' })
+      if (p.m2_totales) cards.push({ value: String(p.m2_totales), label: 'M\u00B2 Total' })
 
       const m2hab = p.m2_habitables ? parseFloat(String(p.m2_habitables)) : 0
       const m2tot = p.m2_totales ? parseFloat(String(p.m2_totales)) : 0
-      if (m2hab > 0 && m2hab !== m2tot) cards.push({ value: String(p.m2_habitables), label: 'M2 Hab.' })
+      if (m2hab > 0 && m2hab !== m2tot) cards.push({ value: String(p.m2_habitables), label: 'M\u00B2 Hab.' })
 
       const m2ext = p.m2_exteriores ? parseFloat(String(p.m2_exteriores)) : 0
-      if (m2ext > 0) cards.push({ value: String(p.m2_exteriores), label: 'M2 Ext.' })
+      if (m2ext > 0) cards.push({ value: String(p.m2_exteriores), label: 'M\u00B2 Ext.' })
 
       const m2roof = p.m2_roof_garden ? parseFloat(String(p.m2_roof_garden)) : 0
-      if (m2roof > 0) cards.push({ value: String(p.m2_roof_garden), label: 'M2 Roof' })
+      if (m2roof > 0) cards.push({ value: String(p.m2_roof_garden), label: 'M\u00B2 Roof' })
 
       const est = p.estacionamiento ? parseFloat(String(p.estacionamiento)) : 0
       if (est > 0) cards.push({ value: String(p.estacionamiento), label: 'Est.' })
@@ -243,17 +255,21 @@ export async function generatePdf(
           doc.setFillColor(ORANGE_LIGHT)
           doc.rect(cx, y, cardW, cardH, 'F')
 
+          // Orange bullet square
+          doc.setFillColor(ORANGE)
+          doc.rect(cx + cardW / 2 - 1, y + 1.5, 2, 2, 'F')
+
           // Value
           doc.setFontSize(11)
           doc.setFont('helvetica', 'bold')
           doc.setTextColor(NAVY)
-          doc.text(cards[c].value, cx + cardW / 2, y + 6, { align: 'center' })
+          doc.text(cards[c].value, cx + cardW / 2, y + 7.5, { align: 'center' })
 
           // Label
           doc.setFontSize(7)
           doc.setFont('helvetica', 'normal')
           doc.setTextColor(LABEL)
-          doc.text(cards[c].label, cx + cardW / 2, y + 11, { align: 'center' })
+          doc.text(cards[c].label, cx + cardW / 2, y + 12, { align: 'center' })
         }
 
         y += cardH + 4
@@ -274,7 +290,7 @@ export async function generatePdf(
         doc.setFontSize(8)
         doc.setFont('helvetica', 'bold')
         doc.setTextColor(WHITE)
-        doc.text(statuses.join('   •   '), mx + contentW / 2, y + 5.5, { align: 'center' })
+        doc.text(statuses.join('   \u2022   '), mx + contentW / 2, y + 5.5, { align: 'center' })
       }
     }
 
