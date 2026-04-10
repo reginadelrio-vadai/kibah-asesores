@@ -41,10 +41,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md px-6">
         {/* Logo */}
         <div className="flex flex-col items-center mb-10">
-          <div className="w-14 h-14 rounded-[var(--radius-lg)] bg-orange flex items-center justify-center mb-4">
-            <span className="text-white font-bold text-2xl">K</span>
-          </div>
-          <h1 className="text-white text-2xl font-semibold">Kibah</h1>
+          <img src="/images/kibah-logo.png" alt="Kibah" className="max-w-[180px] mb-4" />
           <p className="text-[#94A3B8] text-sm mt-1">
             Plataforma de Asesores
           </p>

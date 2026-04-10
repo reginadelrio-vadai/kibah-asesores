@@ -93,11 +93,8 @@ export function Sidebar({ role }: { role: UserRole }) {
   const sidebarContent = (
     <div className="flex flex-col h-full">
       {/* Logo */}
-      <div className="flex items-center gap-2 px-4 h-16 border-b border-white/10">
-        <div className="w-8 h-8 rounded-[var(--radius-sm)] bg-orange flex items-center justify-center">
-          <span className="text-white font-bold text-sm">K</span>
-        </div>
-        <span className="text-white font-semibold text-lg">Kibah</span>
+      <div className="flex items-center px-5 h-16 border-b border-white/10">
+        <img src="/images/kibah-logo.png" alt="Kibah" className="max-w-[120px]" />
       </div>
 
       {/* Main nav */}

@@ -3,26 +3,19 @@ import type { Property } from '@/types'
 
 const NAVY = '#1B2A4A'
 const ORANGE = '#E8872A'
-const GRAY = '#6B7280'
-const WHITE = '#FFFFFF'
-const LIGHT_GRAY = '#F3F4F6'
+const GRAY = '#64748B'
+const LINE_GRAY = '#E2E8F0'
 
-interface PdfProperty {
-  property: Property
-  imageUrl: string | null
-  imageData: string | null // base64
+function toTitleCase(str: string | null | undefined): string {
+  if (!str) return ''
+  return str.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
 }
 
 function formatPrice(value: string | number | null | undefined): string {
-  if (!value) return 'Consultar precio'
+  if (!value) return ''
   const num = typeof value === 'string' ? parseFloat(value) : value
-  if (isNaN(num) || num === 0) return 'Consultar precio'
+  if (isNaN(num) || num === 0) return ''
   return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(num) + ' MXN'
-}
-
-function dv(value: string | number | null | undefined): string {
-  if (value === null || value === undefined || value === '') return '—'
-  return String(value)
 }
 
 export async function loadImageAsBase64(url: string): Promise<string | null> {
@@ -40,158 +33,174 @@ export async function loadImageAsBase64(url: string): Promise<string | null> {
   }
 }
 
+interface PreparedProperty {
+  property: Property
+  imageData: string | null
+}
+
 export async function generatePdf(
   properties: Property[],
-  imageMap: Record<string, string> // nombre_kibah -> url
+  imageMap: Record<string, string>
 ): Promise<Blob> {
-  // Pre-load images
-  const pdfProperties: PdfProperty[] = await Promise.all(
+  // Pre-load all images
+  const prepared: PreparedProperty[] = await Promise.all(
     properties.map(async (property) => {
-      const nombre = property.nombre_kibah ?? ''
-      const imageUrl = imageMap[nombre] ?? null
-      let imageData: string | null = null
-      if (imageUrl) {
-        imageData = await loadImageAsBase64(imageUrl)
-      }
-      return { property, imageUrl, imageData }
+      const url = imageMap[property.nombre_kibah ?? ''] ?? null
+      const imageData = url ? await loadImageAsBase64(url) : null
+      return { property, imageData }
     })
   )
 
+  // Load logo
+  const logoData = await loadImageAsBase64('/images/kibah-logo.png')
+
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
-  const pageWidth = 210
-  const pageHeight = 297
-  const margin = 20
+  const pw = 210
+  const ph = 297
+  const mx = 15
+  const contentW = pw - mx * 2
 
-  // ===== COVER PAGE =====
-  doc.setFillColor(NAVY)
-  doc.rect(0, 0, pageWidth, pageHeight, 'F')
+  const propertiesPerPage = 2
+  const totalPages = Math.ceil(prepared.length / propertiesPerPage)
 
-  // Logo text (K in orange circle)
-  doc.setFillColor(ORANGE)
-  doc.circle(pageWidth / 2, 100, 15, 'F')
-  doc.setTextColor(WHITE)
-  doc.setFontSize(24)
-  doc.setFont('helvetica', 'bold')
-  doc.text('K', pageWidth / 2, 106, { align: 'center' })
+  for (let page = 0; page < totalPages; page++) {
+    if (page > 0) doc.addPage()
 
-  // Title
-  doc.setFontSize(28)
-  doc.setTextColor(WHITE)
-  doc.text('Kibah', pageWidth / 2, 135, { align: 'center' })
-
-  doc.setFontSize(16)
-  doc.setFont('helvetica', 'normal')
-  doc.setTextColor(ORANGE)
-  doc.text('Selección de Propiedades', pageWidth / 2, 148, { align: 'center' })
-
-  doc.setFontSize(11)
-  doc.setTextColor(WHITE)
-  const dateStr = new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })
-  doc.text(dateStr, pageWidth / 2, 162, { align: 'center' })
-
-  doc.setFontSize(10)
-  doc.setTextColor(GRAY)
-  doc.text(`${properties.length} propiedad${properties.length !== 1 ? 'es' : ''}`, pageWidth / 2, 172, { align: 'center' })
-
-  // ===== PROPERTY PAGES =====
-  for (const { property, imageData } of pdfProperties) {
-    doc.addPage()
-    let y = margin
-
-    // Image
-    if (imageData) {
+    // ===== HEADER =====
+    let headerY = 12
+    if (logoData) {
       try {
-        const imgW = pageWidth - margin * 2
-        const imgH = 70
-        doc.addImage(imageData, 'JPEG', margin, y, imgW, imgH)
-        y += imgH + 8
-      } catch {
-        y += 5
-      }
+        doc.addImage(logoData, 'PNG', mx, headerY - 4, 30, 10)
+      } catch { /* skip logo */ }
     }
-
-    // Name
-    doc.setFontSize(18)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(NAVY)
-    const name = property.nombre_kibah || property.nombre_desarrollador || '—'
-    doc.text(name, margin, y)
-    y += 7
-
-    // Unit
-    if (property.unidad) {
-      doc.setFontSize(11)
-      doc.setFont('helvetica', 'normal')
-      doc.setTextColor(GRAY)
-      doc.text(property.unidad, margin, y)
-      y += 6
-    }
-
-    // Price
-    doc.setFontSize(16)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(ORANGE)
-    doc.text(formatPrice(property.precio_unidad), margin, y + 2)
-    y += 12
-
-    // Separator
-    doc.setDrawColor(LIGHT_GRAY)
-    doc.setLineWidth(0.5)
-    doc.line(margin, y, pageWidth - margin, y)
-    y += 8
-
-    // Specs grid
-    doc.setFontSize(9)
-    doc.setFont('helvetica', 'normal')
-
-    const specs = [
-      ['Colonia', dv(property.colonia)],
-      ['Alcaldía', dv(property.alcaldia)],
-      ['M² Totales', property.m2_totales ? `${property.m2_totales} m²` : '—'],
-      ['M² Habitables', property.m2_habitables ? `${property.m2_habitables} m²` : '—'],
-      ['Recámaras', dv(property.num_recamaras)],
-      ['Baños', dv(property.num_banos)],
-      ['Estacionamiento', dv(property.estacionamiento)],
-      ['Disponibilidad', dv(property.disponibilidad)],
-      ['Tipo Preventa', dv(property.tipo_preventa)],
-      ['Tipo Entrega', dv(property.tipo_entrega)],
-      ['Fecha Entrega', dv(property.fecha_entrega)],
-    ]
-
-    const colWidth = (pageWidth - margin * 2) / 2
-    for (let i = 0; i < specs.length; i += 2) {
-      // Left
-      doc.setTextColor(GRAY)
-      doc.setFont('helvetica', 'normal')
-      doc.text(specs[i][0], margin, y)
-      doc.setTextColor(NAVY)
-      doc.setFont('helvetica', 'bold')
-      doc.text(specs[i][1], margin, y + 5)
-
-      // Right
-      if (i + 1 < specs.length) {
-        doc.setTextColor(GRAY)
-        doc.setFont('helvetica', 'normal')
-        doc.text(specs[i + 1][0], margin + colWidth, y)
-        doc.setTextColor(NAVY)
-        doc.setFont('helvetica', 'bold')
-        doc.text(specs[i + 1][1], margin + colWidth, y + 5)
-      }
-
-      y += 14
-    }
-
-    // Footer
     doc.setFontSize(8)
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(GRAY)
-    doc.text('kibah.com.mx', pageWidth / 2, pageHeight - 10, { align: 'center' })
-    doc.text(
-      `${doc.getNumberOfPages() - 1}`,
-      pageWidth - margin,
-      pageHeight - 10,
-      { align: 'right' }
-    )
+    doc.text('kibah.com.mx', pw - mx, headerY + 2, { align: 'right' })
+
+    // Orange header line
+    headerY += 10
+    doc.setDrawColor(ORANGE)
+    doc.setLineWidth(0.5)
+    doc.line(mx, headerY, pw - mx, headerY)
+
+    // ===== PROPERTIES =====
+    const startY = headerY + 6
+    const propHeight = (ph - startY - 15) / 2 // half page minus footer
+
+    for (let i = 0; i < propertiesPerPage; i++) {
+      const idx = page * propertiesPerPage + i
+      if (idx >= prepared.length) break
+
+      const { property, imageData } = prepared[idx]
+      const baseY = startY + i * propHeight
+
+      // Separator between properties
+      if (i > 0) {
+        doc.setDrawColor(LINE_GRAY)
+        doc.setLineWidth(0.3)
+        doc.line(mx, baseY - 3, pw - mx, baseY - 3)
+      }
+
+      let y = baseY
+
+      // Image + Info side by side
+      const imgW = 48
+      const imgH = 32
+      const textX = mx + imgW + 6
+
+      if (imageData) {
+        try {
+          doc.addImage(imageData, 'JPEG', mx, y, imgW, imgH)
+        } catch { /* skip */ }
+      } else {
+        doc.setFillColor('#F3F4F6')
+        doc.rect(mx, y, imgW, imgH, 'F')
+      }
+
+      // Name
+      doc.setFontSize(14)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(NAVY)
+      const name = toTitleCase(property.nombre_kibah || property.nombre_desarrollador)
+      if (name) {
+        const lines = doc.splitTextToSize(name, contentW - imgW - 6)
+        doc.text(lines.slice(0, 2), textX, y + 5)
+      }
+
+      // Unit
+      if (property.unidad) {
+        doc.setFontSize(10)
+        doc.setFont('helvetica', 'normal')
+        doc.setTextColor(GRAY)
+        doc.text(`Unidad: ${property.unidad}`, textX, y + 13)
+      }
+
+      // Price
+      const price = formatPrice(property.precio_unidad)
+      if (price) {
+        doc.setFontSize(13)
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(ORANGE)
+        doc.text(price, textX, y + 21)
+      }
+
+      // Location
+      const location = [toTitleCase(property.colonia), toTitleCase(property.alcaldia)].filter(Boolean).join(', ')
+      if (location) {
+        doc.setFontSize(9)
+        doc.setFont('helvetica', 'normal')
+        doc.setTextColor(GRAY)
+        doc.text(location, textX, y + 27)
+      }
+
+      // Specs line below image
+      y += imgH + 5
+
+      doc.setDrawColor(LINE_GRAY)
+      doc.setLineWidth(0.2)
+      doc.line(mx, y - 1, pw - mx, y - 1)
+
+      y += 3
+      doc.setFontSize(9)
+      doc.setFont('helvetica', 'normal')
+      doc.setTextColor(NAVY)
+
+      const specs: string[] = []
+      if (property.num_recamaras) specs.push(`Rec: ${property.num_recamaras}`)
+      if (property.num_banos) specs.push(`Banos: ${property.num_banos}`)
+      if (property.m2_totales) specs.push(`M2: ${property.m2_totales}`)
+      if (property.estacionamiento) specs.push(`Est: ${property.estacionamiento}`)
+
+      if (specs.length > 0) {
+        doc.text(specs.join('   |   '), mx, y)
+        y += 5
+      }
+
+      // Status line
+      const statuses: string[] = []
+      if (property.disponibilidad) statuses.push(toTitleCase(property.disponibilidad))
+      if (property.tipo_preventa) statuses.push(toTitleCase(property.tipo_preventa))
+      if (property.tipo_entrega) statuses.push(toTitleCase(property.tipo_entrega))
+      if (property.fecha_entrega) statuses.push(`Entrega: ${property.fecha_entrega}`)
+
+      if (statuses.length > 0) {
+        doc.setFontSize(8)
+        doc.setTextColor(GRAY)
+        doc.text(statuses.join('  •  '), mx, y)
+      }
+    }
+
+    // ===== FOOTER =====
+    doc.setDrawColor(LINE_GRAY)
+    doc.setLineWidth(0.2)
+    doc.line(mx, ph - 12, pw - mx, ph - 12)
+
+    doc.setFontSize(7)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(GRAY)
+    doc.text('kibah.com.mx', pw / 2, ph - 8, { align: 'center' })
+    doc.text(`${page + 1} / ${totalPages}`, pw - mx, ph - 8, { align: 'right' })
   }
 
   return doc.output('blob')
