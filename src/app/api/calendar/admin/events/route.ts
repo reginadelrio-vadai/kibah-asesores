@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
           borderColor: color,
           asesorName: name,
           asesorColor: color,
-          title: `${ev.title} (${name})`,
+          title: ev.title,
         }))
       })
     )
