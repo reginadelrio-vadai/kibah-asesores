@@ -7,6 +7,7 @@ import {
   Building2,
   FileText,
   MessageSquare,
+  Megaphone,
   Users,
   Landmark,
   Columns3,
@@ -16,30 +17,14 @@ import {
   X,
 } from 'lucide-react'
 import type { UserRole } from '@/types'
+import { useUnreadCount } from '@/hooks/useUnreadCount'
 
 interface NavItem {
   label: string
   href: string
   icon: React.ReactNode
+  badge?: number
 }
-
-const asesorNav: NavItem[] = [
-  {
-    label: 'Propiedades',
-    href: '/dashboard/propiedades',
-    icon: <Building2 className="w-5 h-5" strokeWidth={1.5} />,
-  },
-  {
-    label: 'PDF',
-    href: '/dashboard/pdf',
-    icon: <FileText className="w-5 h-5" strokeWidth={1.5} />,
-  },
-  {
-    label: 'Whaapy',
-    href: '/dashboard/whaapy',
-    icon: <MessageSquare className="w-5 h-5" strokeWidth={1.5} />,
-  },
-]
 
 const adminNav: NavItem[] = [
   {
@@ -81,7 +66,12 @@ function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
       }`}
     >
       {item.icon}
-      {item.label}
+      <span className="flex-1">{item.label}</span>
+      {item.badge !== undefined && item.badge > 0 && (
+        <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none">
+          {item.badge > 99 ? '99+' : item.badge}
+        </span>
+      )}
     </Link>
   )
 }
@@ -89,6 +79,31 @@ function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
 export function Sidebar({ role }: { role: UserRole }) {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const { unreadCount } = useUnreadCount()
+
+  const asesorNav: NavItem[] = [
+    {
+      label: 'Propiedades',
+      href: '/dashboard/propiedades',
+      icon: <Building2 className="w-5 h-5" strokeWidth={1.5} />,
+    },
+    {
+      label: 'PDF',
+      href: '/dashboard/pdf',
+      icon: <FileText className="w-5 h-5" strokeWidth={1.5} />,
+    },
+    {
+      label: 'Whaapy',
+      href: '/dashboard/whaapy',
+      icon: <MessageSquare className="w-5 h-5" strokeWidth={1.5} />,
+    },
+    {
+      label: 'Anuncios',
+      href: role === 'admin' ? '/dashboard/admin/anuncios' : '/dashboard/anuncios',
+      icon: <Megaphone className="w-5 h-5" strokeWidth={1.5} />,
+      badge: unreadCount,
+    },
+  ]
 
   const sidebarContent = (
     <div className="flex flex-col h-full">

@@ -68,3 +68,9 @@ NO arreglar diseño durante milestones funcionales (M2-M6).
 - Se intentó: transform scale, CSS zoom, dimensiones fijas, zoom 80%/70%/60%/50%, rebuild desde cero — ninguno funcionó
 - Otro miembro del equipo logró resolverlo con iframe al 80% zoom sin definir tamaño fijo — pedir su código exacto como referencia
 - PENDIENTE: obtener el código exacto del iframe funcional del compañero y replicarlo
+- probablemente arreglando el aspect ratio  del iframe se solucione
+
+## PDF — mejorar diseño en iteración futura
+- El diseño actual es funcional pero no premium
+- Iterar con referencia visual concreta (mockup en Figma o PDF de ejemplo de otra inmobiliaria)
+- Considerar usar librería más robusta como @react-pdf/renderer en V2
