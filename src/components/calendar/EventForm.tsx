@@ -126,7 +126,7 @@ export function EventForm({ event, defaultStart, defaultEnd, onClose, onSaved, o
     <div className="fixed inset-0 z-[80]">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <div className="absolute inset-0 overflow-y-auto flex items-start justify-center">
-        <div className="relative bg-bg-primary border border-border-primary rounded-[var(--radius-lg)] w-full max-w-md shadow-2xl my-8 mx-4">
+        <div className="relative bg-bg-primary border border-border-primary rounded-[var(--radius-lg)] w-full max-w-xl shadow-2xl my-8 mx-4">
           <div className="flex items-center justify-between px-6 py-4 border-b border-border-primary">
             <h2 className="text-base font-semibold text-text-primary">{isEdit ? 'Editar Evento' : 'Nuevo Evento'}</h2>
             <button onClick={onClose} className="cursor-pointer text-text-tertiary hover:text-text-primary"><X className="w-5 h-5" strokeWidth={1.5} /></button>

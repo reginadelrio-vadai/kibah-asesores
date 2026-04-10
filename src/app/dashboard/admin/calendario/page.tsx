@@ -10,11 +10,6 @@ import { CalendarSelector } from '@/components/calendar/CalendarSelector'
 import { AsesorFilter } from '@/components/calendar/AsesorFilter'
 import { Toast, type ToastType } from '@/components/ui/Toast'
 
-interface ConnectedUser {
-  userId: string
-  fullName: string
-}
-
 export default function AdminCalendarioPage() {
   const { isConnected, loading } = useGoogleConnection()
   const searchParams = useSearchParams()
@@ -26,6 +21,7 @@ export default function AdminCalendarioPage() {
   const [viewMode, setViewMode] = useState<'personal' | 'admin'>('admin')
   const [adminUserId, setAdminUserId] = useState('')
   const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set())
+  const [ready, setReady] = useState(false)
 
   useEffect(() => { setConnected(isConnected) }, [isConnected])
 
@@ -34,16 +30,20 @@ export default function AdminCalendarioPage() {
     if (searchParams.get('error')) setToast({ message: 'Error al conectar con Google', type: 'error' })
   }, [searchParams])
 
-  // Initialize: get connected users and select all by default
+  // Initialize: get connected users, admin ID, select all by default
   useEffect(() => {
     fetch('/api/calendar/admin/asesores')
       .then((r) => r.json())
       .then((data) => {
-        const users: ConnectedUser[] = data.data ?? []
-        setSelectedUserIds(new Set(users.map((u) => u.userId)))
-        // Find admin: the one whose userId matches (we'll get it from another call)
+        const users: { userId: string }[] = data.data ?? []
+        const aId: string = data.adminUserId ?? ''
+        setAdminUserId(aId)
+        const allIds = new Set(users.map((u) => u.userId))
+        if (aId && !allIds.has(aId)) allIds.add(aId)
+        setSelectedUserIds(allIds)
+        setReady(true)
       })
-      .catch(() => {})
+      .catch(() => setReady(true))
   }, [])
 
   const handleDisconnect = useCallback(async () => {
@@ -67,7 +67,7 @@ export default function AdminCalendarioPage() {
 
   const selectedUserIdsStr = useMemo(() => [...selectedUserIds].join(','), [selectedUserIds])
 
-  if (loading) {
+  if (loading || !ready) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="w-6 h-6 text-text-tertiary animate-spin" strokeWidth={1.5} />
@@ -109,7 +109,7 @@ export default function AdminCalendarioPage() {
 
       <CalendarView
         mode={viewMode}
-        selectedUserIds={viewMode === 'admin' ? selectedUserIdsStr : undefined}
+        selectedUserIds={viewMode === 'admin' && selectedUserIdsStr ? selectedUserIdsStr : undefined}
       />
 
       {showSelector && (

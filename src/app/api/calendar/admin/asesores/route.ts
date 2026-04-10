@@ -12,7 +12,7 @@ export async function GET() {
 
   try {
     const users = await getConnectedUsersWithProfiles()
-    return NextResponse.json({ data: users })
+    return NextResponse.json({ data: users, adminUserId: user.id })
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Error' }, { status: 500 })
   }
