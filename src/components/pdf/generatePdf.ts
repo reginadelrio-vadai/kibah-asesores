@@ -1,13 +1,14 @@
 import { jsPDF } from 'jspdf'
 import type { Property } from '@/types'
 
-// Colors
 const NAVY = '#1B2A4A'
 const ORANGE = '#E8872A'
+const ORANGE_LIGHT = '#FFF7ED'
 const BODY = '#374151'
 const LABEL = '#6B7280'
 const LINE = '#E5E7EB'
 const PLACEHOLDER_BG = '#F3F4F6'
+const WHITE = '#FFFFFF'
 
 function tc(str: string | null | undefined): string {
   if (!str) return ''
@@ -36,6 +37,15 @@ export async function loadImageAsBase64(url: string): Promise<string | null> {
   }
 }
 
+function getImageDimensions(base64: string): Promise<{ w: number; h: number }> {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight })
+    img.onerror = () => resolve({ w: 1, h: 1 })
+    img.src = base64
+  })
+}
+
 interface PreparedProperty {
   property: Property
   imageData: string | null
@@ -54,45 +64,60 @@ export async function generatePdf(
   )
 
   const logoData = await loadImageAsBase64('/images/kibah-logo-dark.png')
+  let logoW = 30
+  let logoH = 10
+  if (logoData) {
+    const dims = await getImageDimensions(logoData)
+    const ratio = dims.h / dims.w
+    logoH = logoW * ratio
+  }
 
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
   const pw = 210
   const ph = 297
-  const mx = 12
+  const mx = 15
   const contentW = pw - mx * 2
 
-  const perPage = 3
-  const headerH = 15
-  const footerH = 10
-  const usableH = ph - headerH - footerH - 4
-  const propH = usableH / perPage
+  const perPage = 2
   const totalPages = Math.ceil(prepared.length / perPage)
 
   for (let page = 0; page < totalPages; page++) {
     if (page > 0) doc.addPage()
 
-    // ===== HEADER =====
-    let hy = 8
+    // ===== PAGE DECORATIONS =====
+    // Top navy bar
+    doc.setFillColor(NAVY)
+    doc.rect(0, 0, pw, 2, 'F')
+
+    // Left orange bar
+    doc.setFillColor(ORANGE)
+    doc.rect(0, 0, 3, ph, 'F')
+
+    // ===== HEADER (20mm) =====
+    const headerY = 6
     if (logoData) {
+      doc.setFillColor(WHITE)
+      doc.rect(mx, headerY - 1, logoW + 2, logoH + 2, 'F')
       try {
-        // White rect behind logo to mask black background
-        doc.setFillColor('#FFFFFF')
-        doc.rect(mx, hy - 2, 36, 12, 'F')
-        doc.addImage(logoData, 'PNG', mx, hy - 1, 35, 10)
+        doc.addImage(logoData, 'PNG', mx + 1, headerY, logoW, logoH)
       } catch { /* skip */ }
     }
+
     doc.setFontSize(8)
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(LABEL)
-    doc.text('kibah.com.mx', pw - mx, hy + 4, { align: 'right' })
+    doc.text('kibah.com.mx', pw - mx, headerY + 4, { align: 'right' })
 
-    hy += 10
+    const headerLineY = headerY + Math.max(logoH, 8) + 3
     doc.setDrawColor(ORANGE)
     doc.setLineWidth(0.5)
-    doc.line(mx, hy, pw - mx, hy)
+    doc.line(mx, headerLineY, pw - mx, headerLineY)
 
     // ===== PROPERTIES =====
-    const startY = hy + 4
+    const startY = headerLineY + 5
+    const footerY = ph - 14
+    const usableH = footerY - startY
+    const propH = usableH / perPage
 
     for (let i = 0; i < perPage; i++) {
       const idx = page * perPage + i
@@ -100,71 +125,68 @@ export async function generatePdf(
 
       const { property: p, imageData } = prepared[idx]
       const baseY = startY + i * propH
-
-      // Separator between properties
-      if (i > 0) {
-        doc.setDrawColor(LINE)
-        doc.setLineWidth(0.5)
-        doc.line(mx, baseY - 2, pw - mx, baseY - 2)
-      }
-
       let y = baseY
 
       // --- IMAGE + TEXT SIDE BY SIDE ---
-      const imgW = 55
-      const imgH = 40
-      const textX = mx + imgW + 5
-      const textW = contentW - imgW - 5
+      const imgW = 65
+      const imgH = 45
+      const textX = mx + imgW + 6
+      const textW = contentW - imgW - 6
 
       if (imageData) {
         try {
           doc.addImage(imageData, 'JPEG', mx, y, imgW, imgH)
         } catch {
           doc.setFillColor(PLACEHOLDER_BG)
-          doc.rect(mx, y, imgW, imgH, 'F')
+          doc.setDrawColor(LINE)
+          doc.setLineWidth(0.5)
+          doc.rect(mx, y, imgW, imgH, 'FD')
         }
       } else {
         doc.setFillColor(PLACEHOLDER_BG)
-        doc.rect(mx, y, imgW, imgH, 'F')
-        doc.setFontSize(7)
+        doc.setDrawColor(LINE)
+        doc.setLineWidth(0.5)
+        doc.rect(mx, y, imgW, imgH, 'FD')
+        doc.setFontSize(8)
         doc.setTextColor(LABEL)
         doc.text('Sin imagen', mx + imgW / 2, y + imgH / 2, { align: 'center' })
       }
 
       // Name
+      let ty = y + 6
       const name = tc(p.nombre_kibah)
       if (name) {
-        doc.setFontSize(12)
+        doc.setFontSize(14)
         doc.setFont('helvetica', 'bold')
         doc.setTextColor(NAVY)
         const lines = doc.splitTextToSize(name, textW)
-        doc.text(lines.slice(0, 2), textX, y + 5)
+        doc.text(lines.slice(0, 2), textX, ty)
+        ty += lines.length > 1 ? 11 : 7
       }
 
+      // Orange line under name
+      doc.setDrawColor(ORANGE)
+      doc.setLineWidth(1)
+      doc.line(textX, ty, textX + Math.min(textW, 60), ty)
+      ty += 5
+
       // Unit
-      let ty = y + (name && name.length > 25 ? 13 : 10)
       if (p.unidad) {
         doc.setFontSize(9)
         doc.setFont('helvetica', 'normal')
         doc.setTextColor(LABEL)
         doc.text(`Unidad: ${p.unidad}`, textX, ty)
-        ty += 4
+        ty += 6
       }
-
-      // Orange separator
-      doc.setDrawColor(ORANGE)
-      doc.setLineWidth(0.3)
-      doc.line(textX, ty, textX + textW - 5, ty)
-      ty += 4
 
       // Price
       const price = fmtPrice(p.precio_unidad)
       if (price) {
-        doc.setFontSize(14)
+        doc.setFontSize(16)
         doc.setFont('helvetica', 'bold')
         doc.setTextColor(ORANGE)
         doc.text(price, textX, ty)
-        ty += 5
+        ty += 7
       }
 
       // Location
@@ -184,39 +206,60 @@ export async function generatePdf(
         doc.text(tc(p.direccion), textX, ty)
       }
 
-      // --- SPECS BELOW IMAGE (full width) ---
-      y += imgH + 3
+      // --- SPEC CARDS (below image, full width) ---
+      y += imgH + 5
 
-      doc.setFontSize(8)
-      const specItems: string[] = []
+      interface SpecCard { value: string; label: string }
+      const cards: SpecCard[] = []
 
-      if (p.num_recamaras) specItems.push(`Rec: ${p.num_recamaras}`)
-      if (p.num_banos) specItems.push(`Banos: ${p.num_banos}`)
-      if (p.m2_totales) specItems.push(`M2 Total: ${p.m2_totales}`)
+      if (p.num_recamaras) cards.push({ value: String(p.num_recamaras), label: 'Recamaras' })
+      if (p.num_banos) cards.push({ value: String(p.num_banos), label: 'Banos' })
+      if (p.m2_totales) cards.push({ value: String(p.m2_totales), label: 'M2 Total' })
 
       const m2hab = p.m2_habitables ? parseFloat(String(p.m2_habitables)) : 0
       const m2tot = p.m2_totales ? parseFloat(String(p.m2_totales)) : 0
-      if (m2hab > 0 && m2hab !== m2tot) specItems.push(`M2 Hab: ${p.m2_habitables}`)
+      if (m2hab > 0 && m2hab !== m2tot) cards.push({ value: String(p.m2_habitables), label: 'M2 Hab.' })
 
       const m2ext = p.m2_exteriores ? parseFloat(String(p.m2_exteriores)) : 0
-      if (m2ext > 0) specItems.push(`M2 Ext: ${p.m2_exteriores}`)
+      if (m2ext > 0) cards.push({ value: String(p.m2_exteriores), label: 'M2 Ext.' })
 
       const m2roof = p.m2_roof_garden ? parseFloat(String(p.m2_roof_garden)) : 0
-      if (m2roof > 0) specItems.push(`M2 Roof: ${p.m2_roof_garden}`)
+      if (m2roof > 0) cards.push({ value: String(p.m2_roof_garden), label: 'M2 Roof' })
 
       const est = p.estacionamiento ? parseFloat(String(p.estacionamiento)) : 0
-      if (est > 0) specItems.push(`Est: ${p.estacionamiento}`)
+      if (est > 0) cards.push({ value: String(p.estacionamiento), label: 'Est.' })
 
-      if (p.bodega && p.bodega.trim()) specItems.push(`Bodega: ${p.bodega}`)
+      if (p.bodega && p.bodega.trim()) cards.push({ value: tc(p.bodega), label: 'Bodega' })
 
-      if (specItems.length > 0) {
-        doc.setFont('helvetica', 'normal')
-        doc.setTextColor(BODY)
-        doc.text(specItems.join('    '), mx, y)
-        y += 4
+      if (cards.length > 0) {
+        const maxCards = Math.min(cards.length, 6)
+        const gap = 2
+        const cardW = (contentW - gap * (maxCards - 1)) / maxCards
+        const cardH = 14
+
+        for (let c = 0; c < maxCards; c++) {
+          const cx = mx + c * (cardW + gap)
+          // Card background
+          doc.setFillColor(ORANGE_LIGHT)
+          doc.rect(cx, y, cardW, cardH, 'F')
+
+          // Value
+          doc.setFontSize(11)
+          doc.setFont('helvetica', 'bold')
+          doc.setTextColor(NAVY)
+          doc.text(cards[c].value, cx + cardW / 2, y + 6, { align: 'center' })
+
+          // Label
+          doc.setFontSize(7)
+          doc.setFont('helvetica', 'normal')
+          doc.setTextColor(LABEL)
+          doc.text(cards[c].label, cx + cardW / 2, y + 11, { align: 'center' })
+        }
+
+        y += cardH + 4
       }
 
-      // Status line
+      // --- STATUS BAR ---
       const statuses: string[] = []
       if (p.disponibilidad) statuses.push(tc(p.disponibilidad))
       if (p.tipo_preventa) statuses.push(tc(p.tipo_preventa))
@@ -224,22 +267,29 @@ export async function generatePdf(
       if (p.fecha_entrega) statuses.push(`Entrega: ${p.fecha_entrega}`)
 
       if (statuses.length > 0) {
-        doc.setFont('helvetica', 'normal')
-        doc.setTextColor(LABEL)
-        doc.text(statuses.join('  •  '), mx, y)
+        const barH = 8
+        doc.setFillColor(NAVY)
+        doc.rect(mx, y, contentW, barH, 'F')
+
+        doc.setFontSize(8)
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(WHITE)
+        doc.text(statuses.join('   •   '), mx + contentW / 2, y + 5.5, { align: 'center' })
       }
     }
 
     // ===== FOOTER =====
-    doc.setDrawColor(LINE)
-    doc.setLineWidth(0.2)
-    doc.line(mx, ph - footerH, pw - mx, ph - footerH)
+    doc.setDrawColor(ORANGE)
+    doc.setLineWidth(0.5)
+    doc.line(mx, footerY, pw - mx, footerY)
 
     doc.setFontSize(7)
     doc.setFont('helvetica', 'normal')
+    doc.setTextColor(NAVY)
+    doc.text('kibah.com.mx', pw / 2, footerY + 5, { align: 'center' })
+
     doc.setTextColor(LABEL)
-    doc.text('kibah.com.mx', pw / 2, ph - 6, { align: 'center' })
-    doc.text(`${page + 1} / ${totalPages}`, pw - mx, ph - 6, { align: 'right' })
+    doc.text(`Pagina ${page + 1} de ${totalPages}`, pw - mx, footerY + 5, { align: 'right' })
   }
 
   return doc.output('blob')
