@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import {
   Building2,
   FileText,
+  Calendar,
   MessageSquare,
   Megaphone,
   Users,
@@ -91,6 +92,11 @@ export function Sidebar({ role }: { role: UserRole }) {
       label: 'PDF',
       href: '/dashboard/pdf',
       icon: <FileText className="w-5 h-5" strokeWidth={1.5} />,
+    },
+    {
+      label: 'Calendario',
+      href: '/dashboard/calendario',
+      icon: <Calendar className="w-5 h-5" strokeWidth={1.5} />,
     },
     {
       label: 'Whaapy',
