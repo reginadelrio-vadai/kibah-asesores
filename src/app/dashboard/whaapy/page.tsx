@@ -27,21 +27,20 @@ export default function WhaapyPage() {
   }
 
   return (
-    <div style={{ width: '100%', height: 'calc(100vh - 64px)', overflow: 'hidden', position: 'relative' }}>
+    <div
+      className="-m-6"
+      style={{
+        width: 'calc(100vw - var(--sidebar-width))',
+        height: 'calc(100vh - var(--topbar-height))',
+        overflow: 'hidden',
+      }}
+    >
       <iframe
         src={WHAAPY_URL}
         onError={() => setError(true)}
         allow="clipboard-write; microphone"
         title="Whaapy"
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '200%',
-          height: '200%',
-          border: 'none',
-          zoom: '0.5',
-        }}
+        className="w-full h-full border-none"
       />
     </div>
   )
