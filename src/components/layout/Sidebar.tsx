@@ -94,7 +94,7 @@ export function Sidebar({ role }: { role: UserRole }) {
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="flex items-center px-5 h-16 border-b border-white/10">
-        <img src="/images/kibah-logo.png" alt="Kibah" className="max-w-[120px]" />
+        <img src="/images/kibah-logo-white.png" alt="Kibah" style={{ maxWidth: '120px', height: 'auto', objectFit: 'contain' }} />
       </div>
 
       {/* Main nav */}
