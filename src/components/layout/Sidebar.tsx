@@ -7,6 +7,7 @@ import {
   Building2,
   MessageSquare,
   Users,
+  Landmark,
   Columns3,
   Webhook,
   Key,
@@ -39,6 +40,11 @@ const adminNav: NavItem[] = [
     label: 'Asesores',
     href: '/dashboard/admin/asesores',
     icon: <Users className="w-5 h-5" strokeWidth={1.5} />,
+  },
+  {
+    label: 'Desarrollos',
+    href: '/dashboard/admin/desarrollos',
+    icon: <Landmark className="w-5 h-5" strokeWidth={1.5} />,
   },
   {
     label: 'Columnas',
