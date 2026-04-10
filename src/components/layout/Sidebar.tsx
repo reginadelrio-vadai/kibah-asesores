@@ -14,46 +14,21 @@ import {
   Columns3,
   Webhook,
   Key,
+  Shield,
   Menu,
   X,
 } from 'lucide-react'
 import type { UserRole } from '@/types'
 import { useUnreadCount } from '@/hooks/useUnreadCount'
+import { usePermissions } from '@/hooks/usePermissions'
 
 interface NavItem {
   label: string
   href: string
   icon: React.ReactNode
   badge?: number
+  permission?: string
 }
-
-const adminNav: NavItem[] = [
-  {
-    label: 'Asesores',
-    href: '/dashboard/admin/asesores',
-    icon: <Users className="w-5 h-5" strokeWidth={1.5} />,
-  },
-  {
-    label: 'Desarrollos',
-    href: '/dashboard/admin/desarrollos',
-    icon: <Landmark className="w-5 h-5" strokeWidth={1.5} />,
-  },
-  {
-    label: 'Columnas',
-    href: '/dashboard/admin/columnas',
-    icon: <Columns3 className="w-5 h-5" strokeWidth={1.5} />,
-  },
-  {
-    label: 'Webhooks',
-    href: '/dashboard/admin/webhooks',
-    icon: <Webhook className="w-5 h-5" strokeWidth={1.5} />,
-  },
-  {
-    label: 'API Keys',
-    href: '/dashboard/admin/api-keys',
-    icon: <Key className="w-5 h-5" strokeWidth={1.5} />,
-  },
-]
 
 function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
   const isActive = pathname === item.href
@@ -81,58 +56,50 @@ export function Sidebar({ role }: { role: UserRole }) {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
   const { unreadCount } = useUnreadCount()
+  const { can } = usePermissions()
 
-  const asesorNav: NavItem[] = [
-    {
-      label: 'Propiedades',
-      href: '/dashboard/propiedades',
-      icon: <Building2 className="w-5 h-5" strokeWidth={1.5} />,
-    },
-    {
-      label: 'PDF',
-      href: '/dashboard/pdf',
-      icon: <FileText className="w-5 h-5" strokeWidth={1.5} />,
-    },
-    {
-      label: 'Calendario',
-      href: role === 'admin' ? '/dashboard/admin/calendario' : '/dashboard/calendario',
-      icon: <Calendar className="w-5 h-5" strokeWidth={1.5} />,
-    },
-    {
-      label: 'Whaapy',
-      href: '/dashboard/whaapy',
-      icon: <MessageSquare className="w-5 h-5" strokeWidth={1.5} />,
-    },
-    {
-      label: 'Anuncios',
-      href: role === 'admin' ? '/dashboard/admin/anuncios' : '/dashboard/anuncios',
-      icon: <Megaphone className="w-5 h-5" strokeWidth={1.5} />,
-      badge: unreadCount,
-    },
+  const isAdmin = role === 'admin'
+
+  const mainNav: NavItem[] = [
+    { label: 'Propiedades', href: '/dashboard/propiedades', icon: <Building2 className="w-5 h-5" strokeWidth={1.5} />, permission: 'propiedades.view' },
+    { label: 'PDF', href: '/dashboard/pdf', icon: <FileText className="w-5 h-5" strokeWidth={1.5} />, permission: 'pdf.view' },
+    { label: 'Calendario', href: isAdmin ? '/dashboard/admin/calendario' : '/dashboard/calendario', icon: <Calendar className="w-5 h-5" strokeWidth={1.5} />, permission: 'calendario.view' },
+    { label: 'Whaapy', href: '/dashboard/whaapy', icon: <MessageSquare className="w-5 h-5" strokeWidth={1.5} />, permission: 'whaapy.view' },
+    { label: 'Anuncios', href: isAdmin ? '/dashboard/admin/anuncios' : '/dashboard/anuncios', icon: <Megaphone className="w-5 h-5" strokeWidth={1.5} />, badge: unreadCount, permission: 'anuncios.view' },
   ]
+
+  const adminItems: NavItem[] = [
+    { label: 'Asesores', href: '/dashboard/admin/asesores', icon: <Users className="w-5 h-5" strokeWidth={1.5} />, permission: 'asesores.view' },
+    { label: 'Desarrollos', href: '/dashboard/admin/desarrollos', icon: <Landmark className="w-5 h-5" strokeWidth={1.5} />, permission: 'desarrollos.view' },
+    { label: 'Columnas', href: '/dashboard/admin/columnas', icon: <Columns3 className="w-5 h-5" strokeWidth={1.5} />, permission: 'columnas.view' },
+    { label: 'Webhooks', href: '/dashboard/admin/webhooks', icon: <Webhook className="w-5 h-5" strokeWidth={1.5} />, permission: 'webhooks.view' },
+    { label: 'API Keys', href: '/dashboard/admin/api-keys', icon: <Key className="w-5 h-5" strokeWidth={1.5} />, permission: 'apikeys.view' },
+    { label: 'Roles', href: '/dashboard/admin/roles', icon: <Shield className="w-5 h-5" strokeWidth={1.5} /> },
+  ]
+
+  const visibleMain = mainNav.filter((item) => !item.permission || can(item.permission))
+  const visibleAdmin = adminItems.filter((item) => !item.permission || can(item.permission))
+  const showAdminSection = visibleAdmin.length > 0
 
   const sidebarContent = (
     <div className="flex flex-col h-full">
-      {/* Logo */}
       <div className="flex items-center px-5 h-16 border-b border-white/10">
         <img src="/images/kibah-logo-white.png" alt="Kibah" style={{ maxWidth: '120px', height: 'auto', objectFit: 'contain' }} />
       </div>
 
-      {/* Main nav */}
       <nav className="flex-1 px-3 py-4 space-y-1">
-        {asesorNav.map((item) => (
+        {visibleMain.map((item) => (
           <NavLink key={item.href} item={item} pathname={pathname} />
         ))}
 
-        {/* Admin section */}
-        {role === 'admin' && (
+        {showAdminSection && (
           <>
             <div className="pt-4 pb-2 px-3">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-on-navy-muted)]/50">
                 Admin
               </span>
             </div>
-            {adminNav.map((item) => (
+            {visibleAdmin.map((item) => (
               <NavLink key={item.href} item={item} pathname={pathname} />
             ))}
           </>
@@ -143,28 +110,18 @@ export function Sidebar({ role }: { role: UserRole }) {
 
   return (
     <>
-      {/* Mobile toggle */}
       <button
         onClick={() => setMobileOpen(!mobileOpen)}
         className="fixed top-4 left-4 z-50 lg:hidden flex items-center justify-center w-10 h-10 rounded-[var(--radius-sm)] bg-navy text-white"
         aria-label="Toggle sidebar"
       >
-        {mobileOpen ? (
-          <X className="w-5 h-5" strokeWidth={1.5} />
-        ) : (
-          <Menu className="w-5 h-5" strokeWidth={1.5} />
-        )}
+        {mobileOpen ? <X className="w-5 h-5" strokeWidth={1.5} /> : <Menu className="w-5 h-5" strokeWidth={1.5} />}
       </button>
 
-      {/* Mobile overlay */}
       {mobileOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={() => setMobileOpen(false)}
-        />
+        <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setMobileOpen(false)} />
       )}
 
-      {/* Sidebar */}
       <aside
         className={`fixed top-0 left-0 z-40 h-screen w-[var(--sidebar-width)] bg-bg-sidebar
           transition-transform duration-200 ease-in-out

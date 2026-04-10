@@ -64,7 +64,7 @@ export async function getAllAsesores(): Promise<Profile[]> {
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
-    .eq('role', 'asesor')
+    .neq('role', 'admin')
     .order('created_at', { ascending: false })
 
   if (error) {
@@ -77,7 +77,8 @@ export async function getAllAsesores(): Promise<Profile[]> {
 export async function createAsesor(
   email: string,
   fullName: string,
-  password: string
+  password: string,
+  role?: string
 ): Promise<Profile> {
   const supabase = createAdminClient()
 
@@ -99,7 +100,7 @@ export async function createAsesor(
       id: userId,
       email,
       full_name: fullName,
-      role: 'asesor',
+      role: role || 'asesor',
     })
     .select()
     .single()

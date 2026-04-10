@@ -34,7 +34,14 @@ export async function PATCH(
 
   try {
     const body = await request.json()
-    await dal.toggleAsesorActive(id, body.is_active)
+    if (body.is_active !== undefined) {
+      await dal.toggleAsesorActive(id, body.is_active)
+    }
+    if (body.role) {
+      const { createAdminClient } = await import('@/lib/supabase/admin')
+      const supabase = createAdminClient()
+      await supabase.from('profiles').update({ role: body.role }).eq('id', id)
+    }
     return NextResponse.json({ success: true })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Error updating asesor'

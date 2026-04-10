@@ -9,13 +9,24 @@ interface AsesorCreateModalProps {
   onToast: (message: string, type: 'success' | 'error') => void
 }
 
+interface RoleOption { name: string; display_name: string }
+
 export function AsesorCreateModal({ onClose, onSuccess, onToast }: AsesorCreateModalProps) {
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [selectedRole, setSelectedRole] = useState('asesor')
+  const [roles, setRoles] = useState<RoleOption[]>([])
   const [showPassword, setShowPassword] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
+
+  useState(() => {
+    fetch('/api/roles').then(r => r.json()).then(data => {
+      const items = (data.data ?? []).filter((r: { name: string }) => r.name !== 'admin')
+      setRoles(items)
+    }).catch(() => {})
+  })
 
   const clearError = (key: string) => {
     if (errors[key]) setErrors((prev) => { const n = { ...prev }; delete n[key]; return n })
@@ -34,6 +45,7 @@ export function AsesorCreateModal({ onClose, onSuccess, onToast }: AsesorCreateM
           full_name: fullName.trim(),
           email: email.trim(),
           password,
+          role: selectedRole,
         }),
       })
 
@@ -115,6 +127,18 @@ export function AsesorCreateModal({ onClose, onSuccess, onToast }: AsesorCreateM
               </button>
             </div>
             {errors.password && <p className="text-xs text-red-500 mt-0.5">{errors.password}</p>}
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-text-secondary mb-1">Rol</label>
+            <select
+              value={selectedRole}
+              onChange={(e) => setSelectedRole(e.target.value)}
+              className="w-full h-9 px-3 text-sm rounded-[var(--radius-sm)] border border-border-primary bg-bg-primary text-text-primary appearance-none cursor-pointer focus:outline-none focus:border-orange"
+            >
+              {roles.map((r) => <option key={r.name} value={r.name}>{r.display_name}</option>)}
+              {roles.length === 0 && <option value="asesor">Asesor</option>}
+            </select>
           </div>
 
           <div className="flex justify-end gap-3 pt-2 border-t border-border-primary">

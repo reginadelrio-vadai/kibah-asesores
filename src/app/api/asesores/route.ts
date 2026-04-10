@@ -7,6 +7,7 @@ const createAsesorSchema = z.object({
   email: z.string().email('Email inválido'),
   full_name: z.string().min(1, 'Nombre es requerido'),
   password: z.string().min(8, 'Contraseña debe tener al menos 8 caracteres'),
+  role: z.string().optional(),
 })
 
 async function verifyAdmin() {
@@ -48,7 +49,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const validated = createAsesorSchema.parse(body)
-    const profile = await dal.createAsesor(validated.email, validated.full_name, validated.password)
+    const profile = await dal.createAsesor(validated.email, validated.full_name, validated.password, validated.role)
     return NextResponse.json({ data: profile }, { status: 201 })
   } catch (err) {
     if (err instanceof ZodError) {

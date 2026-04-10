@@ -8,6 +8,7 @@ import type { ToastType } from '@/components/ui/Toast'
 import { useProperties } from '@/hooks/useProperties'
 import { useFilters } from '@/hooks/useFilters'
 import { useColumnVisibility } from '@/hooks/useColumnVisibility'
+import { usePermissions } from '@/hooks/usePermissions'
 import { usePdfSelection } from '@/hooks/usePdfSelection'
 import { PropertyFilters } from '@/components/properties/PropertyFilters'
 import { PropertyGrid } from '@/components/properties/PropertyGrid'
@@ -26,7 +27,11 @@ interface ToastState {
 }
 
 export function PropiedadesView({ role }: { role: UserRole }) {
+  const { can } = usePermissions()
   const isAdmin = role === 'admin'
+  const canCreate = can('propiedades.create')
+  const canEdit = can('propiedades.edit')
+  const canDelete = can('propiedades.delete')
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
 
@@ -141,7 +146,7 @@ export function PropiedadesView({ role }: { role: UserRole }) {
           )}
         </div>
         <div className="flex items-center gap-3">
-          {isAdmin && (
+          {canCreate && (
             <button
               onClick={handleCreate}
               className="flex items-center gap-2 h-9 px-4 text-sm font-medium rounded-[var(--radius-sm)]
@@ -188,8 +193,8 @@ export function PropiedadesView({ role }: { role: UserRole }) {
               loading={loading}
               onSelect={setSelectedProperty}
               role={role}
-              onEdit={handleEdit}
-              onDelete={handleDeleteRequest}
+              onEdit={canEdit ? handleEdit : undefined}
+              onDelete={canDelete ? handleDeleteRequest : undefined}
               visibleColumnNames={visibleColumnNames}
               pdfSelectedIds={pdfSelectedIds}
               onTogglePdf={togglePdf}
@@ -203,8 +208,8 @@ export function PropiedadesView({ role }: { role: UserRole }) {
               onSort={handleSort}
               onSelect={setSelectedProperty}
               role={role}
-              onEdit={handleEdit}
-              onDelete={handleDeleteRequest}
+              onEdit={canEdit ? handleEdit : undefined}
+              onDelete={canDelete ? handleDeleteRequest : undefined}
               visibleColumnNames={visibleColumnNames}
               pdfSelectedIds={pdfSelectedIds}
               onTogglePdf={togglePdf}
