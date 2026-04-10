@@ -8,13 +8,19 @@ import { EventForm } from './EventForm'
 import { EventDetail } from './EventDetail'
 import { Toast, type ToastType } from '@/components/ui/Toast'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import '@/styles/calendar.css'
 
 const FullCalendar = dynamic(() => import('@fullcalendar/react'), { ssr: false })
 import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
 
-export function CalendarView() {
+interface CalendarViewProps {
+  mode?: 'personal' | 'admin'
+  asesorUserId?: string
+}
+
+export function CalendarView({ mode = 'personal', asesorUserId }: CalendarViewProps) {
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [loading, setLoading] = useState(false)
   const [formOpen, setFormOpen] = useState(false)
@@ -32,7 +38,14 @@ export function CalendarView() {
   const fetchEvents = useCallback(async (start: string, end: string) => {
     setLoading(true)
     try {
-      const res = await fetch(`/api/calendar/events?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`)
+      let url: string
+      if (mode === 'admin') {
+        url = `/api/calendar/admin/events?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`
+        if (asesorUserId) url += `&userId=${encodeURIComponent(asesorUserId)}`
+      } else {
+        url = `/api/calendar/events?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`
+      }
+      const res = await fetch(url)
       if (res.ok) {
         const json = await res.json()
         setEvents(json.data ?? [])
@@ -42,27 +55,33 @@ export function CalendarView() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [mode, asesorUserId])
 
   const refetchEvents = useCallback(() => {
-    if (rangeRef.current) {
-      fetchEvents(rangeRef.current.start, rangeRef.current.end)
-    }
+    if (rangeRef.current) fetchEvents(rangeRef.current.start, rangeRef.current.end)
   }, [fetchEvents])
+
+  // Refetch when asesorUserId changes
+  const prevUserIdRef = useRef(asesorUserId)
+  if (prevUserIdRef.current !== asesorUserId) {
+    prevUserIdRef.current = asesorUserId
+    if (rangeRef.current) fetchEvents(rangeRef.current.start, rangeRef.current.end)
+  }
 
   const handleDatesSet = useCallback((info: { startStr: string; endStr: string }) => {
     rangeRef.current = { start: info.startStr, end: info.endStr }
     fetchEvents(info.startStr, info.endStr)
   }, [fetchEvents])
 
-  const handleDateClick = useCallback((info: { dateStr: string; allDay: boolean }) => {
+  const handleDateClick = useCallback((info: { dateStr: string }) => {
+    if (mode === 'admin') return // admin can't create events on global view
     setEditingEvent(null)
     setDefaultStart(info.dateStr)
     const end = new Date(info.dateStr)
     end.setHours(end.getHours() + 1)
     setDefaultEnd(end.toISOString())
     setFormOpen(true)
-  }, [])
+  }, [mode])
 
   const handleEventClick = useCallback((info: { event: { id: string } }) => {
     const ev = events.find((e) => e.id === info.event.id)
@@ -70,6 +89,7 @@ export function CalendarView() {
   }, [events])
 
   const handleEventDrop = useCallback(async (info: { event: { id: string; startStr: string; endStr: string; allDay: boolean } }) => {
+    if (mode === 'admin') return
     try {
       await fetch(`/api/calendar/events/${info.event.id}`, {
         method: 'PUT',
@@ -80,7 +100,7 @@ export function CalendarView() {
     } catch {
       showToast('Error al mover evento', 'error')
     }
-  }, [refetchEvents, showToast])
+  }, [mode, refetchEvents, showToast])
 
   const handleDelete = useCallback(async () => {
     if (!deletingEvent) return
@@ -91,15 +111,12 @@ export function CalendarView() {
         showToast('Evento eliminado', 'success')
         setDeletingEvent(null)
         refetchEvents()
-      } else {
-        showToast('Error al eliminar', 'error')
-      }
-    } catch {
-      showToast('Error de conexion', 'error')
-    } finally {
-      setDeleteLoading(false)
-    }
+      } else { showToast('Error al eliminar', 'error') }
+    } catch { showToast('Error de conexion', 'error') }
+    finally { setDeleteLoading(false) }
   }, [deletingEvent, refetchEvents, showToast])
+
+  const isPersonal = mode === 'personal'
 
   return (
     <div className="relative">
@@ -111,27 +128,34 @@ export function CalendarView() {
 
       <FullCalendar
         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-        initialView="dayGridMonth"
+        initialView="timeGridWeek"
         headerToolbar={{
           left: 'prev,next today',
           center: 'title',
           right: 'dayGridMonth,timeGridWeek,timeGridDay',
         }}
         locale="es"
-        buttonText={{ today: 'Hoy', month: 'Mes', week: 'Semana', day: 'Dia' }}
+        buttonText={{ today: 'Hoy', month: 'Mes', week: 'Semana', day: 'D\u00eda' }}
+        nowIndicator={true}
+        allDaySlot={true}
+        slotMinTime="07:00:00"
+        slotMaxTime="22:00:00"
+        expandRows={true}
+        stickyHeaderDates={true}
+        dayMaxEvents={3}
+        selectMirror={true}
         events={events}
-        editable={true}
-        selectable={true}
+        editable={isPersonal}
+        selectable={isPersonal}
         dateClick={handleDateClick}
         eventClick={handleEventClick}
         eventDrop={handleEventDrop}
         eventResize={handleEventDrop}
         datesSet={handleDatesSet}
-        height="auto"
-        dayMaxEvents={3}
+        height="calc(100vh - 160px)"
       />
 
-      {formOpen && (
+      {formOpen && isPersonal && (
         <EventForm
           event={editingEvent}
           defaultStart={defaultStart}
@@ -146,12 +170,12 @@ export function CalendarView() {
         <EventDetail
           event={selectedEvent}
           onClose={() => setSelectedEvent(null)}
-          onEdit={(ev) => { setSelectedEvent(null); setEditingEvent(ev); setFormOpen(true) }}
-          onDelete={(ev) => { setSelectedEvent(null); setDeletingEvent(ev) }}
+          onEdit={(ev) => { if (!isPersonal) return; setSelectedEvent(null); setEditingEvent(ev); setFormOpen(true) }}
+          onDelete={(ev) => { if (!isPersonal) return; setSelectedEvent(null); setDeletingEvent(ev) }}
         />
       )}
 
-      {deletingEvent && (
+      {deletingEvent && isPersonal && (
         <ConfirmDialog
           title="Eliminar Evento"
           message={`Eliminar "${deletingEvent.title}"?`}

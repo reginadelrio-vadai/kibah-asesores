@@ -95,7 +95,7 @@ export function Sidebar({ role }: { role: UserRole }) {
     },
     {
       label: 'Calendario',
-      href: '/dashboard/calendario',
+      href: role === 'admin' ? '/dashboard/admin/calendario' : '/dashboard/calendario',
       icon: <Calendar className="w-5 h-5" strokeWidth={1.5} />,
     },
     {

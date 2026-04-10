@@ -91,3 +91,38 @@ export async function deleteTokens(userId: string): Promise<void> {
 
   if (error) throw new Error(error.message)
 }
+
+export interface ConnectedUser {
+  userId: string
+  fullName: string
+  calendarEmail: string | null
+  calendarName: string | null
+}
+
+export async function getConnectedUsersWithProfiles(): Promise<ConnectedUser[]> {
+  const supabase = createAdminClient()
+
+  const { data: tokens, error: tokErr } = await supabase
+    .from('google_tokens')
+    .select('user_id, calendar_email, selected_calendar_name')
+    .eq('is_connected', true)
+
+  if (tokErr || !tokens) return []
+
+  const userIds = tokens.map((t) => t.user_id as string)
+  if (userIds.length === 0) return []
+
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, full_name')
+    .in('id', userIds)
+
+  const profileMap = new Map((profiles ?? []).map((p) => [p.id, p.full_name]))
+
+  return tokens.map((t) => ({
+    userId: t.user_id as string,
+    fullName: (profileMap.get(t.user_id as string) as string) ?? 'Sin nombre',
+    calendarEmail: t.calendar_email as string | null,
+    calendarName: t.selected_calendar_name as string | null,
+  }))
+}
