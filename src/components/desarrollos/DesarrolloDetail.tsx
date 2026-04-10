@@ -1,9 +1,10 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { X, Pencil, Trash2, MapPin } from 'lucide-react'
+import { X, Pencil, Trash2, MapPin, Ruler, Bed, Bath, Car, Warehouse, Sparkles } from 'lucide-react'
 import type { Desarrollo } from '@/types/desarrollo'
 import { DISPONIBILIDAD_COLORS } from '@/lib/utils/constants'
+import { toTitleCase } from '@/lib/utils/format'
 
 interface DesarrolloDetailProps {
   desarrollo: Desarrollo
@@ -47,6 +48,18 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
     <div>
       <dt className="text-xs text-text-tertiary">{label}</dt>
       <dd className="text-sm text-text-primary font-medium mt-0.5">{value || '—'}</dd>
+    </div>
+  )
+}
+
+function IconField({ icon: Icon, label, value }: { icon: React.ComponentType<{ className?: string; strokeWidth?: number }>; label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex items-start gap-2">
+      <Icon className="w-4 h-4 text-text-tertiary mt-0.5 flex-shrink-0" strokeWidth={1.5} />
+      <div>
+        <dt className="text-xs text-text-tertiary">{label}</dt>
+        <dd className="text-sm text-text-primary font-medium mt-0.5">{value || '—'}</dd>
+      </div>
     </div>
   )
 }
@@ -144,9 +157,10 @@ export function DesarrolloDetail({ desarrollo, onClose, onEdit, onDelete }: Desa
           </Section>
 
           <Section title="Ubicación">
-            <Field label="Dirección" value={desarrollo.direccion} />
-            <Field label="Colonia" value={desarrollo.colonia} />
-            <Field label="Alcaldía" value={desarrollo.alcaldia} />
+            <Field label="Dirección (sin número)" value={desarrollo.direccion} />
+            <Field label="Dirección BDD (con número)" value={desarrollo.direccion_bdd} />
+            <Field label="Colonia" value={toTitleCase(desarrollo.colonia)} />
+            <Field label="Alcaldía" value={toTitleCase(desarrollo.alcaldia)} />
             {desarrollo.link_maps && (
               <div>
                 <a href={desarrollo.link_maps} target="_blank" rel="noopener noreferrer"
@@ -157,14 +171,17 @@ export function DesarrolloDetail({ desarrollo, onClose, onEdit, onDelete }: Desa
             )}
           </Section>
 
-          <Section title="Características">
-            <Field label="M² Totales" value={formatRange(desarrollo.m2_totales_min, desarrollo.m2_totales_max, ' m²')} />
-            <Field label="Recámaras" value={formatRange(desarrollo.recamaras_min, desarrollo.recamaras_max)} />
-            <Field label="Baños" value={formatRange(desarrollo.banos_min, desarrollo.banos_max)} />
-            <Field label="Estacionamientos" value={formatRange(desarrollo.estacionamientos_min, desarrollo.estacionamientos_max)} />
-            <Field label="Bodega" value={desarrollo.bodega} />
-            <Field label="Amenidades" value={desarrollo.amenidades} />
-          </Section>
+          <div className="py-4">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-text-tertiary mb-3">Características</h3>
+            <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+              <IconField icon={Ruler} label="M² Totales" value={formatRange(desarrollo.m2_totales_min, desarrollo.m2_totales_max, ' m²')} />
+              <IconField icon={Bed} label="Recámaras" value={formatRange(desarrollo.recamaras_min, desarrollo.recamaras_max)} />
+              <IconField icon={Bath} label="Baños" value={formatRange(desarrollo.banos_min, desarrollo.banos_max)} />
+              <IconField icon={Car} label="Estacionamientos" value={formatRange(desarrollo.estacionamientos_min, desarrollo.estacionamientos_max)} />
+              <IconField icon={Warehouse} label="Bodega" value={desarrollo.bodega} />
+              <IconField icon={Sparkles} label="Amenidades" value={desarrollo.amenidades} />
+            </div>
+          </div>
 
           <Section title="Entrega">
             <Field label="Tipo de Entrega" value={desarrollo.tipo_entrega} />

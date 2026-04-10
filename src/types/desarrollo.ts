@@ -19,6 +19,7 @@ export interface Desarrollo {
   bodega: string | null
   amenidades: string | null
   direccion: string | null
+  direccion_bdd: string | null
   colonia: string | null
   alcaldia: string | null
   contacto_desarrollador: string | null

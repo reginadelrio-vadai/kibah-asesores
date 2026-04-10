@@ -78,11 +78,12 @@ export async function getDesarrolloById(id: number): Promise<Desarrollo | null> 
 export async function getDesarrolloFilterOptions() {
   const supabase = createAdminClient()
 
-  const [colonias, alcaldias, disponibilidades, tipos_preventa] = await Promise.all([
+  const [colonias, alcaldias, disponibilidades, tipos_preventa, nombres_kibah] = await Promise.all([
     supabase.from('desarrollos_view').select('colonia').not('colonia', 'is', null),
     supabase.from('desarrollos_view').select('alcaldia').not('alcaldia', 'is', null),
     supabase.from('desarrollos_view').select('disponibilidad').not('disponibilidad', 'is', null),
     supabase.from('desarrollos_view').select('tipo_preventa').not('tipo_preventa', 'is', null),
+    supabase.from('desarrollos_view').select('nombre_kibah').not('nombre_kibah', 'is', null),
   ])
 
   return {
@@ -90,6 +91,7 @@ export async function getDesarrolloFilterOptions() {
     alcaldias: [...new Set((alcaldias.data ?? []).map((r) => r.alcaldia as string).filter(Boolean))].sort(),
     disponibilidades: [...new Set((disponibilidades.data ?? []).map((r) => r.disponibilidad as string).filter(Boolean))].sort(),
     tipos_preventa: [...new Set((tipos_preventa.data ?? []).map((r) => r.tipo_preventa as string).filter(Boolean))].sort(),
+    nombres_kibah: [...new Set((nombres_kibah.data ?? []).map((r) => r.nombre_kibah as string).filter(Boolean))].sort(),
   }
 }
 

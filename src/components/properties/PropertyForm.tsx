@@ -179,8 +179,9 @@ export function PropertyForm({ property, onClose, onSuccess, onToast }: Property
     `${inputClass(key)} appearance-none cursor-pointer`
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto">
+    <div className="fixed inset-0 z-[80]">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 overflow-y-auto flex items-start justify-center">
       <div className="relative bg-bg-primary border border-border-primary rounded-[var(--radius-lg)] w-full max-w-2xl shadow-2xl my-8 mx-4">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border-primary">
@@ -387,6 +388,7 @@ export function PropertyForm({ property, onClose, onSuccess, onToast }: Property
             </button>
           </div>
         </form>
+      </div>
       </div>
     </div>
   )

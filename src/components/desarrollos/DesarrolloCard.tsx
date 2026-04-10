@@ -3,6 +3,7 @@
 import { Bed, Bath, Ruler, Pencil, Trash2 } from 'lucide-react'
 import type { Desarrollo } from '@/types/desarrollo'
 import { DISPONIBILIDAD_COLORS } from '@/lib/utils/constants'
+import { toTitleCase } from '@/lib/utils/format'
 
 interface DesarrolloCardProps {
   desarrollo: Desarrollo
@@ -91,8 +92,8 @@ export function DesarrolloCard({ desarrollo, onClick, onEdit, onDelete }: Desarr
           {desarrollo.nombre_kibah || desarrollo.nombre_desarrollador || '—'}
         </h3>
         <p className="text-xs text-text-secondary mb-2">
-          {desarrollo.colonia ?? ''}
-          {desarrollo.alcaldia ? `, ${desarrollo.alcaldia}` : ''}
+          {toTitleCase(desarrollo.colonia)}
+          {desarrollo.alcaldia ? `, ${toTitleCase(desarrollo.alcaldia)}` : ''}
         </p>
 
         {/* Price */}

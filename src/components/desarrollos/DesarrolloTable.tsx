@@ -3,6 +3,7 @@
 import { Pencil, Trash2 } from 'lucide-react'
 import type { Desarrollo } from '@/types/desarrollo'
 import { DISPONIBILIDAD_COLORS } from '@/lib/utils/constants'
+import { toTitleCase } from '@/lib/utils/format'
 
 interface DesarrolloTableProps {
   desarrollos: Desarrollo[]
@@ -93,7 +94,7 @@ export function DesarrolloTable({ desarrollos, loading, onSelect, onEdit, onDele
                     <span className="truncate">{d.nombre_kibah || d.nombre_desarrollador || '—'}</span>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-text-primary whitespace-nowrap">{d.colonia || '—'}</td>
+                <td className="px-4 py-3 text-text-primary whitespace-nowrap">{toTitleCase(d.colonia)}</td>
                 <td className="px-4 py-3 text-text-primary whitespace-nowrap">{formatPriceShort(d.precio_min, d.precio_max)}</td>
                 <td className="px-4 py-3 text-text-primary whitespace-nowrap">{formatRange(d.recamaras_min, d.recamaras_max)}</td>
                 <td className="px-4 py-3 whitespace-nowrap">

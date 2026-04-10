@@ -22,6 +22,7 @@ SELECT
   "Bodega" AS bodega,
   "Amenidades" AS amenidades,
   "Dirección" AS direccion,
+  "Dirección BDD" AS direccion_bdd,
   "Colonia" AS colonia,
   LOWER(TRIM("Alcaldia")) AS alcaldia,
   "Desarrollador/Propietario (Whats grupo)" AS contacto_desarrollador,

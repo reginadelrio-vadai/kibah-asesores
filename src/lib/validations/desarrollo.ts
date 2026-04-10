@@ -1,12 +1,18 @@
 import { z } from 'zod'
 
 export const createDesarrolloSchema = z.object({
+  // Required
   nombre_kibah: z.string().min(1, 'Nombre Kibah es requerido'),
-  nombre_desarrollador: z.string().nullable().optional(),
   disponibilidad: z.string().min(1, 'Disponibilidad es requerida'),
   colonia: z.string().min(1, 'Colonia es requerida'),
   alcaldia: z.string().min(1, 'Alcaldía es requerida'),
   tipo_preventa: z.string().min(1, 'Tipo preventa es requerido'),
+  imagen_principal: z.string().min(1, 'Imagen principal es requerida'),
+  descripcion: z.string().min(1, 'Descripción es requerida'),
+  link_maps: z.string().min(1, 'Código Mapa es requerido'),
+
+  // Optional
+  nombre_desarrollador: z.string().nullable().optional(),
   precio_min: z.number().nonnegative().nullable().optional(),
   precio_max: z.number().nonnegative().nullable().optional(),
   m2_totales_min: z.number().nonnegative().nullable().optional(),
@@ -20,13 +26,11 @@ export const createDesarrolloSchema = z.object({
   bodega: z.string().nullable().optional(),
   amenidades: z.string().nullable().optional(),
   direccion: z.string().nullable().optional(),
+  direccion_bdd: z.string().nullable().optional(),
   contacto_desarrollador: z.string().nullable().optional(),
   fecha_entrega: z.string().nullable().optional(),
   tipo_entrega: z.string().nullable().optional(),
   pct_comision: z.string().nullable().optional(),
-  descripcion: z.string().nullable().optional(),
-  imagen_principal: z.string().nullable().optional(),
-  link_maps: z.string().nullable().optional(),
   imagen_1: z.string().nullable().optional(),
   imagen_2: z.string().nullable().optional(),
   imagen_3: z.string().nullable().optional(),
@@ -55,6 +59,7 @@ const DESARROLLO_COLUMN_MAP: Record<string, string> = {
   bodega: 'Bodega',
   amenidades: 'Amenidades',
   direccion: 'Dirección',
+  direccion_bdd: 'Dirección BDD',
   colonia: 'Colonia',
   alcaldia: 'Alcaldia',
   contacto_desarrollador: 'Desarrollador/Propietario (Whats grupo)',
