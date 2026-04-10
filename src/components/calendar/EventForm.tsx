@@ -1,8 +1,16 @@
 'use client'
 
-import { useState } from 'react'
-import { X } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { X, Plus } from 'lucide-react'
 import type { CalendarEvent } from '@/lib/google/calendar'
+
+interface Category {
+  id: string
+  name: string
+  color: string
+}
+
+const QUICK_COLORS = ['#E8872A', '#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EC4899']
 
 interface EventFormProps {
   event?: CalendarEvent | null
@@ -17,18 +25,12 @@ export function EventForm({ event, defaultStart, defaultEnd, onClose, onSaved, o
   const isEdit = !!event
   const [title, setTitle] = useState(event?.title === '(Sin titulo)' ? '' : event?.title ?? '')
   const [allDay, setAllDay] = useState(event?.allDay ?? false)
-  const [startDate, setStartDate] = useState(() => {
-    const s = event?.start || defaultStart || ''
-    return s.split('T')[0] || ''
-  })
+  const [startDate, setStartDate] = useState(() => (event?.start || defaultStart || '').split('T')[0] || '')
   const [startTime, setStartTime] = useState(() => {
     const s = event?.start || defaultStart || ''
     return s.includes('T') ? s.split('T')[1]?.slice(0, 5) || '09:00' : '09:00'
   })
-  const [endDate, setEndDate] = useState(() => {
-    const s = event?.end || defaultEnd || ''
-    return s.split('T')[0] || startDate
-  })
+  const [endDate, setEndDate] = useState(() => (event?.end || defaultEnd || '').split('T')[0] || startDate)
   const [endTime, setEndTime] = useState(() => {
     const s = event?.end || defaultEnd || ''
     return s.includes('T') ? s.split('T')[1]?.slice(0, 5) || '10:00' : '10:00'
@@ -37,6 +39,38 @@ export function EventForm({ event, defaultStart, defaultEnd, onClose, onSaved, o
   const [location, setLocation] = useState(event?.location ?? '')
   const [submitting, setSubmitting] = useState(false)
 
+  // Categories
+  const [categories, setCategories] = useState<Category[]>([])
+  const [selectedCatId, setSelectedCatId] = useState(event?.categoryId ?? '')
+  const [showNewCat, setShowNewCat] = useState(false)
+  const [newCatName, setNewCatName] = useState('')
+  const [newCatColor, setNewCatColor] = useState(QUICK_COLORS[0])
+
+  useEffect(() => {
+    fetch('/api/calendar/categories')
+      .then((r) => r.json())
+      .then((data) => setCategories(data.data ?? []))
+      .catch(() => {})
+  }, [])
+
+  const handleCreateCategory = async () => {
+    if (!newCatName.trim()) return
+    try {
+      const res = await fetch('/api/calendar/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newCatName.trim(), color: newCatColor }),
+      })
+      if (res.ok) {
+        const json = await res.json()
+        setCategories((prev) => [...prev, json.data])
+        setSelectedCatId(json.data.id)
+        setNewCatName('')
+        setShowNewCat(false)
+      }
+    } catch {}
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!title.trim()) { onToast('Titulo es requerido', 'error'); return }
@@ -44,7 +78,9 @@ export function EventForm({ event, defaultStart, defaultEnd, onClose, onSaved, o
 
     setSubmitting(true)
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
-    const payload = {
+    const cat = categories.find((c) => c.id === selectedCatId)
+
+    const payload: Record<string, unknown> = {
       title: title.trim(),
       allDay,
       start: allDay ? startDate : `${startDate}T${startTime}:00`,
@@ -52,6 +88,11 @@ export function EventForm({ event, defaultStart, defaultEnd, onClose, onSaved, o
       description: description.trim() || undefined,
       location: location.trim() || undefined,
       timeZone: tz,
+    }
+    if (cat) {
+      payload.categoryId = cat.id
+      payload.categoryName = cat.name
+      payload.categoryColor = cat.color
     }
 
     const url = isEdit ? `/api/calendar/events/${event!.id}` : '/api/calendar/events'
@@ -90,6 +131,54 @@ export function EventForm({ event, defaultStart, defaultEnd, onClose, onSaved, o
             <div>
               <label className="block text-xs font-medium text-text-secondary mb-1">Titulo *</label>
               <input className={ic} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Nombre del evento" />
+            </div>
+
+            {/* Category */}
+            <div>
+              <label className="block text-xs font-medium text-text-secondary mb-1">Categoria</label>
+              {categories.length === 0 && !showNewCat ? (
+                <p className="text-xs text-text-tertiary mb-2">Crea tu primera categoria. Ideas: Reunion, Llamada, Capacitacion, Visita, Personal...</p>
+              ) : (
+                <div className="flex items-center gap-1.5 flex-wrap mb-2">
+                  <button type="button" onClick={() => setSelectedCatId('')}
+                    className={`h-7 px-2.5 text-[11px] font-medium rounded-full border cursor-pointer transition-colors
+                      ${!selectedCatId ? 'border-orange bg-orange/10 text-orange' : 'border-border-primary text-text-tertiary'}`}>
+                    Sin categoria
+                  </button>
+                  {categories.map((cat) => (
+                    <button key={cat.id} type="button" onClick={() => setSelectedCatId(cat.id)}
+                      className={`h-7 px-2.5 text-[11px] font-medium rounded-full border cursor-pointer transition-colors flex items-center gap-1`}
+                      style={selectedCatId === cat.id
+                        ? { borderColor: cat.color, backgroundColor: `${cat.color}18`, color: cat.color }
+                        : undefined
+                      }>
+                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
+                      {cat.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {showNewCat ? (
+                <div className="flex items-center gap-2">
+                  <div className="flex gap-1 flex-shrink-0">
+                    {QUICK_COLORS.map((c) => (
+                      <button key={c} type="button" onClick={() => setNewCatColor(c)}
+                        className={`w-4 h-4 rounded-full cursor-pointer ${newCatColor === c ? 'ring-2 ring-offset-1 ring-offset-bg-primary' : ''}`}
+                        style={{ backgroundColor: c }} />
+                    ))}
+                  </div>
+                  <input value={newCatName} onChange={(e) => setNewCatName(e.target.value)} placeholder="Nombre"
+                    className="flex-1 h-7 px-2 text-xs rounded-[var(--radius-sm)] border border-border-primary bg-bg-primary text-text-primary focus:outline-none focus:border-orange" />
+                  <button type="button" onClick={handleCreateCategory} className="text-xs text-orange hover:text-orange-hover cursor-pointer font-medium">OK</button>
+                  <button type="button" onClick={() => setShowNewCat(false)} className="text-xs text-text-tertiary cursor-pointer">X</button>
+                </div>
+              ) : (
+                <button type="button" onClick={() => setShowNewCat(true)}
+                  className="flex items-center gap-1 text-xs text-orange hover:text-orange-hover cursor-pointer">
+                  <Plus className="w-3 h-3" strokeWidth={2} /> Nueva categoria
+                </button>
+              )}
             </div>
 
             <div className="flex items-center gap-2">

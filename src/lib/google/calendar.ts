@@ -11,6 +11,11 @@ export interface CalendarEvent {
   backgroundColor?: string
   borderColor?: string
   allDay: boolean
+  categoryId?: string
+  categoryName?: string
+  categoryColor?: string
+  asesorName?: string
+  asesorColor?: string
 }
 
 export interface CalendarListItem {
@@ -23,7 +28,6 @@ export interface CalendarListItem {
 export async function getCalendarList(userId: string): Promise<CalendarListItem[]> {
   const { client } = await getOAuth2Client(userId)
   const cal = google.calendar({ version: 'v3', auth: client })
-
   const res = await cal.calendarList.list()
   return (res.data.items ?? []).map((item) => ({
     id: item.id!,
@@ -52,6 +56,9 @@ export async function getEvents(
 
   return (res.data.items ?? []).map((ev) => {
     const allDay = !!ev.start?.date
+    const priv = (ev.extendedProperties?.private as Record<string, string> | undefined) ?? {}
+    const catColor = priv.kibah_category_color || null
+
     return {
       id: ev.id!,
       title: ev.summary || '(Sin titulo)',
@@ -59,9 +66,12 @@ export async function getEvents(
       end: allDay ? ev.end!.date! : ev.end!.dateTime!,
       description: ev.description ?? undefined,
       location: ev.location ?? undefined,
-      backgroundColor: ev.colorId ? undefined : '#E8872A',
-      borderColor: '#E8872A',
+      backgroundColor: catColor || '#E8872A',
+      borderColor: catColor || '#E8872A',
       allDay,
+      categoryId: priv.kibah_category_id || undefined,
+      categoryName: priv.kibah_category_name || undefined,
+      categoryColor: catColor || undefined,
     }
   })
 }
@@ -74,6 +84,9 @@ interface EventInput {
   location?: string
   allDay?: boolean
   timeZone?: string
+  categoryId?: string
+  categoryName?: string
+  categoryColor?: string
 }
 
 export async function createEvent(
@@ -98,11 +111,17 @@ export async function createEvent(
     eventBody.end = { dateTime: data.end, timeZone: tz }
   }
 
-  const res = await cal.events.insert({
-    calendarId: selectedCalendarId,
-    requestBody: eventBody,
-  })
+  if (data.categoryId) {
+    eventBody.extendedProperties = {
+      private: {
+        kibah_category_id: data.categoryId,
+        kibah_category_name: data.categoryName || '',
+        kibah_category_color: data.categoryColor || '#E8872A',
+      },
+    }
+  }
 
+  const res = await cal.events.insert({ calendarId: selectedCalendarId, requestBody: eventBody })
   const ev = res.data
   const allDay = !!ev.start?.date
   return {
@@ -112,7 +131,12 @@ export async function createEvent(
     end: allDay ? ev.end!.date! : ev.end!.dateTime!,
     description: ev.description ?? undefined,
     location: ev.location ?? undefined,
+    backgroundColor: data.categoryColor || '#E8872A',
+    borderColor: data.categoryColor || '#E8872A',
     allDay,
+    categoryId: data.categoryId,
+    categoryName: data.categoryName,
+    categoryColor: data.categoryColor,
   }
 }
 
@@ -140,14 +164,20 @@ export async function updateEvent(
     }
   }
 
-  const res = await cal.events.patch({
-    calendarId: selectedCalendarId,
-    eventId,
-    requestBody: eventBody,
-  })
+  if (data.categoryId !== undefined) {
+    eventBody.extendedProperties = {
+      private: {
+        kibah_category_id: data.categoryId || '',
+        kibah_category_name: data.categoryName || '',
+        kibah_category_color: data.categoryColor || '',
+      },
+    }
+  }
 
+  const res = await cal.events.patch({ calendarId: selectedCalendarId, eventId, requestBody: eventBody })
   const ev = res.data
   const allDay = !!ev.start?.date
+  const priv = (ev.extendedProperties?.private as Record<string, string> | undefined) ?? {}
   return {
     id: ev.id!,
     title: ev.summary || '(Sin titulo)',
@@ -155,16 +185,16 @@ export async function updateEvent(
     end: allDay ? ev.end!.date! : ev.end!.dateTime!,
     description: ev.description ?? undefined,
     location: ev.location ?? undefined,
+    backgroundColor: priv.kibah_category_color || '#E8872A',
     allDay,
+    categoryId: priv.kibah_category_id || undefined,
+    categoryName: priv.kibah_category_name || undefined,
+    categoryColor: priv.kibah_category_color || undefined,
   }
 }
 
 export async function deleteEvent(userId: string, eventId: string): Promise<void> {
   const { client, selectedCalendarId } = await getOAuth2Client(userId)
   const cal = google.calendar({ version: 'v3', auth: client })
-
-  await cal.events.delete({
-    calendarId: selectedCalendarId,
-    eventId,
-  })
+  await cal.events.delete({ calendarId: selectedCalendarId, eventId })
 }

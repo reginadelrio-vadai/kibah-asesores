@@ -1,11 +1,12 @@
 'use client'
 
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { Loader2 } from 'lucide-react'
 import type { CalendarEvent } from '@/lib/google/calendar'
 import { EventForm } from './EventForm'
 import { EventDetail } from './EventDetail'
+import { CategoryFilter } from './CategoryFilter'
 import { Toast, type ToastType } from '@/components/ui/Toast'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import '@/styles/calendar.css'
@@ -31,6 +32,7 @@ export function CalendarView({ mode = 'personal', asesorUserId }: CalendarViewPr
   const [deletingEvent, setDeletingEvent] = useState<CalendarEvent | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null)
+  const [hiddenCategories, setHiddenCategories] = useState<Set<string>>(new Set())
   const rangeRef = useRef<{ start: string; end: string } | null>(null)
 
   const showToast = useCallback((msg: string, type: ToastType) => setToast({ message: msg, type }), [])
@@ -46,22 +48,14 @@ export function CalendarView({ mode = 'personal', asesorUserId }: CalendarViewPr
         url = `/api/calendar/events?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`
       }
       const res = await fetch(url)
-      if (res.ok) {
-        const json = await res.json()
-        setEvents(json.data ?? [])
-      }
-    } catch {
-      // silent
-    } finally {
-      setLoading(false)
-    }
+      if (res.ok) { const json = await res.json(); setEvents(json.data ?? []) }
+    } catch {} finally { setLoading(false) }
   }, [mode, asesorUserId])
 
   const refetchEvents = useCallback(() => {
     if (rangeRef.current) fetchEvents(rangeRef.current.start, rangeRef.current.end)
   }, [fetchEvents])
 
-  // Refetch when asesorUserId changes
   const prevUserIdRef = useRef(asesorUserId)
   if (prevUserIdRef.current !== asesorUserId) {
     prevUserIdRef.current = asesorUserId
@@ -74,7 +68,7 @@ export function CalendarView({ mode = 'personal', asesorUserId }: CalendarViewPr
   }, [fetchEvents])
 
   const handleDateClick = useCallback((info: { dateStr: string }) => {
-    if (mode === 'admin') return // admin can't create events on global view
+    if (mode === 'admin') return
     setEditingEvent(null)
     setDefaultStart(info.dateStr)
     const end = new Date(info.dateStr)
@@ -97,9 +91,7 @@ export function CalendarView({ mode = 'personal', asesorUserId }: CalendarViewPr
         body: JSON.stringify({ start: info.event.startStr, end: info.event.endStr, allDay: info.event.allDay, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }),
       })
       refetchEvents()
-    } catch {
-      showToast('Error al mover evento', 'error')
-    }
+    } catch { showToast('Error al mover evento', 'error') }
   }, [mode, refetchEvents, showToast])
 
   const handleDelete = useCallback(async () => {
@@ -107,19 +99,37 @@ export function CalendarView({ mode = 'personal', asesorUserId }: CalendarViewPr
     setDeleteLoading(true)
     try {
       const res = await fetch(`/api/calendar/events/${deletingEvent.id}`, { method: 'DELETE' })
-      if (res.ok || res.status === 204) {
-        showToast('Evento eliminado', 'success')
-        setDeletingEvent(null)
-        refetchEvents()
-      } else { showToast('Error al eliminar', 'error') }
+      if (res.ok || res.status === 204) { showToast('Evento eliminado', 'success'); setDeletingEvent(null); refetchEvents() }
+      else showToast('Error al eliminar', 'error')
     } catch { showToast('Error de conexion', 'error') }
     finally { setDeleteLoading(false) }
   }, [deletingEvent, refetchEvents, showToast])
 
+  const toggleCategory = useCallback((catId: string) => {
+    setHiddenCategories((prev) => {
+      const next = new Set(prev)
+      if (next.has(catId)) next.delete(catId)
+      else next.add(catId)
+      return next
+    })
+  }, [])
+
+  const filteredEvents = useMemo(() => {
+    if (mode === 'admin' || hiddenCategories.size === 0) return events
+    return events.filter((ev) => {
+      const catId = ev.categoryId || '__none__'
+      return !hiddenCategories.has(catId)
+    })
+  }, [events, hiddenCategories, mode])
+
   const isPersonal = mode === 'personal'
 
   return (
-    <div className="relative">
+    <div className="relative space-y-3">
+      {isPersonal && (
+        <CategoryFilter hiddenCategories={hiddenCategories} onToggle={toggleCategory} onManagerChanged={refetchEvents} />
+      )}
+
       {loading && (
         <div className="absolute top-2 right-2 z-10">
           <Loader2 className="w-5 h-5 text-orange animate-spin" strokeWidth={1.5} />
@@ -129,11 +139,7 @@ export function CalendarView({ mode = 'personal', asesorUserId }: CalendarViewPr
       <FullCalendar
         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
         initialView="timeGridWeek"
-        headerToolbar={{
-          left: 'prev,next today',
-          center: 'title',
-          right: 'dayGridMonth,timeGridWeek,timeGridDay',
-        }}
+        headerToolbar={{ left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' }}
         locale="es"
         buttonText={{ today: 'Hoy', month: 'Mes', week: 'Semana', day: 'D\u00eda' }}
         nowIndicator={true}
@@ -144,7 +150,7 @@ export function CalendarView({ mode = 'personal', asesorUserId }: CalendarViewPr
         stickyHeaderDates={true}
         dayMaxEvents={3}
         selectMirror={true}
-        events={events}
+        events={filteredEvents}
         editable={isPersonal}
         selectable={isPersonal}
         dateClick={handleDateClick}
@@ -152,39 +158,21 @@ export function CalendarView({ mode = 'personal', asesorUserId }: CalendarViewPr
         eventDrop={handleEventDrop}
         eventResize={handleEventDrop}
         datesSet={handleDatesSet}
-        height="calc(100vh - 160px)"
+        height="calc(100vh - 200px)"
       />
 
       {formOpen && isPersonal && (
-        <EventForm
-          event={editingEvent}
-          defaultStart={defaultStart}
-          defaultEnd={defaultEnd}
-          onClose={() => setFormOpen(false)}
-          onSaved={refetchEvents}
-          onToast={showToast}
-        />
+        <EventForm event={editingEvent} defaultStart={defaultStart} defaultEnd={defaultEnd} onClose={() => setFormOpen(false)} onSaved={refetchEvents} onToast={showToast} />
       )}
 
       {selectedEvent && (
-        <EventDetail
-          event={selectedEvent}
-          onClose={() => setSelectedEvent(null)}
+        <EventDetail event={selectedEvent} onClose={() => setSelectedEvent(null)}
           onEdit={(ev) => { if (!isPersonal) return; setSelectedEvent(null); setEditingEvent(ev); setFormOpen(true) }}
-          onDelete={(ev) => { if (!isPersonal) return; setSelectedEvent(null); setDeletingEvent(ev) }}
-        />
+          onDelete={(ev) => { if (!isPersonal) return; setSelectedEvent(null); setDeletingEvent(ev) }} />
       )}
 
       {deletingEvent && isPersonal && (
-        <ConfirmDialog
-          title="Eliminar Evento"
-          message={`Eliminar "${deletingEvent.title}"?`}
-          confirmLabel="Eliminar"
-          variant="danger"
-          loading={deleteLoading}
-          onConfirm={handleDelete}
-          onCancel={() => setDeletingEvent(null)}
-        />
+        <ConfirmDialog title="Eliminar Evento" message={`Eliminar "${deletingEvent.title}"?`} confirmLabel="Eliminar" variant="danger" loading={deleteLoading} onConfirm={handleDelete} onCancel={() => setDeletingEvent(null)} />
       )}
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
