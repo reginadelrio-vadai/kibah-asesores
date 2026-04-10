@@ -22,8 +22,15 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  // Check permission: admin always can, others need anuncios.create
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-  if (!profile || profile.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (profile?.role !== 'admin') {
+    const { getUserPermissions } = await import('@/lib/dal/roles')
+    const perms = await getUserPermissions(user.id)
+    if (!perms['anuncios.create'] && !perms._isAdmin) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+  }
 
   try {
     const body = await request.json()

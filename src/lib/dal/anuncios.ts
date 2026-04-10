@@ -7,17 +7,38 @@ export interface Anuncio {
   priority: 'normal' | 'urgente'
   created_by: string
   created_at: string
+  author_name?: string
+  author_role?: string
 }
 
 export async function getAnuncios(): Promise<Anuncio[]> {
   const supabase = createAdminClient()
-  const { data, error } = await supabase
+
+  const { data: anuncios, error } = await supabase
     .from('anuncios')
     .select('*')
     .order('created_at', { ascending: false })
 
   if (error) throw new Error(error.message)
-  return data as Anuncio[]
+
+  const userIds = [...new Set((anuncios ?? []).map((a) => a.created_by as string))]
+  if (userIds.length === 0) return anuncios as Anuncio[]
+
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, full_name, role')
+    .in('id', userIds)
+
+  const profileMap = new Map((profiles ?? []).map((p) => [p.id, { name: p.full_name, role: p.role }]))
+
+  return (anuncios ?? []).map((a) => {
+    const author = profileMap.get(a.created_by as string)
+    return {
+      ...(a as Anuncio),
+      author_name: author?.role === 'admin' ? 'Administracion' : (author?.name as string) ?? 'Desconocido',
+      author_role: (author?.role as string) ?? '',
+    }
+  })
 }
 
 export async function createAnuncio(

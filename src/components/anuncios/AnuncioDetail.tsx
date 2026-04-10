@@ -10,6 +10,7 @@ interface Anuncio {
   priority: 'normal' | 'urgente'
   created_at: string
   is_read: boolean
+  author_name?: string
 }
 
 interface AnuncioDetailProps {
@@ -80,7 +81,10 @@ export function AnuncioDetail({ anuncio, isAdmin, onClose, onDelete }: AnuncioDe
 
         {/* Body */}
         <div className="px-6 py-5">
-          <p className="text-xs text-text-tertiary mb-4">{formatFullDate(anuncio.created_at)}</p>
+          <div className="flex items-center gap-2 text-xs text-text-tertiary mb-4">
+            <span>{formatFullDate(anuncio.created_at)}</span>
+            {anuncio.author_name && <><span>·</span><span>Enviado por: {anuncio.author_name}</span></>}
+          </div>
           <p className="text-sm text-text-primary whitespace-pre-wrap leading-relaxed">{anuncio.message}</p>
         </div>
       </div>

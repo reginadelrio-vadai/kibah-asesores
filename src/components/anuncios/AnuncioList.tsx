@@ -12,6 +12,7 @@ interface Anuncio {
   title: string
   message: string
   priority: 'normal' | 'urgente'
+  author_name?: string
   created_at: string
   is_read: boolean
 }
@@ -127,9 +128,14 @@ export function AnuncioList({ isAdmin, refreshKey }: AnuncioListProps) {
             {!a.is_read && (
               <div className="w-2.5 h-2.5 rounded-full bg-blue-500 flex-shrink-0" />
             )}
-            <h3 className={`text-sm text-text-primary truncate flex-1 ${!a.is_read ? 'font-bold' : 'font-medium'}`}>
-              {a.title}
-            </h3>
+            <div className="flex-1 min-w-0">
+              <h3 className={`text-sm text-text-primary truncate ${!a.is_read ? 'font-bold' : 'font-medium'}`}>
+                {a.title}
+              </h3>
+              {a.author_name && (
+                <p className="text-[10px] text-text-tertiary truncate">Enviado por: {a.author_name}</p>
+              )}
+            </div>
             {a.priority === 'urgente' && (
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/15 text-red-600 dark:text-red-400 flex-shrink-0">
                 Urgente
