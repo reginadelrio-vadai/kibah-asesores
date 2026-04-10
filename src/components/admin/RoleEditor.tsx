@@ -5,6 +5,19 @@ import { X } from 'lucide-react'
 import type { Role } from '@/types/roles'
 import { ALL_PERMISSIONS, PERMISSION_GROUPS } from '@/types/roles'
 
+const PERM_LABELS: Record<string, string> = {
+  'propiedades.view': 'Ver', 'propiedades.create': 'Crear', 'propiedades.edit': 'Editar', 'propiedades.delete': 'Eliminar',
+  'pdf.view': 'Generar PDFs',
+  'calendario.view': 'Ver',
+  'whaapy.view': 'Ver',
+  'anuncios.view': 'Ver', 'anuncios.create': 'Enviar anuncios',
+  'asesores.view': 'Ver', 'asesores.create': 'Crear', 'asesores.edit': 'Editar', 'asesores.delete': 'Eliminar',
+  'desarrollos.view': 'Ver', 'desarrollos.create': 'Crear', 'desarrollos.edit': 'Editar', 'desarrollos.delete': 'Eliminar',
+  'columnas.view': 'Ver', 'columnas.edit': 'Editar',
+  'webhooks.view': 'Ver', 'webhooks.manage': 'Gestionar',
+  'apikeys.view': 'Ver', 'apikeys.manage': 'Gestionar',
+}
+
 interface RoleEditorProps {
   role?: Role | null
   onClose: () => void
@@ -101,24 +114,26 @@ export function RoleEditor({ role, onClose, onSaved, onToast }: RoleEditorProps)
                 {PERMISSION_GROUPS.map((group) => (
                   <div key={group.label}>
                     <h4 className="text-xs font-semibold text-text-primary mb-2">{group.label}</h4>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-x-5 gap-y-1.5">
                       {group.keys.map((key) => {
-                        const label = ALL_PERMISSIONS[key]?.split(' ').pop() ?? key
+                        const label = PERM_LABELS[key] ?? key
                         const active = isAdmin ? true : permissions[key] === true
                         return (
-                          <button
+                          <label
                             key={key}
-                            type="button"
-                            onClick={() => togglePerm(key)}
-                            disabled={isAdmin}
-                            className={`h-7 px-2.5 text-[11px] font-medium rounded-full border transition-colors cursor-pointer
-                              ${active
-                                ? 'bg-orange/10 border-orange/30 text-orange'
-                                : 'bg-bg-tertiary border-border-primary text-text-tertiary'
-                              } ${isAdmin ? 'opacity-60 cursor-not-allowed' : ''}`}
+                            className={`flex items-center gap-1.5 cursor-pointer text-xs ${isAdmin ? 'opacity-60 cursor-not-allowed' : ''}`}
                           >
-                            {active ? '✓ ' : ''}{label}
-                          </button>
+                            <button
+                              type="button"
+                              onClick={() => togglePerm(key)}
+                              disabled={isAdmin}
+                              className={`w-4 h-4 rounded border flex items-center justify-center transition-colors
+                                ${active ? 'bg-orange border-orange' : 'border-border-primary bg-bg-primary'}`}
+                            >
+                              {active && <span className="text-white text-[10px] font-bold">✓</span>}
+                            </button>
+                            <span className={active ? 'text-text-primary' : 'text-text-tertiary'}>{label}</span>
+                          </label>
                         )
                       })}
                     </div>
