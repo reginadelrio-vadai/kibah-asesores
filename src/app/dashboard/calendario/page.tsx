@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Loader2, Unlink, Settings } from 'lucide-react'
 import { useGoogleConnection } from '@/hooks/useGoogleConnection'
 import { GoogleConnectScreen } from '@/components/calendar/GoogleConnectScreen'
@@ -12,6 +12,7 @@ import { Toast, type ToastType } from '@/components/ui/Toast'
 export default function CalendarioPage() {
   const { isConnected, loading } = useGoogleConnection()
   const searchParams = useSearchParams()
+  const router = useRouter()
   const [showSelector, setShowSelector] = useState(false)
   const [disconnecting, setDisconnecting] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null)
@@ -74,7 +75,7 @@ export default function CalendarioPage() {
       <CalendarView />
 
       {showSelector && (
-        <CalendarSelector onSelect={() => { setShowSelector(false); window.location.reload() }} />
+        <CalendarSelector onSelect={() => { setShowSelector(false); router.replace('/dashboard/calendario') }} />
       )}
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}

@@ -41,12 +41,14 @@ export function CalendarSelector({ onSelect }: CalendarSelectorProps) {
 
     setSaving(true)
     try {
-      await fetch('/api/calendar/select', {
+      const res = await fetch('/api/calendar/select', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ calendarId: cal.id, calendarName: cal.summary }),
       })
-      onSelect()
+      if (res.ok) {
+        onSelect()
+      }
     } catch {
       // silent
     } finally {
