@@ -131,3 +131,28 @@ export async function deleteDesarrollo(id: number): Promise<void> {
 
   if (error) throw new Error(error.message)
 }
+
+export async function getDesarrolloImagesByNombresKibah(
+  nombres: string[]
+): Promise<Record<string, string>> {
+  if (nombres.length === 0) return {}
+  const supabase = createAdminClient()
+  const { data, error } = await supabase
+    .from('desarrollos_view')
+    .select('nombre_kibah, imagen_principal')
+    .in('nombre_kibah', nombres)
+    .not('imagen_principal', 'is', null)
+
+  if (error) {
+    console.error('Error fetching desarrollo images:', error.message)
+    return {}
+  }
+
+  const map: Record<string, string> = {}
+  for (const row of data ?? []) {
+    if (row.nombre_kibah && row.imagen_principal) {
+      map[row.nombre_kibah as string] = row.imagen_principal as string
+    }
+  }
+  return map
+}

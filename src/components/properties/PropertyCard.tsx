@@ -1,6 +1,6 @@
 'use client'
 
-import { Bed, Bath, Ruler, Pencil, Trash2 } from 'lucide-react'
+import { Bed, Bath, Ruler, Pencil, Trash2, FilePlus, FileCheck } from 'lucide-react'
 import type { Property, UserRole } from '@/types'
 import { formatPrice, displayValue } from '@/lib/utils/format'
 import { DISPONIBILIDAD_COLORS, TIPO_PREVENTA_COLORS } from '@/lib/utils/constants'
@@ -13,9 +13,11 @@ interface PropertyCardProps {
   onEdit?: (property: Property) => void
   onDelete?: (property: Property) => void
   visibleColumnNames?: Set<string>
+  pdfSelected?: boolean
+  onTogglePdf?: (property: Property) => void
 }
 
-export function PropertyCard({ property, onClick, role, onEdit, onDelete, visibleColumnNames }: PropertyCardProps) {
+export function PropertyCard({ property, onClick, role, onEdit, onDelete, visibleColumnNames, pdfSelected, onTogglePdf }: PropertyCardProps) {
   const isAdmin = role === 'admin'
   const show = (col: string) => isAdmin || !visibleColumnNames || visibleColumnNames.has(col)
   const disponibilidadStyle =
@@ -49,6 +51,20 @@ export function PropertyCard({ property, onClick, role, onEdit, onDelete, visibl
             title="Eliminar"
           >
             <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
+          </button>
+        </div>
+      )}
+
+      {/* PDF toggle */}
+      {onTogglePdf && (
+        <div className="flex items-center justify-end mb-1">
+          <button
+            onClick={(e) => { e.stopPropagation(); onTogglePdf(property) }}
+            className={`flex items-center gap-1 px-2 py-1 rounded-[var(--radius-sm)] text-xs font-medium transition-colors cursor-pointer
+              ${pdfSelected ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10' : 'text-text-tertiary hover:text-orange hover:bg-orange/10'}`}
+          >
+            {pdfSelected ? <FileCheck className="w-3.5 h-3.5" strokeWidth={1.5} /> : <FilePlus className="w-3.5 h-3.5" strokeWidth={1.5} />}
+            {pdfSelected ? 'En PDF' : 'PDF'}
           </button>
         </div>
       )}

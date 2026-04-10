@@ -1,6 +1,6 @@
 'use client'
 
-import { ArrowUpDown, ArrowUp, ArrowDown, Pencil, Trash2 } from 'lucide-react'
+import { ArrowUpDown, ArrowUp, ArrowDown, Pencil, Trash2, Check } from 'lucide-react'
 import type { Property, UserRole, ColumnVisibility } from '@/types'
 import { formatPrice, formatM2, displayValue, capitalize, formatComision } from '@/lib/utils/format'
 import { DISPONIBILIDAD_COLORS, TIPO_PREVENTA_COLORS } from '@/lib/utils/constants'
@@ -16,6 +16,8 @@ interface PropertyTableProps {
   onEdit?: (property: Property) => void
   onDelete?: (property: Property) => void
   visibleColumnNames?: Set<string>
+  pdfSelectedIds?: Set<number>
+  onTogglePdf?: (property: Property) => void
 }
 
 function formatCell(columnName: string, value: unknown, property: Property): React.ReactNode {
@@ -85,6 +87,8 @@ export function PropertyTable({
   onEdit,
   onDelete,
   visibleColumnNames,
+  pdfSelectedIds,
+  onTogglePdf,
 }: PropertyTableProps) {
   const isAdmin = role === 'admin'
   const visibleCols = visibleColumnNames && !isAdmin
@@ -119,6 +123,11 @@ export function PropertyTable({
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-border-primary bg-bg-tertiary">
+            {onTogglePdf && (
+              <th className="px-3 py-3 w-10">
+                <span className="text-[10px] text-text-tertiary">PDF</span>
+              </th>
+            )}
             {visibleCols.map((col) => {
               const isSorted = sortConfig.column === col.column_name
               return (
@@ -154,8 +163,20 @@ export function PropertyTable({
             <tr
               key={property.id}
               onClick={() => onSelect(property)}
-              className="border-b border-border-primary hover:bg-bg-tertiary/50 cursor-pointer transition-colors group"
+              className={`border-b border-border-primary hover:bg-bg-tertiary/50 cursor-pointer transition-colors group
+                ${pdfSelectedIds?.has(property.id) ? 'bg-orange/5' : ''}`}
             >
+              {onTogglePdf && (
+                <td className="px-3 py-3">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onTogglePdf(property) }}
+                    className={`w-5 h-5 rounded border flex items-center justify-center cursor-pointer transition-colors
+                      ${pdfSelectedIds?.has(property.id) ? 'bg-orange border-orange' : 'border-border-primary hover:border-orange/50'}`}
+                  >
+                    {pdfSelectedIds?.has(property.id) && <Check className="w-3 h-3 text-white" strokeWidth={2} />}
+                  </button>
+                </td>
+              )}
               {visibleCols.map((col) => (
                 <td
                   key={col.column_name}

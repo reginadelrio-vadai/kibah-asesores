@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   Building2,
+  FileText,
   MessageSquare,
   Users,
   Landmark,
@@ -27,6 +28,11 @@ const asesorNav: NavItem[] = [
     label: 'Propiedades',
     href: '/dashboard/propiedades',
     icon: <Building2 className="w-5 h-5" strokeWidth={1.5} />,
+  },
+  {
+    label: 'PDF',
+    href: '/dashboard/pdf',
+    icon: <FileText className="w-5 h-5" strokeWidth={1.5} />,
   },
   {
     label: 'Whaapy',

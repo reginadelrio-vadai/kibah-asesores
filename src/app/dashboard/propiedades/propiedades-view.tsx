@@ -1,12 +1,14 @@
 'use client'
 
 import { useCallback, useMemo, useState } from 'react'
-import { Building2, AlertCircle, Plus } from 'lucide-react'
+import Link from 'next/link'
+import { Building2, AlertCircle, Plus, FileText } from 'lucide-react'
 import type { Property, UserRole } from '@/types'
 import type { ToastType } from '@/components/ui/Toast'
 import { useProperties } from '@/hooks/useProperties'
 import { useFilters } from '@/hooks/useFilters'
 import { useColumnVisibility } from '@/hooks/useColumnVisibility'
+import { usePdfSelection } from '@/hooks/usePdfSelection'
 import { PropertyFilters } from '@/components/properties/PropertyFilters'
 import { PropertyGrid } from '@/components/properties/PropertyGrid'
 import { PropertyTable } from '@/components/properties/PropertyTable'
@@ -34,6 +36,10 @@ export function PropiedadesView({ role }: { role: UserRole }) {
   const [deletingProperty, setDeletingProperty] = useState<Property | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [toast, setToast] = useState<ToastState | null>(null)
+
+  // PDF selection
+  const { selectedProperties: pdfProperties, count: pdfCount, toggleProperty: togglePdf } = usePdfSelection()
+  const pdfSelectedIds = useMemo(() => new Set(pdfProperties.map((p) => p.id)), [pdfProperties])
 
   const {
     activeFilters,
@@ -185,6 +191,8 @@ export function PropiedadesView({ role }: { role: UserRole }) {
               onEdit={handleEdit}
               onDelete={handleDeleteRequest}
               visibleColumnNames={visibleColumnNames}
+              pdfSelectedIds={pdfSelectedIds}
+              onTogglePdf={togglePdf}
             />
           ) : (
             <PropertyTable
@@ -198,6 +206,8 @@ export function PropiedadesView({ role }: { role: UserRole }) {
               onEdit={handleEdit}
               onDelete={handleDeleteRequest}
               visibleColumnNames={visibleColumnNames}
+              pdfSelectedIds={pdfSelectedIds}
+              onTogglePdf={togglePdf}
             />
           )}
 
@@ -275,6 +285,21 @@ export function PropiedadesView({ role }: { role: UserRole }) {
           onConfirm={handleDeleteConfirm}
           onCancel={() => setDeletingProperty(null)}
         />
+      )}
+
+      {/* PDF floating banner */}
+      {pdfCount > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 px-4 py-2.5 rounded-full
+          bg-navy text-white shadow-lg border border-white/10">
+          <FileText className="w-4 h-4 text-orange" strokeWidth={1.5} />
+          <span className="text-sm font-medium">{pdfCount} propiedad{pdfCount !== 1 ? 'es' : ''}</span>
+          <Link
+            href="/dashboard/pdf"
+            className="flex items-center gap-1 px-3 py-1 text-xs font-medium rounded-full bg-orange text-white hover:bg-orange-hover transition-colors"
+          >
+            Generar PDF
+          </Link>
+        </div>
       )}
 
       {/* Toast */}
