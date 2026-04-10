@@ -94,7 +94,7 @@ export function CalendarView({ mode = 'personal', asesorUserId }: CalendarViewPr
       await fetch(`/api/calendar/events/${info.event.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ start: info.event.startStr, end: info.event.endStr, allDay: info.event.allDay }),
+        body: JSON.stringify({ start: info.event.startStr, end: info.event.endStr, allDay: info.event.allDay, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }),
       })
       refetchEvents()
     } catch {

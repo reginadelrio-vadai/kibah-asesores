@@ -73,6 +73,7 @@ interface EventInput {
   description?: string
   location?: string
   allDay?: boolean
+  timeZone?: string
 }
 
 export async function createEvent(
@@ -88,12 +89,13 @@ export async function createEvent(
     location: data.location || undefined,
   }
 
+  const tz = data.timeZone || 'America/Mexico_City'
   if (data.allDay) {
     eventBody.start = { date: data.start.split('T')[0] }
     eventBody.end = { date: data.end.split('T')[0] }
   } else {
-    eventBody.start = { dateTime: data.start }
-    eventBody.end = { dateTime: data.end }
+    eventBody.start = { dateTime: data.start, timeZone: tz }
+    eventBody.end = { dateTime: data.end, timeZone: tz }
   }
 
   const res = await cal.events.insert({
@@ -128,12 +130,13 @@ export async function updateEvent(
   if (data.location !== undefined) eventBody.location = data.location
 
   if (data.start && data.end) {
+    const tz = data.timeZone || 'America/Mexico_City'
     if (data.allDay) {
       eventBody.start = { date: data.start.split('T')[0] }
       eventBody.end = { date: data.end.split('T')[0] }
     } else {
-      eventBody.start = { dateTime: data.start }
-      eventBody.end = { dateTime: data.end }
+      eventBody.start = { dateTime: data.start, timeZone: tz }
+      eventBody.end = { dateTime: data.end, timeZone: tz }
     }
   }
 
