@@ -46,10 +46,10 @@ function getImageDimensions(base64: string): Promise<{ w: number; h: number }> {
   })
 }
 
-function getMonthYear(): string {
+function getFullDate(): string {
   const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
   const now = new Date()
-  return `${months[now.getMonth()]} ${now.getFullYear()}`
+  return `${now.getDate()} de ${months[now.getMonth()]} de ${now.getFullYear()}`
 }
 
 interface PreparedProperty {
@@ -112,29 +112,31 @@ export async function generatePdf(
     doc.setTextColor(LABEL)
     doc.text('kibah.com.mx', pw - mx, headerY + 4, { align: 'right' })
 
-    const headerLineY = headerY + Math.max(logoH, 8) + 3
+    // Title + date inside header (first page only)
+    let headerLineY: number
+    if (page === 0) {
+      const titleY = headerY + Math.max(logoH, 8) + 6
+      doc.setFontSize(16)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(NAVY)
+      doc.text('Propiedades de Inter\u00E9s', pw / 2, titleY, { align: 'center' })
+
+      doc.setFontSize(9)
+      doc.setFont('helvetica', 'normal')
+      doc.setTextColor(LABEL)
+      doc.text(getFullDate(), pw / 2, titleY + 6, { align: 'center' })
+
+      headerLineY = titleY + 10
+    } else {
+      headerLineY = headerY + Math.max(logoH, 8) + 3
+    }
+
     doc.setDrawColor(ORANGE)
     doc.setLineWidth(0.5)
     doc.line(mx, headerLineY, pw - mx, headerLineY)
 
-    // ===== TITLE (first page only) =====
-    let startY = headerLineY + 5
-    if (page === 0) {
-      startY = headerLineY + 4
-      doc.setFontSize(18)
-      doc.setFont('helvetica', 'bold')
-      doc.setTextColor(NAVY)
-      doc.text('Propiedades de Interes', pw / 2, startY + 5, { align: 'center' })
-
-      doc.setFontSize(10)
-      doc.setFont('helvetica', 'normal')
-      doc.setTextColor(LABEL)
-      doc.text(getMonthYear(), pw / 2, startY + 12, { align: 'center' })
-
-      startY += 20
-    }
-
     // ===== PROPERTIES =====
+    const startY = headerLineY + 5
     const footerY = ph - 14
     const usableH = footerY - startY
     const propH = usableH / perPage
@@ -226,50 +228,43 @@ export async function generatePdf(
 
       if (p.num_recamaras) cards.push({ value: String(p.num_recamaras), label: 'Rec.' })
       if (p.num_banos) cards.push({ value: String(p.num_banos), label: 'Ba\u00F1os' })
-      if (p.m2_totales) cards.push({ value: String(p.m2_totales), label: 'M\u00B2 Total' })
+      if (p.m2_totales) cards.push({ value: `${p.m2_totales} m\u00B2`, label: 'M\u00B2 Total' })
 
       const m2hab = p.m2_habitables ? parseFloat(String(p.m2_habitables)) : 0
       const m2tot = p.m2_totales ? parseFloat(String(p.m2_totales)) : 0
-      if (m2hab > 0 && m2hab !== m2tot) cards.push({ value: String(p.m2_habitables), label: 'M\u00B2 Hab.' })
-
-      const m2ext = p.m2_exteriores ? parseFloat(String(p.m2_exteriores)) : 0
-      if (m2ext > 0) cards.push({ value: String(p.m2_exteriores), label: 'M\u00B2 Ext.' })
-
-      const m2roof = p.m2_roof_garden ? parseFloat(String(p.m2_roof_garden)) : 0
-      if (m2roof > 0) cards.push({ value: String(p.m2_roof_garden), label: 'M\u00B2 Roof' })
+      if (m2hab > 0 && m2hab !== m2tot) cards.push({ value: `${p.m2_habitables} m\u00B2`, label: 'M\u00B2 Hab.' })
 
       const est = p.estacionamiento ? parseFloat(String(p.estacionamiento)) : 0
       if (est > 0) cards.push({ value: String(p.estacionamiento), label: 'Est.' })
 
-      if (p.bodega && p.bodega.trim()) cards.push({ value: tc(p.bodega), label: 'Bodega' })
-
       if (cards.length > 0) {
-        const maxCards = Math.min(cards.length, 6)
+        const maxCards = Math.min(cards.length, 5)
         const gap = 2
         const cardW = (contentW - gap * (maxCards - 1)) / maxCards
-        const cardH = 14
+        const cardH = 15
 
         for (let c = 0; c < maxCards; c++) {
           const cx = mx + c * (cardW + gap)
+
           // Card background
           doc.setFillColor(ORANGE_LIGHT)
           doc.rect(cx, y, cardW, cardH, 'F')
 
-          // Orange bullet square
-          doc.setFillColor(ORANGE)
-          doc.rect(cx + cardW / 2 - 1, y + 1.5, 2, 2, 'F')
+          // Orange bullet square (left of label at bottom)
+          doc.setFillColor(232, 135, 42)
+          doc.rect(cx + 3, y + 10.5, 1.5, 1.5, 'F')
 
           // Value
           doc.setFontSize(11)
           doc.setFont('helvetica', 'bold')
           doc.setTextColor(NAVY)
-          doc.text(cards[c].value, cx + cardW / 2, y + 7.5, { align: 'center' })
+          doc.text(cards[c].value, cx + cardW / 2, y + 7, { align: 'center' })
 
-          // Label
+          // Label (after orange bullet)
           doc.setFontSize(7)
           doc.setFont('helvetica', 'normal')
           doc.setTextColor(LABEL)
-          doc.text(cards[c].label, cx + cardW / 2, y + 12, { align: 'center' })
+          doc.text(cards[c].label, cx + 6, y + 12)
         }
 
         y += cardH + 4
@@ -281,6 +276,7 @@ export async function generatePdf(
       if (p.tipo_preventa) statuses.push(tc(p.tipo_preventa))
       if (p.tipo_entrega) statuses.push(tc(p.tipo_entrega))
       if (p.fecha_entrega) statuses.push(`Entrega: ${p.fecha_entrega}`)
+      if (p.bodega && p.bodega.trim()) statuses.push(`Bodega: ${tc(p.bodega)}`)
 
       if (statuses.length > 0) {
         const barH = 8
