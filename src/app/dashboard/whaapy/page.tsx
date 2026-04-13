@@ -36,18 +36,28 @@ export default function WhaapyPage() {
         overflow: 'hidden',
       }}
     >
-      <iframe
-        src={WHAAPY_URL}
-        onError={() => setError(true)}
-        allow="clipboard-write; microphone"
-        title="Whaapy"
+      <div
         style={{
-          width: '195%',
+          position: 'absolute',
+          top: 0,
+          left: '-50px',
+          width: 'calc(100% + 50px)',
           height: '100%',
-          border: 'none',
-          zoom: 0.5,
         }}
-      />
+      >
+        <iframe
+          src={WHAAPY_URL}
+          onError={() => setError(true)}
+          allow="clipboard-write; microphone"
+          title="Whaapy"
+          style={{
+            width: '170%',
+            height: '100%',
+            border: 'none',
+            zoom: 0.65,
+          }}
+        />
+      </div>
     </div>
   )
 }
