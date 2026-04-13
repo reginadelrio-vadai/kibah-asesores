@@ -178,3 +178,37 @@ button:focus-visible, a:focus-visible {
 .dark ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.25);
 }
+
+/* ============================================================
+   Topbar
+   ============================================================ */
+.kibah-topbar {
+  background: #FFFFFF;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.dark .kibah-topbar {
+  background: rgba(15, 25, 35, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.kibah-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.kibah-icon-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.dark .kibah-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}

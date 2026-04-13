@@ -18,29 +18,32 @@ export function Topbar({ userName }: TopbarProps) {
     router.push('/login')
   }
 
+  const initial = userName ? userName.charAt(0).toUpperCase() : 'U'
+
   return (
-    <header
-      className="h-[var(--topbar-height)] border-b border-border-primary bg-bg-secondary
-        flex items-center justify-end px-6 gap-4"
-    >
+    <header className="kibah-topbar h-[var(--topbar-height)] flex items-center justify-end px-6 gap-4">
       <ThemeToggle />
 
       <div className="flex items-center gap-3">
-        <span className="text-sm font-medium text-text-primary">
+        <span
+          className="text-[14px] font-medium"
+          style={{ color: 'var(--text-primary)' }}
+        >
           {userName ?? 'Usuario'}
         </span>
-        <div className="w-8 h-8 rounded-full bg-bg-tertiary flex items-center justify-center">
-          <span className="text-xs font-semibold text-text-secondary">
-            {userName ? userName.charAt(0).toUpperCase() : 'U'}
-          </span>
+        <div
+          className="flex items-center justify-center rounded-full"
+          style={{ width: '32px', height: '32px', background: '#E8872A' }}
+        >
+          <span className="text-[13px] font-semibold text-white">{initial}</span>
         </div>
         <button
           onClick={handleSignOut}
           title="Cerrar sesión"
-          className="p-1.5 rounded-[var(--radius-sm)] text-text-tertiary hover:text-text-primary
-            hover:bg-bg-tertiary transition-colors cursor-pointer"
+          className="kibah-icon-btn"
+          style={{ width: '32px', height: '32px' }}
         >
-          <LogOut className="w-4 h-4" strokeWidth={1.5} />
+          <LogOut className="w-4 h-4" strokeWidth={1.5} style={{ color: 'var(--text-secondary)' }} />
         </button>
       </div>
     </header>
