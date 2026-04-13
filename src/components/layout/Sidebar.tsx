@@ -78,7 +78,11 @@ export function Sidebar({ role }: { role: UserRole }) {
   ]
 
   const visibleMain = mainNav.filter((item) => !item.permission || can(item.permission))
-  const visibleAdmin = adminItems.filter((item) => !item.permission || can(item.permission))
+  const visibleAdmin = adminItems.filter((item) => {
+    // Roles page is admin-only, hardcoded (not permission-based)
+    if (item.href === '/dashboard/admin/roles') return isAdmin
+    return !item.permission || can(item.permission)
+  })
   const showAdminSection = visibleAdmin.length > 0
 
   const sidebarContent = (
