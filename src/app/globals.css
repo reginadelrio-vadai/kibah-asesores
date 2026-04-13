@@ -304,3 +304,69 @@ button:focus-visible, a:focus-visible {
 .kibah-badge-preventa { background: rgba(232, 135, 42, 0.1); color: #E8872A; }
 
 .kibah-badge-entrega { background: rgba(59, 130, 246, 0.1); color: #3B82F6; }
+
+/* ============================================================
+   Tables
+   ============================================================ */
+.kibah-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.kibah-table thead tr {
+  background: #F8FAFB;
+}
+
+.dark .kibah-table thead tr {
+  background: rgba(27, 42, 74, 0.3);
+}
+
+.kibah-table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6B7280;
+  white-space: nowrap;
+}
+
+.dark .kibah-table th {
+  color: #94A3B8;
+}
+
+.kibah-table tbody tr {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  transition: background-color 0.15s ease;
+}
+
+.dark .kibah-table tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.kibah-table tbody tr:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.dark .kibah-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.kibah-table td {
+  padding: 12px 16px;
+  color: #1E293B;
+}
+
+.dark .kibah-table td {
+  color: #E2E8F0;
+}
+
+.kibah-table-price {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.kibah-sort-active { color: #E8872A; }
+.kibah-sort-inactive { color: #94A3B8; opacity: 0.5; }

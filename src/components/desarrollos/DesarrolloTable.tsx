@@ -2,7 +2,13 @@
 
 import { Pencil, Trash2 } from 'lucide-react'
 import type { Desarrollo } from '@/types/desarrollo'
-import { DISPONIBILIDAD_COLORS } from '@/lib/utils/constants'
+function disponibilidadBadgeClass(value: string): string {
+  const v = value.toLowerCase()
+  if (v.includes('dispon')) return 'kibah-badge kibah-badge-disponible'
+  if (v.includes('apart')) return 'kibah-badge kibah-badge-apartado'
+  if (v.includes('rent')) return 'kibah-badge kibah-badge-rentado'
+  return 'kibah-badge kibah-badge-disponible'
+}
 import { toTitleCase } from '@/lib/utils/format'
 
 interface DesarrolloTableProps {
@@ -47,16 +53,16 @@ export function DesarrolloTable({ desarrollos, loading, onSelect, onEdit, onDele
   if (loading && desarrollos.length === 0) {
     return (
       <div className="overflow-x-auto rounded-[var(--radius-sm)] border border-border-primary">
-        <table className="w-full text-sm">
+        <table className="kibah-table">
           <thead>
-            <tr className="border-b border-border-primary bg-bg-tertiary">
-              <th className="px-4 py-3 text-left text-xs font-semibold text-text-secondary">Nombre</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-text-secondary">Colonia</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-text-secondary">Precio</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-text-secondary">Recámaras</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-text-secondary">Disponibilidad</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-text-secondary">Preventa</th>
-              <th className="px-4 py-3 text-right text-xs font-semibold text-text-secondary w-24">Acciones</th>
+            <tr>
+              <th>Nombre</th>
+              <th>Colonia</th>
+              <th>Precio</th>
+              <th>Recámaras</th>
+              <th>Disponibilidad</th>
+              <th>Preventa</th>
+              <th className="text-right">Acciones</th>
             </tr>
           </thead>
           <tbody>{Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)}</tbody>
@@ -67,24 +73,23 @@ export function DesarrolloTable({ desarrollos, loading, onSelect, onEdit, onDele
 
   return (
     <div className="overflow-x-auto rounded-[var(--radius-sm)] border border-border-primary">
-      <table className="w-full text-sm">
+      <table className="kibah-table">
         <thead>
-          <tr className="border-b border-border-primary bg-bg-tertiary">
-            <th className="px-4 py-3 text-left text-xs font-semibold text-text-secondary">Nombre</th>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-text-secondary">Colonia</th>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-text-secondary">Precio</th>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-text-secondary">Recámaras</th>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-text-secondary">Disponibilidad</th>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-text-secondary">Preventa</th>
-            <th className="px-4 py-3 text-right text-xs font-semibold text-text-secondary w-24">Acciones</th>
+          <tr>
+            <th>Nombre</th>
+            <th>Colonia</th>
+            <th>Precio</th>
+            <th>Recámaras</th>
+            <th>Disponibilidad</th>
+            <th>Preventa</th>
+            <th className="text-right">Acciones</th>
           </tr>
         </thead>
         <tbody>
           {desarrollos.map((d) => {
-            const dispColors = DISPONIBILIDAD_COLORS[d.disponibilidad ?? '']
             return (
-              <tr key={d.id} onClick={() => onSelect(d)} className="border-b border-border-primary hover:bg-bg-tertiary/50 cursor-pointer transition-colors group">
-                <td className="px-4 py-3 text-text-primary whitespace-nowrap max-w-[200px] truncate">
+              <tr key={d.id} onClick={() => onSelect(d)} className="cursor-pointer group">
+                <td className="whitespace-nowrap max-w-[200px] truncate">
                   <div className="flex items-center gap-2">
                     {d.imagen_principal ? (
                       <img src={d.imagen_principal} alt="" className="w-8 h-8 rounded object-cover flex-shrink-0" />
@@ -94,16 +99,16 @@ export function DesarrolloTable({ desarrollos, loading, onSelect, onEdit, onDele
                     <span className="truncate">{d.nombre_kibah || d.nombre_desarrollador || '—'}</span>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-text-primary whitespace-nowrap">{toTitleCase(d.colonia)}</td>
-                <td className="px-4 py-3 text-text-primary whitespace-nowrap">{formatPriceShort(d.precio_min, d.precio_max)}</td>
-                <td className="px-4 py-3 text-text-primary whitespace-nowrap">{formatRange(d.recamaras_min, d.recamaras_max)}</td>
-                <td className="px-4 py-3 whitespace-nowrap">
-                  {dispColors && d.disponibilidad ? (
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${dispColors.bg} ${dispColors.text}`}>{d.disponibilidad}</span>
-                  ) : (d.disponibilidad || '—')}
+                <td className="whitespace-nowrap">{toTitleCase(d.colonia)}</td>
+                <td className="whitespace-nowrap kibah-table-price">{formatPriceShort(d.precio_min, d.precio_max)}</td>
+                <td className="whitespace-nowrap">{formatRange(d.recamaras_min, d.recamaras_max)}</td>
+                <td className="whitespace-nowrap">
+                  {d.disponibilidad ? (
+                    <span className={disponibilidadBadgeClass(d.disponibilidad)}>{d.disponibilidad}</span>
+                  ) : '—'}
                 </td>
-                <td className="px-4 py-3 text-text-primary whitespace-nowrap">{toTitleCase(d.tipo_preventa)}</td>
-                <td className="px-4 py-3 text-right whitespace-nowrap">
+                <td className="whitespace-nowrap">{toTitleCase(d.tipo_preventa)}</td>
+                <td className="text-right whitespace-nowrap">
                   <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 md:transition-opacity">
                     <button onClick={(e) => { e.stopPropagation(); onEdit?.(d) }} className="p-1.5 rounded-[var(--radius-sm)] text-text-secondary hover:text-orange hover:bg-orange/10 transition-colors cursor-pointer" title="Editar">
                       <Pencil className="w-3.5 h-3.5" strokeWidth={1.5} />

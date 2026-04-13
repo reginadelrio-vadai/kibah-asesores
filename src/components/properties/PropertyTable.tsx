@@ -3,7 +3,14 @@
 import { ArrowUpDown, ArrowUp, ArrowDown, Pencil, Trash2, Check } from 'lucide-react'
 import type { Property, UserRole, ColumnVisibility } from '@/types'
 import { formatPrice, formatM2, displayValue, capitalize, formatComision } from '@/lib/utils/format'
-import { DISPONIBILIDAD_COLORS, TIPO_PREVENTA_COLORS } from '@/lib/utils/constants'
+
+function disponibilidadBadgeClass(value: string): string {
+  const v = value.toLowerCase()
+  if (v.includes('dispon')) return 'kibah-badge kibah-badge-disponible'
+  if (v.includes('apart')) return 'kibah-badge kibah-badge-apartado'
+  if (v.includes('rent')) return 'kibah-badge kibah-badge-rentado'
+  return 'kibah-badge kibah-badge-disponible'
+}
 
 interface PropertyTableProps {
   properties: Property[]
@@ -27,7 +34,7 @@ function formatCell(columnName: string, value: unknown, property: Property): Rea
     case 'nombre_kibah':
       return displayValue((property.nombre_kibah || property.nombre_desarrollador) as string | null)
     case 'precio_unidad':
-      return formatPrice(str)
+      return <span className="kibah-table-price">{formatPrice(str)}</span>
     case 'm2_totales':
     case 'm2_habitables':
     case 'm2_exteriores':
@@ -38,16 +45,12 @@ function formatCell(columnName: string, value: unknown, property: Property): Rea
     case 'tipo_preventa':
       return capitalize(str as string | null)
     case 'disponibilidad': {
-      const colors = DISPONIBILIDAD_COLORS[str as string] ?? null
       if (!str) return '—'
-      if (colors) {
-        return (
-          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${colors.bg} ${colors.text}`}>
-            {str as string}
-          </span>
-        )
-      }
-      return displayValue(str)
+      return (
+        <span className={disponibilidadBadgeClass(str as string)}>
+          {str as string}
+        </span>
+      )
     }
     default:
       return displayValue(str)
@@ -97,14 +100,12 @@ export function PropertyTable({
 
   if (loading && properties.length === 0) {
     return (
-      <div className="overflow-x-auto rounded-[var(--radius-sm)] border border-border-primary">
-        <table className="w-full text-sm">
+      <div className="overflow-x-auto rounded-[12px] border border-border-primary">
+        <table className="kibah-table">
           <thead>
-            <tr className="border-b border-border-primary bg-bg-tertiary">
+            <tr>
               {visibleCols.map((col) => (
-                <th key={col.column_name} className="px-4 py-3 text-left text-xs font-semibold text-text-secondary">
-                  {col.display_label}
-                </th>
+                <th key={col.column_name}>{col.display_label}</th>
               ))}
             </tr>
           </thead>
@@ -119,33 +120,31 @@ export function PropertyTable({
   }
 
   return (
-    <div className="overflow-x-auto rounded-[var(--radius-sm)] border border-border-primary">
-      <table className="w-full text-sm">
+    <div className="overflow-x-auto rounded-[12px] border border-border-primary">
+      <table className="kibah-table">
         <thead>
-          <tr className="border-b border-border-primary bg-bg-tertiary">
+          <tr>
             {onTogglePdf && (
-              <th className="px-3 py-3 w-10">
-                <span className="text-[10px] text-text-tertiary">PDF</span>
-              </th>
+              <th style={{ width: '40px' }}>PDF</th>
             )}
             {visibleCols.map((col) => {
               const isSorted = sortConfig.column === col.column_name
               return (
                 <th
                   key={col.column_name}
-                  className="px-4 py-3 text-left text-xs font-semibold text-text-secondary whitespace-nowrap cursor-pointer hover:text-text-primary transition-colors select-none"
+                  className="cursor-pointer select-none"
                   onClick={() => onSort(col.column_name)}
                 >
-                  <span className="flex items-center gap-1">
+                  <span className="inline-flex items-center gap-1">
                     {col.display_label}
                     {isSorted ? (
                       sortConfig.order === 'asc' ? (
-                        <ArrowUp className="w-3 h-3" />
+                        <ArrowUp className="w-3 h-3 kibah-sort-active" />
                       ) : (
-                        <ArrowDown className="w-3 h-3" />
+                        <ArrowDown className="w-3 h-3 kibah-sort-active" />
                       )
                     ) : (
-                      <ArrowUpDown className="w-3 h-3 opacity-30" />
+                      <ArrowUpDown className="w-3 h-3 kibah-sort-inactive" />
                     )}
                   </span>
                 </th>
@@ -163,8 +162,7 @@ export function PropertyTable({
             <tr
               key={property.id}
               onClick={() => onSelect(property)}
-              className={`border-b border-border-primary hover:bg-bg-tertiary/50 cursor-pointer transition-colors group
-                ${pdfSelectedIds?.has(property.id) ? 'bg-orange/5' : ''}`}
+              className={`cursor-pointer group ${pdfSelectedIds?.has(property.id) ? 'bg-orange/5' : ''}`}
             >
               {onTogglePdf && (
                 <td className="px-3 py-3">
@@ -180,7 +178,7 @@ export function PropertyTable({
               {visibleCols.map((col) => (
                 <td
                   key={col.column_name}
-                  className="px-4 py-3 text-text-primary whitespace-nowrap max-w-[200px] truncate"
+                  className="whitespace-nowrap max-w-[200px] truncate"
                 >
                   {formatCell(
                     col.column_name,
