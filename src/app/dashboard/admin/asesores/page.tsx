@@ -19,8 +19,8 @@ export default function AsesoresPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-text-primary">Gestión de Asesores</h1>
-          <p className="text-sm text-text-secondary mt-0.5">
+          <h1 className="kibah-page-title">Gestión de Asesores</h1>
+          <p className="kibah-page-desc mt-1">
             Crea y administra las cuentas de los asesores de Kibah
           </p>
         </div>

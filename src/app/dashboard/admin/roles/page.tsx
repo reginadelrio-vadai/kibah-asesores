@@ -17,8 +17,8 @@ export default function RolesPage() {
     <div className="space-y-4 max-w-2xl">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-text-primary">Gestion de Roles</h1>
-          <p className="text-sm text-text-secondary mt-1">Configura los permisos de cada rol en la plataforma</p>
+          <h1 className="kibah-page-title">Gestion de Roles</h1>
+          <p className="kibah-page-desc mt-1">Configura los permisos de cada rol en la plataforma</p>
         </div>
         <button onClick={() => setFormOpen(true)}
           className="flex items-center gap-2 h-9 px-4 text-sm font-medium rounded-[var(--radius-sm)] bg-orange text-white hover:bg-orange-hover transition-colors cursor-pointer">

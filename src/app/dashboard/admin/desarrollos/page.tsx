@@ -59,9 +59,9 @@ export default function DesarrollosPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-text-primary">Desarrollos</h1>
+          <h1 className="kibah-page-title">Desarrollos</h1>
           {!loading && desarrollos.length > 0 && (
-            <p className="text-sm text-text-secondary mt-0.5">
+            <p className="kibah-page-desc mt-1">
               {desarrollos.length} desarrollo{desarrollos.length !== 1 ? 's' : ''}{hasMore ? '+' : ''}
             </p>
           )}

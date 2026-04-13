@@ -23,8 +23,8 @@ export default function WebhooksPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-text-primary">Webhooks</h1>
-          <p className="text-sm text-text-secondary mt-0.5">
+          <h1 className="kibah-page-title">Webhooks</h1>
+          <p className="kibah-page-desc mt-1">
             Recibe notificaciones cuando se crean, editan o eliminan propiedades
           </p>
         </div>

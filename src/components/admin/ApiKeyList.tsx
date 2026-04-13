@@ -90,10 +90,10 @@ export function ApiKeyList({ onCreateClick, refreshKey }: ApiKeyListProps) {
     return (
       <>
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <Key className="w-12 h-12 text-text-tertiary mb-4" strokeWidth={1.5} />
+          <Key className="w-12 h-12 kibah-empty-icon mb-4" strokeWidth={1.5} />
           <h2 className="text-base font-semibold text-text-primary mb-1">No hay API keys</h2>
           <p className="text-sm text-text-secondary mb-4">Crea una para que sistemas externos consulten propiedades</p>
-          <button onClick={onCreateClick} className="h-9 px-4 text-sm font-medium rounded-[var(--radius-sm)] bg-orange text-white hover:bg-orange-hover transition-colors cursor-pointer">
+          <button onClick={onCreateClick} className="kibah-btn-primary" style={{ padding: '8px 16px', fontSize: '13px' }}>
             Crear API Key
           </button>
         </div>
@@ -108,22 +108,17 @@ export function ApiKeyList({ onCreateClick, refreshKey }: ApiKeyListProps) {
         {keys.map((apiKey) => (
           <div
             key={apiKey.id}
-            className={`flex items-center gap-4 px-4 py-3 rounded-[var(--radius-sm)] border border-border-primary bg-bg-secondary transition-opacity
-              ${!apiKey.is_active ? 'opacity-50' : ''}`}
+            className={`kibah-card flex items-center gap-4 p-4 ${!apiKey.is_active ? 'opacity-60' : ''}`}
           >
             {/* Info */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-2 mb-1.5">
                 <span className="text-sm font-medium text-text-primary truncate">{apiKey.name}</span>
-                <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full
-                  ${apiKey.is_active
-                    ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400'
-                    : 'bg-red-500/15 text-red-700 dark:text-red-400'
-                  }`}>
+                <span className={`kibah-badge ${apiKey.is_active ? 'kibah-badge-active' : 'kibah-badge-inactive'}`}>
                   {apiKey.is_active ? 'Activa' : 'Revocada'}
                 </span>
               </div>
-              <code className="text-xs font-mono text-text-tertiary">{apiKey.key_prefix}...</code>
+              <span className="kibah-mono-pill">{apiKey.key_prefix}...</span>
               <div className="flex items-center gap-3 mt-1.5 flex-wrap">
                 {apiKey.permissions.map((perm) => (
                   <span key={perm} className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-orange/15 text-orange">

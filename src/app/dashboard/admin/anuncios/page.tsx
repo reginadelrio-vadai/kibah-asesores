@@ -20,8 +20,8 @@ export default function AnunciosAdminPage() {
     <div className="space-y-4 max-w-2xl">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-text-primary">Anuncios</h1>
-          <p className="text-sm text-text-secondary mt-1">Comunicados de Kibah para el equipo</p>
+          <h1 className="kibah-page-title">Anuncios</h1>
+          <p className="kibah-page-desc mt-1">Comunicados de Kibah para el equipo</p>
         </div>
         {canCreate && (
           <button

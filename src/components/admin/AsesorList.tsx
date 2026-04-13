@@ -77,10 +77,10 @@ export function AsesorList({ onCreateClick, refreshKey }: AsesorListProps) {
     return (
       <>
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <Users className="w-12 h-12 text-text-tertiary mb-4" strokeWidth={1.5} />
+          <Users className="w-12 h-12 kibah-empty-icon mb-4" strokeWidth={1.5} />
           <h2 className="text-base font-semibold text-text-primary mb-1">No hay asesores registrados</h2>
           <p className="text-sm text-text-secondary mb-4">Crea uno para que pueda acceder a la plataforma</p>
-          <button onClick={onCreateClick} className="h-9 px-4 text-sm font-medium rounded-[var(--radius-sm)] bg-orange text-white hover:bg-orange-hover transition-colors cursor-pointer">
+          <button onClick={onCreateClick} className="kibah-btn-primary" style={{ padding: '8px 16px', fontSize: '13px' }}>
             Crear Asesor
           </button>
         </div>
@@ -96,25 +96,23 @@ export function AsesorList({ onCreateClick, refreshKey }: AsesorListProps) {
           <button
             key={asesor.id}
             onClick={() => setSelected(asesor)}
-            className={`w-full text-left rounded-[var(--radius-lg)] border border-card-border group
-              bg-card-bg dark:bg-glass-bg dark:border-glass-border
-              dark:backdrop-blur-[var(--glass-blur)]
-              shadow-sm hover:shadow-md dark:shadow-none
-              hover:-translate-y-0.5 transition-all duration-200
-              p-5 cursor-pointer
-              ${!asesor.is_active ? 'opacity-60' : ''}`}
+            className={`kibah-card w-full text-left p-5 cursor-pointer ${!asesor.is_active ? 'opacity-60' : ''}`}
           >
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-text-primary truncate flex-1 mr-3">
-                {asesor.full_name}
-              </h3>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <h3 className="kibah-card-title truncate">{asesor.full_name}</h3>
+                <div className="mt-1.5">
+                  <span className={`kibah-badge ${asesor.is_active ? 'kibah-badge-active' : 'kibah-badge-inactive'}`}>
+                    {asesor.is_active ? 'Activo' : 'Inactivo'}
+                  </span>
+                </div>
+              </div>
               <button
                 onClick={(e) => { e.stopPropagation(); handleToggle(asesor) }}
-                className={`relative w-9 h-5 rounded-full transition-colors cursor-pointer flex-shrink-0
-                  ${asesor.is_active ? 'bg-orange' : 'bg-bg-tertiary border border-border-primary'}`}
+                className={`kibah-toggle ${asesor.is_active ? 'kibah-toggle-on' : 'kibah-toggle-off'}`}
+                title={asesor.is_active ? 'Desactivar' : 'Activar'}
               >
-                <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform
-                  ${asesor.is_active ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                <span className="kibah-toggle-thumb" />
               </button>
             </div>
           </button>

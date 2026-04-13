@@ -37,8 +37,15 @@ export function ConfirmDialog({
 
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onCancel} />
-      <div className="relative bg-bg-primary border border-border-primary rounded-[var(--radius-lg)] p-6 w-full max-w-md shadow-2xl mx-4">
+      <div
+        className="absolute inset-0 bg-black/50"
+        style={{ backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}
+        onClick={onCancel}
+      />
+      <div
+        className="relative kibah-modal-solid border border-border-primary p-6 w-full max-w-md shadow-2xl mx-4"
+        style={{ borderRadius: '16px' }}
+      >
         <div className="flex items-start gap-4">
           {variant === 'danger' && (
             <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
@@ -46,8 +53,8 @@ export function ConfirmDialog({
             </div>
           )}
           <div className="flex-1">
-            <h3 className="text-base font-semibold text-text-primary">{title}</h3>
-            <p className="text-sm text-text-secondary mt-1">{message}</p>
+            <h3 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>{title}</h3>
+            <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>{message}</p>
           </div>
         </div>
         <div className="flex justify-end gap-3 mt-6">
@@ -55,20 +62,16 @@ export function ConfirmDialog({
             ref={cancelRef}
             onClick={onCancel}
             disabled={loading}
-            className="h-9 px-4 text-sm font-medium rounded-[var(--radius-sm)]
-              bg-bg-tertiary text-text-primary hover:bg-border-primary
-              disabled:opacity-50 transition-colors cursor-pointer"
+            className="kibah-btn-secondary"
+            style={{ padding: '8px 16px', fontSize: '13px' }}
           >
             {cancelLabel}
           </button>
           <button
             onClick={onConfirm}
             disabled={loading}
-            className={`h-9 px-4 text-sm font-medium rounded-[var(--radius-sm)] transition-colors cursor-pointer disabled:opacity-50
-              ${variant === 'danger'
-                ? 'bg-red-500 text-white hover:bg-red-600'
-                : 'bg-orange text-white hover:bg-orange-hover'
-              }`}
+            className={variant === 'danger' ? 'kibah-btn-danger' : 'kibah-btn-primary'}
+            style={{ padding: '8px 16px', fontSize: '13px' }}
           >
             {loading ? 'Procesando...' : confirmLabel}
           </button>

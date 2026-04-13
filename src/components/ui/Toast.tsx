@@ -17,10 +17,16 @@ const ICONS = {
   warning: AlertTriangle,
 }
 
-const STYLES = {
-  success: 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20 text-emerald-800 dark:text-emerald-300',
-  error: 'bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20 text-red-800 dark:text-red-300',
-  warning: 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20 text-amber-800 dark:text-amber-300',
+const BORDER_COLORS = {
+  success: '#10B981',
+  error: '#EF4444',
+  warning: '#F59E0B',
+}
+
+const TEXT_COLORS = {
+  success: '#10B981',
+  error: '#EF4444',
+  warning: '#F59E0B',
 }
 
 export function Toast({ message, type, onClose }: ToastProps) {
@@ -38,14 +44,27 @@ export function Toast({ message, type, onClose }: ToastProps) {
 
   return (
     <div
-      className={`fixed bottom-6 right-6 z-[100] flex items-center gap-3 px-4 py-3 rounded-[var(--radius-sm)] border shadow-lg
+      className={`fixed bottom-6 right-6 z-[100] flex items-center gap-3 px-4 py-3 kibah-modal-solid
         transition-all duration-200 max-w-sm
-        ${STYLES[type]}
         ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
+      style={{
+        borderRadius: '12px',
+        borderLeft: `3px solid ${BORDER_COLORS[type]}`,
+        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.25)',
+      }}
     >
-      <Icon className="w-5 h-5 flex-shrink-0" strokeWidth={1.5} />
-      <p className="text-sm font-medium flex-1">{message}</p>
-      <button onClick={() => { setVisible(false); setTimeout(onClose, 200) }} className="flex-shrink-0 cursor-pointer">
+      <Icon
+        className="w-5 h-5 flex-shrink-0"
+        strokeWidth={1.5}
+        style={{ color: TEXT_COLORS[type] }}
+      />
+      <p className="text-sm font-medium flex-1" style={{ color: 'var(--text-primary)' }}>
+        {message}
+      </p>
+      <button
+        onClick={() => { setVisible(false); setTimeout(onClose, 200) }}
+        className="flex-shrink-0 cursor-pointer"
+      >
         <X className="w-4 h-4 opacity-60 hover:opacity-100 transition-opacity" strokeWidth={1.5} />
       </button>
     </div>

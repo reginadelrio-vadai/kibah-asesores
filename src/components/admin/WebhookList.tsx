@@ -143,13 +143,10 @@ export function WebhookList({ onCreateClick }: WebhookListProps) {
     return (
       <>
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <Webhook className="w-12 h-12 text-text-tertiary mb-4" strokeWidth={1.5} />
+          <Webhook className="w-12 h-12 kibah-empty-icon mb-4" strokeWidth={1.5} />
           <h2 className="text-base font-semibold text-text-primary mb-1">No hay webhooks configurados</h2>
           <p className="text-sm text-text-secondary mb-4">Crea uno para recibir notificaciones de cambios en propiedades</p>
-          <button
-            onClick={onCreateClick}
-            className="h-9 px-4 text-sm font-medium rounded-[var(--radius-sm)] bg-orange text-white hover:bg-orange-hover transition-colors cursor-pointer"
-          >
+          <button onClick={onCreateClick} className="kibah-btn-primary" style={{ padding: '8px 16px', fontSize: '13px' }}>
             Crear Webhook
           </button>
         </div>
@@ -164,23 +161,24 @@ export function WebhookList({ onCreateClick }: WebhookListProps) {
         {webhooks.map((webhook) => (
           <div
             key={webhook.id}
-            className={`flex items-center gap-4 px-4 py-3 rounded-[var(--radius-sm)] border border-border-primary bg-bg-secondary transition-opacity
-              ${!webhook.is_active ? 'opacity-50' : ''}`}
+            className={`kibah-card flex items-center gap-4 p-4 ${!webhook.is_active ? 'opacity-60' : ''}`}
           >
             {/* Toggle */}
             <button
               onClick={() => handleToggle(webhook)}
-              className={`relative w-9 h-5 rounded-full transition-colors cursor-pointer flex-shrink-0
-                ${webhook.is_active ? 'bg-orange' : 'bg-bg-tertiary border border-border-primary'}`}
+              className={`kibah-toggle ${webhook.is_active ? 'kibah-toggle-on' : 'kibah-toggle-off'}`}
+              title={webhook.is_active ? 'Desactivar' : 'Activar'}
             >
-              <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform
-                ${webhook.is_active ? 'translate-x-4' : 'translate-x-0.5'}`} />
+              <span className="kibah-toggle-thumb" />
             </button>
 
             {/* Info */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-sm font-medium text-text-primary truncate">{webhook.name}</span>
+                <span className={`kibah-badge ${webhook.is_active ? 'kibah-badge-active' : 'kibah-badge-inactive'}`}>
+                  {webhook.is_active ? 'Activo' : 'Inactivo'}
+                </span>
               </div>
               <p className="text-xs text-text-tertiary truncate mb-1.5" title={webhook.url}>{webhook.url}</p>
               <div className="flex items-center gap-1.5 flex-wrap">

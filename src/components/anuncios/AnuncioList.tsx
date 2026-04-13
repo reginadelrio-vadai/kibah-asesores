@@ -103,7 +103,7 @@ export function AnuncioList({ isAdmin, refreshKey }: AnuncioListProps) {
   if (anuncios.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
-        <Megaphone className="w-12 h-12 text-text-tertiary mb-4" strokeWidth={1.5} />
+        <Megaphone className="w-12 h-12 kibah-empty-icon mb-4" strokeWidth={1.5} />
         <h2 className="text-base font-semibold text-text-primary mb-1">No hay anuncios</h2>
         <p className="text-sm text-text-secondary">
           {isAdmin ? 'Publica un anuncio para tus asesores' : 'Aqui apareceran los anuncios de Kibah'}
@@ -119,29 +119,24 @@ export function AnuncioList({ isAdmin, refreshKey }: AnuncioListProps) {
           <button
             key={a.id}
             onClick={() => setSelected(a)}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-[var(--radius-sm)] border text-left transition-colors cursor-pointer
-              ${!a.is_read
-                ? 'border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/10'
-                : 'border-border-primary bg-bg-secondary hover:bg-bg-tertiary/50'
-              }`}
+            className={`kibah-card kibah-card-flat w-full flex items-center gap-3 p-4 text-left cursor-pointer
+              ${!a.is_read ? 'border-l-[3px] !border-l-blue-500' : ''}`}
           >
             {!a.is_read && (
-              <div className="w-2.5 h-2.5 rounded-full bg-blue-500 flex-shrink-0" />
+              <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
             )}
             <div className="flex-1 min-w-0">
               <h3 className={`text-sm text-text-primary truncate ${!a.is_read ? 'font-bold' : 'font-medium'}`}>
                 {a.title}
               </h3>
               {a.author_name && (
-                <p className="text-[10px] text-text-tertiary truncate">Enviado por: {a.author_name}</p>
+                <p className="text-[12px] text-text-tertiary truncate mt-0.5">Enviado por: {a.author_name}</p>
               )}
             </div>
             {a.priority === 'urgente' && (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/15 text-red-600 dark:text-red-400 flex-shrink-0">
-                Urgente
-              </span>
+              <span className="kibah-badge kibah-badge-urgent flex-shrink-0">Urgente</span>
             )}
-            <span className="text-[10px] text-text-tertiary flex-shrink-0">{timeAgo(a.created_at)}</span>
+            <span className="text-[13px] text-text-tertiary flex-shrink-0">{timeAgo(a.created_at)}</span>
           </button>
         ))}
       </div>
