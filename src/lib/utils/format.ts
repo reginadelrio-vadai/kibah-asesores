@@ -16,7 +16,9 @@ export function formatM2(value: number | string | null | undefined): string {
   if (value === null || value === undefined || value === '') return '—'
   const num = typeof value === 'string' ? parseFloat(value) : value
   if (isNaN(num)) return '—'
-  return `${Math.round(num)} m²`
+  // Preserve decimals; strip trailing zeros
+  const formatted = Number.isInteger(num) ? String(num) : String(num).replace(/\.?0+$/, '')
+  return `${formatted} m²`
 }
 
 export function formatComision(value: number | null | undefined): string {
