@@ -48,11 +48,10 @@ function SelectFilter({
       onChange={(e) =>
         onChange(col.column_name, e.target.value, col.display_label ?? col.column_name, e.target.value)
       }
-      className="h-9 px-3 text-sm rounded-[var(--radius-sm)] bg-input-bg border border-input-border
-        text-text-primary focus:outline-none focus:ring-2 focus:ring-input-focus-ring
-        min-w-[140px] cursor-pointer"
+      className="h-9 w-full px-3 text-sm rounded-[var(--radius-sm)] bg-input-bg border border-input-border
+        text-text-primary focus:outline-none focus:ring-2 focus:ring-input-focus-ring cursor-pointer"
     >
-      <option value="">{col.display_label ?? col.column_name}</option>
+      <option value="">Todas</option>
       {options.map((opt) => (
         <option key={opt} value={opt}>
           {opt.charAt(0).toUpperCase() + opt.slice(1)}
@@ -75,39 +74,29 @@ function RangeFilter({
 }) {
   const label = col.display_label ?? col.column_name
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-2 w-full">
       <input
         type="number"
-        placeholder={`${label} min`}
+        placeholder="Min"
         value={minValue}
         onChange={(e) => {
           const val = e.target.value
-          onChange(
-            `${col.column_name}_min`,
-            val,
-            label,
-            val ? `${label} >= ${val}` : ''
-          )
+          onChange(`${col.column_name}_min`, val, label, val ? `${label} >= ${val}` : '')
         }}
-        className="h-9 w-[100px] px-3 text-sm rounded-[var(--radius-sm)] bg-input-bg border border-input-border
+        className="h-9 flex-1 min-w-0 px-3 text-sm rounded-[var(--radius-sm)] bg-input-bg border border-input-border
           text-text-primary focus:outline-none focus:ring-2 focus:ring-input-focus-ring
           [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
       />
-      <span className="text-text-tertiary text-xs">—</span>
+      <span className="text-text-tertiary text-xs flex-shrink-0">—</span>
       <input
         type="number"
-        placeholder={`max`}
+        placeholder="Max"
         value={maxValue}
         onChange={(e) => {
           const val = e.target.value
-          onChange(
-            `${col.column_name}_max`,
-            val,
-            label,
-            val ? `${label} <= ${val}` : ''
-          )
+          onChange(`${col.column_name}_max`, val, label, val ? `${label} <= ${val}` : '')
         }}
-        className="h-9 w-[100px] px-3 text-sm rounded-[var(--radius-sm)] bg-input-bg border border-input-border
+        className="h-9 flex-1 min-w-0 px-3 text-sm rounded-[var(--radius-sm)] bg-input-bg border border-input-border
           text-text-primary focus:outline-none focus:ring-2 focus:ring-input-focus-ring
           [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
       />
@@ -132,9 +121,8 @@ function TextFilter({
       onChange={(e) =>
         onChange(col.column_name, e.target.value, col.display_label ?? col.column_name, e.target.value)
       }
-      className="h-9 px-3 text-sm rounded-[var(--radius-sm)] bg-input-bg border border-input-border
-        text-text-primary focus:outline-none focus:ring-2 focus:ring-input-focus-ring
-        min-w-[140px]"
+      className="h-9 w-full px-3 text-sm rounded-[var(--radius-sm)] bg-input-bg border border-input-border
+        text-text-primary focus:outline-none focus:ring-2 focus:ring-input-focus-ring"
     />
   )
 }
@@ -156,9 +144,9 @@ function BooleanFilter({
       }
       className="h-9 px-3 text-sm rounded-[var(--radius-sm)] bg-input-bg border border-input-border
         text-text-primary focus:outline-none focus:ring-2 focus:ring-input-focus-ring
-        min-w-[120px] cursor-pointer"
+        w-full cursor-pointer"
     >
-      <option value="">{col.display_label ?? col.column_name}</option>
+      <option value="">Todos</option>
       <option value="Si">Sí</option>
       <option value="No">No</option>
     </select>
@@ -216,6 +204,41 @@ function FilterInput({
   }
 }
 
+function LabeledFilter({
+  col,
+  activeFilters,
+  selectOptions,
+  onChange,
+}: {
+  col: ColumnVisibility
+  activeFilters: Record<string, string>
+  selectOptions: string[]
+  onChange: (key: string, value: string, label: string, display: string) => void
+}) {
+  return (
+    <div>
+      <label
+        className="block mb-1"
+        style={{
+          fontSize: '11px',
+          fontWeight: 600,
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+          color: 'var(--text-tertiary)',
+        }}
+      >
+        {col.display_label ?? col.column_name}
+      </label>
+      <FilterInput
+        col={col}
+        activeFilters={activeFilters}
+        selectOptions={selectOptions}
+        onChange={onChange}
+      />
+    </div>
+  )
+}
+
 export function PropertyFilters({
   filterableColumns,
   activeFilters,
@@ -244,9 +267,12 @@ export function PropertyFilters({
   }
 
   const structuredColumns = filterableColumns.filter((c) => c.filter_type !== 'text')
-  const ESSENTIAL = new Set(['disponibilidad', 'colonia', 'precio_unidad'])
-  const essentialColumns = structuredColumns.filter((c) => ESSENTIAL.has(c.column_name))
-  const extraColumns = structuredColumns.filter((c) => !ESSENTIAL.has(c.column_name))
+  const DEFAULT_FILTERS = ['precio_unidad', 'colonia', 'm2_totales']
+  const essentialColumns = DEFAULT_FILTERS
+    .map((name) => structuredColumns.find((c) => c.column_name === name))
+    .filter((c): c is NonNullable<typeof c> => !!c)
+  const essentialSet = new Set(essentialColumns.map((c) => c.column_name))
+  const extraColumns = structuredColumns.filter((c) => !essentialSet.has(c.column_name))
 
   const filterContent = (
     <div className="flex flex-wrap items-center gap-2">
@@ -278,25 +304,37 @@ export function PropertyFilters({
 
   return (
     <div className="space-y-3">
-      {/* Desktop filters — essential row + expandable more */}
-      <div className="hidden lg:block">
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" strokeWidth={1.5} />
-            <input
-              type="text"
-              placeholder="Buscar..."
-              value={activeFilters.search ?? ''}
-              onChange={(e) => onSetFilter('search', e.target.value, 'Búsqueda', e.target.value)}
-              className="h-9 pl-9 pr-3 text-sm rounded-[var(--radius-sm)] bg-input-bg border border-input-border
-                text-text-primary focus:outline-none focus:ring-2 focus:ring-input-focus-ring w-[220px]"
-            />
-          </div>
+      {/* Desktop filters — search full width + 3 defaults + expandable more */}
+      <div className="hidden lg:block space-y-3">
+        {/* Row 1: Full-width search */}
+        <div className="relative w-full">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" strokeWidth={1.5} />
+          <input
+            type="text"
+            placeholder="Buscar por nombre, colonia, dirección..."
+            value={activeFilters.search ?? ''}
+            onChange={(e) => onSetFilter('search', e.target.value, 'Búsqueda', e.target.value)}
+            className="h-10 w-full pl-9 pr-3 text-sm rounded-[var(--radius-sm)] bg-input-bg border border-input-border
+              text-text-primary focus:outline-none focus:ring-2 focus:ring-input-focus-ring"
+          />
+        </div>
+
+        {/* Row 2: 3 default filters */}
+        <div className="grid grid-cols-3 gap-3">
           {essentialColumns.map((col) => (
-            <FilterInput key={col.id} col={col} activeFilters={activeFilters}
-              selectOptions={getSelectOptions(col.column_name)} onChange={onSetFilter} />
+            <LabeledFilter
+              key={col.id}
+              col={col}
+              activeFilters={activeFilters}
+              selectOptions={getSelectOptions(col.column_name)}
+              onChange={onSetFilter}
+            />
           ))}
-          {extraColumns.length > 0 && (
+        </div>
+
+        {/* Row 3: More filters button */}
+        {extraColumns.length > 0 && (
+          <div>
             <button
               onClick={() => setExpandedDesktop(!expandedDesktop)}
               className={`flex items-center gap-2 h-9 px-3 text-sm font-medium rounded-[var(--radius-sm)] border transition-colors cursor-pointer
@@ -305,16 +343,28 @@ export function PropertyFilters({
               <SlidersHorizontal className="w-4 h-4" strokeWidth={1.5} />
               {expandedDesktop ? 'Menos filtros' : 'Más filtros'}
             </button>
-          )}
-        </div>
-        {expandedDesktop && extraColumns.length > 0 && (
-          <div className="mt-3 p-4 rounded-[var(--radius-sm)] border border-border-primary bg-bg-secondary/50">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {extraColumns.map((col) => (
-                <FilterInput key={col.id} col={col} activeFilters={activeFilters}
-                  selectOptions={getSelectOptions(col.column_name)} onChange={onSetFilter} />
-              ))}
-            </div>
+
+            {expandedDesktop && (
+              <div
+                className="mt-2 p-4 rounded-[12px] border"
+                style={{
+                  borderColor: 'rgba(255, 255, 255, 0.06)',
+                  background: 'rgba(15, 25, 35, 0.5)',
+                }}
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-3 gap-y-4">
+                  {extraColumns.map((col) => (
+                    <LabeledFilter
+                      key={col.id}
+                      col={col}
+                      activeFilters={activeFilters}
+                      selectOptions={getSelectOptions(col.column_name)}
+                      onChange={onSetFilter}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
