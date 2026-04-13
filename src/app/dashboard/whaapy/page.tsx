@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { ExternalLink } from 'lucide-react'
 
-const WHAAPY_URL = 'https://app.whaapy.com/inbox'
+const WHAAPY_URL = 'https://app.whaapy.com'
 
 export default function WhaapyPage() {
   const [error, setError] = useState(false)
@@ -30,34 +30,24 @@ export default function WhaapyPage() {
     <div
       className="-m-6"
       style={{
-        position: 'relative',
         width: '100%',
         height: 'calc(100vh - 64px)',
-        overflow: 'hidden',
+        overflow: 'auto',
       }}
     >
-      <div
+      <iframe
+        src={WHAAPY_URL}
+        onError={() => setError(true)}
+        allow="clipboard-write; microphone"
+        title="Whaapy"
         style={{
-          position: 'absolute',
-          top: 0,
-          left: '-50px',
-          width: 'calc(100% + 50px)',
-          height: '100%',
+          width: '2400px',
+          height: '1400px',
+          border: 'none',
+          transform: 'scale(0.5)',
+          transformOrigin: 'top left',
         }}
-      >
-        <iframe
-          src={WHAAPY_URL}
-          onError={() => setError(true)}
-          allow="clipboard-write; microphone"
-          title="Whaapy"
-          style={{
-            width: '170%',
-            height: '100%',
-            border: 'none',
-            zoom: 0.65,
-          }}
-        />
-      </div>
+      />
     </div>
   )
 }
