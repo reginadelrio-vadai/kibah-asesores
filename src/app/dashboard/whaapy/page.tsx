@@ -1,12 +1,30 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ExternalLink } from 'lucide-react'
 
 const WHAAPY_URL = 'https://app.whaapy.com'
+const IFRAME_WIDTH = 1600
+const IFRAME_HEIGHT = 900
 
 export default function WhaapyPage() {
   const [error, setError] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [scale, setScale] = useState(1)
+
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const update = () => {
+      const w = el.clientWidth
+      const h = el.clientHeight
+      setScale(Math.min(w / IFRAME_WIDTH, h / IFRAME_HEIGHT))
+    }
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
   if (error) {
     return (
@@ -28,11 +46,13 @@ export default function WhaapyPage() {
 
   return (
     <div
+      ref={containerRef}
       className="-m-6"
       style={{
         width: '100%',
         height: 'calc(100vh - 64px)',
-        overflow: 'auto',
+        overflow: 'hidden',
+        position: 'relative',
       }}
     >
       <iframe
@@ -41,10 +61,10 @@ export default function WhaapyPage() {
         allow="clipboard-write; microphone"
         title="Whaapy"
         style={{
-          width: '2400px',
-          height: '1400px',
+          width: `${IFRAME_WIDTH}px`,
+          height: `${IFRAME_HEIGHT}px`,
           border: 'none',
-          transform: 'scale(0.5)',
+          transform: `scale(${scale})`,
           transformOrigin: 'top left',
         }}
       />
