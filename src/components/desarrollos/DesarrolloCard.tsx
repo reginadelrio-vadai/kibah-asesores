@@ -2,8 +2,23 @@
 
 import { Bed, Bath, Ruler, Pencil, Trash2 } from 'lucide-react'
 import type { Desarrollo } from '@/types/desarrollo'
-import { DISPONIBILIDAD_COLORS } from '@/lib/utils/constants'
 import { toTitleCase } from '@/lib/utils/format'
+
+function disponibilidadBadge(value: string | null | undefined): string {
+  if (!value) return ''
+  const v = value.toLowerCase()
+  if (v.includes('dispon')) return 'kibah-badge kibah-badge-disponible'
+  if (v.includes('apart')) return 'kibah-badge kibah-badge-apartado'
+  if (v.includes('rent')) return 'kibah-badge kibah-badge-rentado'
+  return 'kibah-badge kibah-badge-disponible'
+}
+
+function preventaBadge(value: string | null | undefined): string {
+  if (!value) return ''
+  const v = value.toLowerCase()
+  if (v.includes('inmediata')) return 'kibah-badge kibah-badge-entrega'
+  return 'kibah-badge kibah-badge-preventa'
+}
 
 interface DesarrolloCardProps {
   desarrollo: Desarrollo
@@ -30,7 +45,6 @@ function formatRange(min: number | null, max: number | null): string | null {
 }
 
 export function DesarrolloCard({ desarrollo, onClick, onEdit, onDelete }: DesarrolloCardProps) {
-  const disponibilidadStyle = DISPONIBILIDAD_COLORS[desarrollo.disponibilidad ?? '']
   const recamaras = formatRange(desarrollo.recamaras_min, desarrollo.recamaras_max)
   const banos = formatRange(desarrollo.banos_min, desarrollo.banos_max)
   const m2 = formatRange(desarrollo.m2_totales_min, desarrollo.m2_totales_max)
@@ -38,12 +52,7 @@ export function DesarrolloCard({ desarrollo, onClick, onEdit, onDelete }: Desarr
   return (
     <button
       onClick={() => onClick(desarrollo)}
-      className="w-full text-left rounded-[var(--radius-lg)] border border-card-border group
-        bg-card-bg dark:bg-glass-bg dark:border-glass-border
-        dark:backdrop-blur-[var(--glass-blur)]
-        shadow-sm hover:shadow-md dark:shadow-none
-        hover:-translate-y-0.5 transition-all duration-200
-        overflow-hidden cursor-pointer"
+      className="kibah-card w-full text-left group overflow-hidden cursor-pointer"
     >
       {/* Image */}
       {desarrollo.imagen_principal ? (
@@ -75,51 +84,51 @@ export function DesarrolloCard({ desarrollo, onClick, onEdit, onDelete }: Desarr
 
         {/* Badges */}
         <div className="flex items-center gap-2 mb-2 flex-wrap">
-          {disponibilidadStyle && desarrollo.disponibilidad && (
-            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${disponibilidadStyle.bg} ${disponibilidadStyle.text}`}>
+          {desarrollo.disponibilidad && (
+            <span className={disponibilidadBadge(desarrollo.disponibilidad)}>
               {desarrollo.disponibilidad}
             </span>
           )}
           {desarrollo.tipo_preventa && (
-            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-700 dark:text-blue-400">
+            <span className={preventaBadge(desarrollo.tipo_preventa)}>
               {toTitleCase(desarrollo.tipo_preventa)}
             </span>
           )}
         </div>
 
         {/* Title */}
-        <h3 className="text-sm font-semibold text-text-primary mb-0.5 line-clamp-1">
+        <h3 className="kibah-card-title mb-0.5 line-clamp-1">
           {desarrollo.nombre_kibah || desarrollo.nombre_desarrollador || '—'}
         </h3>
-        <p className="text-xs text-text-secondary mb-2">
+        <p className="kibah-card-location mb-2">
           {toTitleCase(desarrollo.colonia)}
           {desarrollo.alcaldia ? `, ${toTitleCase(desarrollo.alcaldia)}` : ''}
         </p>
 
         {/* Price */}
-        <p className="text-base font-bold text-text-primary mb-3">
+        <p className="kibah-card-price mb-3">
           {formatPriceRange(desarrollo.precio_min, desarrollo.precio_max)}
         </p>
 
         {/* Specs */}
-        <div className="flex items-center gap-4 text-text-secondary">
+        <div className="flex items-center gap-4">
           {recamaras && (
-            <div className="flex items-center gap-1.5">
-              <Bed className="w-3.5 h-3.5" strokeWidth={1.5} />
-              <span className="text-xs">{recamaras}</span>
-            </div>
+            <span className="kibah-card-spec">
+              <Bed className="w-[14px] h-[14px]" strokeWidth={1.5} />
+              {recamaras}
+            </span>
           )}
           {banos && (
-            <div className="flex items-center gap-1.5">
-              <Bath className="w-3.5 h-3.5" strokeWidth={1.5} />
-              <span className="text-xs">{banos}</span>
-            </div>
+            <span className="kibah-card-spec">
+              <Bath className="w-[14px] h-[14px]" strokeWidth={1.5} />
+              {banos}
+            </span>
           )}
           {m2 && (
-            <div className="flex items-center gap-1.5">
-              <Ruler className="w-3.5 h-3.5" strokeWidth={1.5} />
-              <span className="text-xs">{m2} m²</span>
-            </div>
+            <span className="kibah-card-spec">
+              <Ruler className="w-[14px] h-[14px]" strokeWidth={1.5} />
+              {m2} m²
+            </span>
           )}
         </div>
       </div>

@@ -3,8 +3,23 @@
 import { Bed, Bath, Ruler, Pencil, Trash2, FilePlus, FileCheck } from 'lucide-react'
 import type { Property, UserRole } from '@/types'
 import { formatPrice, displayValue } from '@/lib/utils/format'
-import { DISPONIBILIDAD_COLORS, TIPO_PREVENTA_COLORS } from '@/lib/utils/constants'
 import { capitalize } from '@/lib/utils/format'
+
+function disponibilidadBadge(value: string | null | undefined): string {
+  if (!value) return ''
+  const v = value.toLowerCase()
+  if (v.includes('dispon')) return 'kibah-badge kibah-badge-disponible'
+  if (v.includes('apart')) return 'kibah-badge kibah-badge-apartado'
+  if (v.includes('rent')) return 'kibah-badge kibah-badge-rentado'
+  return 'kibah-badge kibah-badge-disponible'
+}
+
+function preventaBadge(value: string | null | undefined): string {
+  if (!value) return ''
+  const v = value.toLowerCase()
+  if (v.includes('inmediata')) return 'kibah-badge kibah-badge-entrega'
+  return 'kibah-badge kibah-badge-preventa'
+}
 
 interface PropertyCardProps {
   property: Property
@@ -20,20 +35,11 @@ interface PropertyCardProps {
 export function PropertyCard({ property, onClick, role, onEdit, onDelete, visibleColumnNames, pdfSelected, onTogglePdf }: PropertyCardProps) {
   const isAdmin = role === 'admin'
   const show = (col: string) => isAdmin || !visibleColumnNames || visibleColumnNames.has(col)
-  const disponibilidadStyle =
-    DISPONIBILIDAD_COLORS[property.disponibilidad ?? '']
-  const tipoPreventaStyle =
-    TIPO_PREVENTA_COLORS[property.tipo_preventa ?? '']
 
   return (
     <button
       onClick={() => onClick(property)}
-      className="w-full text-left rounded-[var(--radius-lg)] border border-card-border group
-        bg-card-bg dark:bg-glass-bg dark:border-glass-border
-        dark:backdrop-blur-[var(--glass-blur)]
-        shadow-sm hover:shadow-md dark:shadow-none
-        hover:-translate-y-0.5 transition-all duration-200
-        p-5 cursor-pointer"
+      className="kibah-card w-full text-left group p-5 cursor-pointer"
     >
       {/* Admin actions */}
       {isAdmin && (
@@ -71,17 +77,13 @@ export function PropertyCard({ property, onClick, role, onEdit, onDelete, visibl
 
       {/* Badges */}
       <div className="flex items-center gap-2 mb-3 flex-wrap">
-        {show('disponibilidad') && disponibilidadStyle && property.disponibilidad && (
-          <span
-            className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${disponibilidadStyle.bg} ${disponibilidadStyle.text}`}
-          >
+        {show('disponibilidad') && property.disponibilidad && (
+          <span className={disponibilidadBadge(property.disponibilidad)}>
             {property.disponibilidad}
           </span>
         )}
-        {show('tipo_preventa') && tipoPreventaStyle && property.tipo_preventa && (
-          <span
-            className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${tipoPreventaStyle.bg} ${tipoPreventaStyle.text}`}
-          >
+        {show('tipo_preventa') && property.tipo_preventa && (
+          <span className={preventaBadge(property.tipo_preventa)}>
             {capitalize(property.tipo_preventa)}
           </span>
         )}
@@ -89,17 +91,15 @@ export function PropertyCard({ property, onClick, role, onEdit, onDelete, visibl
 
       {/* Title */}
       {show('nombre_kibah') && (
-        <h3 className="text-sm font-semibold text-text-primary mb-0.5 line-clamp-1">
+        <h3 className="kibah-card-title mb-0.5 line-clamp-1">
           {displayValue(property.nombre_kibah || property.nombre_desarrollador)}
         </h3>
       )}
       {show('unidad') && property.unidad && (
-        <p className="text-xs text-text-tertiary mb-1">
-          {property.unidad}
-        </p>
+        <p className="text-[12px] text-text-tertiary mb-1">{property.unidad}</p>
       )}
       {(show('colonia') || show('alcaldia')) && (
-        <p className="text-xs text-text-secondary mb-3">
+        <p className="kibah-card-location mb-3">
           {show('colonia') ? displayValue(property.colonia) : ''}
           {show('alcaldia') && property.alcaldia ? `, ${property.alcaldia}` : ''}
         </p>
@@ -107,30 +107,30 @@ export function PropertyCard({ property, onClick, role, onEdit, onDelete, visibl
 
       {/* Price */}
       {show('precio_unidad') && (
-        <p className="text-lg font-bold text-text-primary mb-4">
+        <p className="kibah-card-price mb-4">
           {formatPrice(property.precio_unidad)}
         </p>
       )}
 
       {/* Features */}
-      <div className="flex items-center gap-4 text-text-secondary">
+      <div className="flex items-center gap-4">
         {show('num_recamaras') && property.num_recamaras && (
-          <div className="flex items-center gap-1.5">
-            <Bed className="w-3.5 h-3.5" strokeWidth={1.5} />
-            <span className="text-xs">{property.num_recamaras}</span>
-          </div>
+          <span className="kibah-card-spec">
+            <Bed className="w-[14px] h-[14px]" strokeWidth={1.5} />
+            {property.num_recamaras}
+          </span>
         )}
         {show('num_banos') && property.num_banos && (
-          <div className="flex items-center gap-1.5">
-            <Bath className="w-3.5 h-3.5" strokeWidth={1.5} />
-            <span className="text-xs">{property.num_banos}</span>
-          </div>
+          <span className="kibah-card-spec">
+            <Bath className="w-[14px] h-[14px]" strokeWidth={1.5} />
+            {property.num_banos}
+          </span>
         )}
         {show('m2_totales') && property.m2_totales && (
-          <div className="flex items-center gap-1.5">
-            <Ruler className="w-3.5 h-3.5" strokeWidth={1.5} />
-            <span className="text-xs">{property.m2_totales} m²</span>
-          </div>
+          <span className="kibah-card-spec">
+            <Ruler className="w-[14px] h-[14px]" strokeWidth={1.5} />
+            {property.m2_totales} m²
+          </span>
         )}
       </div>
     </button>
