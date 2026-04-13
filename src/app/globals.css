@@ -255,7 +255,11 @@ button:focus-visible, a:focus-visible {
 .kibah-card-price {
   font-size: 18px;
   font-weight: 600;
-  color: #E8872A;
+  color: #1E293B;
+}
+
+.dark .kibah-card-price {
+  color: #E2E8F0;
 }
 
 .kibah-card-location {
@@ -370,3 +374,14 @@ button:focus-visible, a:focus-visible {
 
 .kibah-sort-active { color: #E8872A; }
 .kibah-sort-inactive { color: #94A3B8; opacity: 0.5; }
+
+/* ============================================================
+   Modal (solid, non-transparent)
+   ============================================================ */
+.kibah-modal-solid {
+  background: #FFFFFF;
+}
+
+.dark .kibah-modal-solid {
+  background: #142038;
+}

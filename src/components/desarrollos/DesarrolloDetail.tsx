@@ -87,17 +87,19 @@ export function DesarrolloDetail({ desarrollo, onClose, onEdit, onDelete }: Desa
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+      <div
+        className="absolute inset-0 bg-black/50"
+        style={{ backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}
+      />
       <div
         onClick={(e) => e.stopPropagation()}
         className="relative w-full max-w-[720px] max-h-[90vh] overflow-y-auto
-          bg-bg-secondary dark:bg-glass-bg dark:backdrop-blur-[var(--glass-blur)]
-          border border-border-primary dark:border-glass-border
+          kibah-modal-solid border border-border-primary
           rounded-[20px] shadow-xl
           max-md:fixed max-md:inset-0 max-md:max-w-none max-md:max-h-none max-md:rounded-none"
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-border-primary bg-bg-secondary dark:bg-glass-bg">
+        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-border-primary kibah-modal-solid">
           <h2 className="text-lg font-semibold text-text-primary truncate">
             {desarrollo.nombre_kibah || desarrollo.nombre_desarrollador || '—'}
           </h2>

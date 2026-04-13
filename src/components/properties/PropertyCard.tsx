@@ -42,36 +42,37 @@ export function PropertyCard({ property, onClick, role, onEdit, onDelete, visibl
       className="kibah-card w-full text-left group p-5 cursor-pointer"
     >
       {/* Admin actions */}
-      {isAdmin && (
-        <div className="flex items-center justify-end gap-1 mb-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-          <button
-            onClick={(e) => { e.stopPropagation(); onEdit?.(property) }}
-            className="p-1.5 rounded-[var(--radius-sm)] text-text-secondary hover:text-orange hover:bg-orange/10 transition-colors cursor-pointer"
-            title="Editar"
-          >
-            <Pencil className="w-3.5 h-3.5" strokeWidth={1.5} />
-          </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); onDelete?.(property) }}
-            className="p-1.5 rounded-[var(--radius-sm)] text-text-secondary hover:text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
-            title="Eliminar"
-          >
-            <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
-          </button>
-        </div>
-      )}
-
-      {/* PDF toggle */}
-      {onTogglePdf && (
-        <div className="flex items-center justify-end mb-1">
-          <button
-            onClick={(e) => { e.stopPropagation(); onTogglePdf(property) }}
-            className={`flex items-center gap-1 px-2 py-1 rounded-[var(--radius-sm)] text-xs font-medium transition-colors cursor-pointer
-              ${pdfSelected ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10' : 'text-text-tertiary hover:text-orange hover:bg-orange/10'}`}
-          >
-            {pdfSelected ? <FileCheck className="w-3.5 h-3.5" strokeWidth={1.5} /> : <FilePlus className="w-3.5 h-3.5" strokeWidth={1.5} />}
-            {pdfSelected ? 'En PDF' : 'PDF'}
-          </button>
+      {/* Actions row — PDF + admin buttons on one line */}
+      {(isAdmin || onTogglePdf) && (
+        <div className="flex items-center justify-end gap-1 mb-2">
+          {onTogglePdf && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onTogglePdf(property) }}
+              className={`p-1.5 rounded-[var(--radius-sm)] transition-colors cursor-pointer
+                ${pdfSelected ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10' : 'text-text-tertiary hover:text-orange hover:bg-orange/10'}`}
+              title={pdfSelected ? 'En PDF' : 'Agregar al PDF'}
+            >
+              {pdfSelected ? <FileCheck className="w-4 h-4" strokeWidth={1.5} /> : <FilePlus className="w-4 h-4" strokeWidth={1.5} />}
+            </button>
+          )}
+          {isAdmin && (
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); onEdit?.(property) }}
+                className="p-1.5 rounded-[var(--radius-sm)] text-text-secondary hover:text-orange hover:bg-orange/10 transition-colors cursor-pointer"
+                title="Editar"
+              >
+                <Pencil className="w-4 h-4" strokeWidth={1.5} />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); onDelete?.(property) }}
+                className="p-1.5 rounded-[var(--radius-sm)] text-text-secondary hover:text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
+                title="Eliminar"
+              >
+                <Trash2 className="w-4 h-4" strokeWidth={1.5} />
+              </button>
+            </>
+          )}
         </div>
       )}
 
