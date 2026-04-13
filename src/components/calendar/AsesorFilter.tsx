@@ -19,9 +19,10 @@ interface AsesorFilterProps {
   adminUserId: string
   selectedUserIds: Set<string>
   onToggle: (userId: string) => void
+  hideSelf?: boolean
 }
 
-export function AsesorFilter({ adminUserId, selectedUserIds, onToggle }: AsesorFilterProps) {
+export function AsesorFilter({ adminUserId, selectedUserIds, onToggle, hideSelf }: AsesorFilterProps) {
   const [users, setUsers] = useState<ConnectedUser[]>([])
 
   useEffect(() => {
@@ -35,16 +36,17 @@ export function AsesorFilter({ adminUserId, selectedUserIds, onToggle }: AsesorF
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      {/* Admin's own events */}
-      <button
-        onClick={() => onToggle(adminUserId)}
-        className={`h-7 px-2.5 text-[11px] font-medium rounded-full border transition-colors cursor-pointer flex items-center gap-1.5
-          ${selectedUserIds.has(adminUserId) ? 'border-[#6B7280]/40 bg-[#6B7280]/10 text-[#6B7280]' : 'border-border-primary text-text-tertiary opacity-50'}`}
-      >
-        {selectedUserIds.has(adminUserId) && <Check className="w-3 h-3" strokeWidth={2} />}
-        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: ADMIN_COLOR }} />
-        Mis eventos
-      </button>
+      {!hideSelf && (
+        <button
+          onClick={() => onToggle(adminUserId)}
+          className={`h-7 px-2.5 text-[11px] font-medium rounded-full border transition-colors cursor-pointer flex items-center gap-1.5
+            ${selectedUserIds.has(adminUserId) ? 'border-[#6B7280]/40 bg-[#6B7280]/10 text-[#6B7280]' : 'border-border-primary text-text-tertiary opacity-50'}`}
+        >
+          {selectedUserIds.has(adminUserId) && <Check className="w-3 h-3" strokeWidth={2} />}
+          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: ADMIN_COLOR }} />
+          Mis eventos
+        </button>
+      )}
 
       {/* Asesores */}
       {asesores.map((u, idx) => {

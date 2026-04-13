@@ -11,6 +11,7 @@ import { useColumnVisibility } from '@/hooks/useColumnVisibility'
 import { usePermissions } from '@/hooks/usePermissions'
 import { usePdfSelection } from '@/hooks/usePdfSelection'
 import { PropertyFilters } from '@/components/properties/PropertyFilters'
+import { SavedFiltersBar } from '@/components/properties/SavedFiltersBar'
 import { PropertyGrid } from '@/components/properties/PropertyGrid'
 import { PropertyTable } from '@/components/properties/PropertyTable'
 import { PropertyDetail } from '@/components/properties/PropertyDetail'
@@ -53,6 +54,7 @@ export function PropiedadesView({ role }: { role: UserRole }) {
     setFilter,
     removeFilter,
     clearAll,
+    replaceAll,
   } = useFilters()
 
   const {
@@ -159,6 +161,14 @@ export function PropiedadesView({ role }: { role: UserRole }) {
           <ViewToggle onChange={handleViewChange} />
         </div>
       </div>
+
+      {/* Saved filters bar */}
+      <SavedFiltersBar
+        activeFilters={activeFilters}
+        hasActiveFilters={Object.keys(activeFilters).length > 0}
+        onApply={replaceAll}
+        onToast={showToast}
+      />
 
       {/* Filters */}
       <PropertyFilters

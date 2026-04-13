@@ -15,6 +15,8 @@ interface Anuncio {
   author_name?: string
   created_at: string
   is_read: boolean
+  target_type?: 'all' | 'specific'
+  target_names?: string[]
 }
 
 function timeAgo(dateStr: string): string {
@@ -126,11 +128,22 @@ export function AnuncioList({ isAdmin, refreshKey }: AnuncioListProps) {
               <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
             )}
             <div className="flex-1 min-w-0">
-              <h3 className={`text-sm text-text-primary truncate ${!a.is_read ? 'font-bold' : 'font-medium'}`}>
-                {a.title}
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className={`text-sm text-text-primary truncate ${!a.is_read ? 'font-bold' : 'font-medium'}`}>
+                  {a.title}
+                </h3>
+                {a.target_type === 'specific' && (
+                  <span className="kibah-badge kibah-badge-preventa flex-shrink-0">Dirigido</span>
+                )}
+              </div>
               {a.author_name && (
                 <p className="text-[12px] text-text-tertiary truncate mt-0.5">Enviado por: {a.author_name}</p>
+              )}
+              {isAdmin && a.target_type === 'specific' && a.target_names && a.target_names.length > 0 && (
+                <p className="text-[11px] text-text-tertiary truncate mt-0.5">Para: {a.target_names.join(', ')}</p>
+              )}
+              {isAdmin && a.target_type === 'all' && (
+                <p className="text-[11px] text-text-tertiary truncate mt-0.5">Para: Todos</p>
               )}
             </div>
             {a.priority === 'urgente' && (

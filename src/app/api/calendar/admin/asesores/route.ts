@@ -8,7 +8,13 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-  if (!profile || profile.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (profile?.role !== 'admin') {
+    const { getUserPermissions } = await import('@/lib/dal/roles')
+    const perms = await getUserPermissions(user.id)
+    if (!perms['asesores.view'] && !perms._isAdmin) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+  }
 
   try {
     const users = await getConnectedUsersWithProfiles()

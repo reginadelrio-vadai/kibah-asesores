@@ -15,13 +15,20 @@ export async function GET(request: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { data: profile } = await supabase.from('profiles').select('role, full_name').eq('id', user.id).single()
-  if (!profile || profile.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (profile?.role !== 'admin') {
+    const { getUserPermissions } = await import('@/lib/dal/roles')
+    const perms = await getUserPermissions(user.id)
+    if (!perms['asesores.view'] && !perms._isAdmin) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+  }
 
   const params = request.nextUrl.searchParams
   const start = params.get('start')
   const end = params.get('end')
   const filterUserId = params.get('userId')
   const filterUserIds = params.get('userIds')
+  const excludeUserId = params.get('excludeUserId')
 
   if (!start || !end) return NextResponse.json({ error: 'start and end required' }, { status: 400 })
 
@@ -38,6 +45,9 @@ export async function GET(request: NextRequest) {
       usersToFetch = allUsers.filter((u) => ids.has(u.userId))
     } else if (filterUserId) {
       usersToFetch = allUsers.filter((u) => u.userId === filterUserId)
+    }
+    if (excludeUserId) {
+      usersToFetch = usersToFetch.filter((u) => u.userId !== excludeUserId)
     }
 
     // Assign colors: admin = gray, asesores = rotating palette

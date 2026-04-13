@@ -26,10 +26,9 @@ async function verifyAdmin() {
 }
 
 export async function GET() {
-  const auth = await verifyAdmin()
-  if ('error' in auth) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status })
-  }
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
     const asesores = await dal.getAllAsesores()

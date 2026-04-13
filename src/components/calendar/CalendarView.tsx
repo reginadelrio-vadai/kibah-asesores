@@ -20,9 +20,10 @@ interface CalendarViewProps {
   mode?: 'personal' | 'admin'
   asesorUserId?: string
   selectedUserIds?: string
+  excludeUserId?: string
 }
 
-export function CalendarView({ mode = 'personal', asesorUserId, selectedUserIds }: CalendarViewProps) {
+export function CalendarView({ mode = 'personal', asesorUserId, selectedUserIds, excludeUserId }: CalendarViewProps) {
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [loading, setLoading] = useState(false)
   const [formOpen, setFormOpen] = useState(false)
@@ -46,20 +47,21 @@ export function CalendarView({ mode = 'personal', asesorUserId, selectedUserIds 
         url = `/api/calendar/admin/events?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`
         if (selectedUserIds) url += `&userIds=${encodeURIComponent(selectedUserIds)}`
         else if (asesorUserId) url += `&userId=${encodeURIComponent(asesorUserId)}`
+        if (excludeUserId) url += `&excludeUserId=${encodeURIComponent(excludeUserId)}`
       } else {
         url = `/api/calendar/events?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`
       }
       const res = await fetch(url)
       if (res.ok) { const json = await res.json(); setEvents(json.data ?? []) }
     } catch {} finally { setLoading(false) }
-  }, [mode, asesorUserId, selectedUserIds])
+  }, [mode, asesorUserId, selectedUserIds, excludeUserId])
 
   const refetchEvents = useCallback(() => {
     if (rangeRef.current) fetchEvents(rangeRef.current.start, rangeRef.current.end)
   }, [fetchEvents])
 
-  const prevFilterRef = useRef(asesorUserId + '|' + selectedUserIds)
-  const currentFilter = asesorUserId + '|' + selectedUserIds
+  const prevFilterRef = useRef(asesorUserId + '|' + selectedUserIds + '|' + excludeUserId)
+  const currentFilter = asesorUserId + '|' + selectedUserIds + '|' + excludeUserId
   if (prevFilterRef.current !== currentFilter) {
     prevFilterRef.current = currentFilter
     if (rangeRef.current) fetchEvents(rangeRef.current.start, rangeRef.current.end)

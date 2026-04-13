@@ -7,36 +7,56 @@ export interface Anuncio {
   priority: 'normal' | 'urgente'
   created_by: string
   created_at: string
+  target_type: 'all' | 'specific'
+  target_user_ids: string[]
   author_name?: string
   author_role?: string
+  target_names?: string[]
 }
 
-export async function getAnuncios(): Promise<Anuncio[]> {
+export async function getAnuncios(userId: string, role: string): Promise<Anuncio[]> {
   const supabase = createAdminClient()
 
-  const { data: anuncios, error } = await supabase
+  let query = supabase
     .from('anuncios')
     .select('*')
     .order('created_at', { ascending: false })
 
+  if (role !== 'admin') {
+    query = query.or(
+      `target_type.eq.all,target_user_ids.cs.{${userId}},created_by.eq.${userId}`
+    )
+  }
+
+  const { data: anuncios, error } = await query
   if (error) throw new Error(error.message)
 
-  const userIds = [...new Set((anuncios ?? []).map((a) => a.created_by as string))]
-  if (userIds.length === 0) return anuncios as Anuncio[]
+  const authorIds = new Set<string>()
+  const targetIds = new Set<string>()
+  for (const a of anuncios ?? []) {
+    authorIds.add(a.created_by as string)
+    for (const uid of (a.target_user_ids as string[] | null) ?? []) targetIds.add(uid)
+  }
+
+  const allIds = [...new Set([...authorIds, ...targetIds])]
+  if (allIds.length === 0) return (anuncios ?? []) as Anuncio[]
 
   const { data: profiles } = await supabase
     .from('profiles')
     .select('id, full_name, role')
-    .in('id', userIds)
+    .in('id', allIds)
 
-  const profileMap = new Map((profiles ?? []).map((p) => [p.id, { name: p.full_name, role: p.role }]))
+  const profileMap = new Map((profiles ?? []).map((p) => [p.id as string, { name: p.full_name as string, role: p.role as string }]))
 
   return (anuncios ?? []).map((a) => {
     const author = profileMap.get(a.created_by as string)
+    const targetUserIds = ((a.target_user_ids as string[] | null) ?? [])
     return {
       ...(a as Anuncio),
-      author_name: author?.role === 'admin' ? 'Administracion' : (author?.name as string) ?? 'Desconocido',
-      author_role: (author?.role as string) ?? '',
+      target_user_ids: targetUserIds,
+      author_name: author?.role === 'admin' ? 'Administracion' : author?.name ?? 'Desconocido',
+      author_role: author?.role ?? '',
+      target_names: targetUserIds.map((uid) => profileMap.get(uid)?.name ?? 'Desconocido'),
     }
   })
 }
@@ -45,12 +65,21 @@ export async function createAnuncio(
   title: string,
   message: string,
   priority: string,
-  userId: string
+  userId: string,
+  targetType: 'all' | 'specific',
+  targetUserIds: string[]
 ): Promise<Anuncio> {
   const supabase = createAdminClient()
   const { data, error } = await supabase
     .from('anuncios')
-    .insert({ title, message, priority, created_by: userId })
+    .insert({
+      title,
+      message,
+      priority,
+      created_by: userId,
+      target_type: targetType,
+      target_user_ids: targetType === 'specific' ? targetUserIds : [],
+    })
     .select()
     .single()
 
@@ -68,23 +97,28 @@ export async function deleteAnuncio(id: string): Promise<void> {
   if (error) throw new Error(error.message)
 }
 
-export async function getUnreadCount(userId: string): Promise<number> {
+export async function getUnreadCount(userId: string, role: string): Promise<number> {
   const supabase = createAdminClient()
 
-  const { count: totalCount, error: totalErr } = await supabase
-    .from('anuncios')
-    .select('*', { count: 'exact', head: true })
+  let idsQuery = supabase.from('anuncios').select('id')
+  if (role !== 'admin') {
+    idsQuery = idsQuery.or(
+      `target_type.eq.all,target_user_ids.cs.{${userId}},created_by.eq.${userId}`
+    )
+  }
 
-  if (totalErr) return 0
+  const { data: visibleIds, error: idsErr } = await idsQuery
+  if (idsErr || !visibleIds) return 0
+  const total = visibleIds.length
+  if (total === 0) return 0
 
-  const { count: readCount, error: readErr } = await supabase
+  const { data: reads } = await supabase
     .from('anuncio_reads')
-    .select('*', { count: 'exact', head: true })
+    .select('anuncio_id')
     .eq('user_id', userId)
+    .in('anuncio_id', visibleIds.map((r) => r.id as string))
 
-  if (readErr) return totalCount ?? 0
-
-  return Math.max((totalCount ?? 0) - (readCount ?? 0), 0)
+  return Math.max(total - (reads?.length ?? 0), 0)
 }
 
 export async function markAsRead(anuncioIds: string[], userId: string): Promise<void> {

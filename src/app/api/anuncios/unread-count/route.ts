@@ -8,7 +8,9 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
-    const count = await dal.getUnreadCount(user.id)
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+    const role = (profile?.role as string) ?? 'asesor'
+    const count = await dal.getUnreadCount(user.id, role)
     return NextResponse.json({ count })
   } catch {
     return NextResponse.json({ count: 0 })

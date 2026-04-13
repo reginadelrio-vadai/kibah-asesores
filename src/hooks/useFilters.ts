@@ -14,6 +14,7 @@ interface UseFiltersReturn {
   setFilter: (key: string, value: string, label?: string, displayValue?: string) => void
   removeFilter: (key: string) => void
   clearAll: () => void
+  replaceAll: (filters: Record<string, string>) => void
   filterChips: FilterValue[]
   debouncedFilters: Record<string, string>
 }
@@ -71,11 +72,24 @@ export function useFilters(): UseFiltersReturn {
     setChips([])
   }, [])
 
+  const replaceAll = useCallback((filters: Record<string, string>) => {
+    const cleaned: Record<string, string> = {}
+    const newChips: FilterValue[] = []
+    for (const [key, value] of Object.entries(filters)) {
+      if (!value) continue
+      cleaned[key] = value
+      newChips.push({ key, value, label: key, displayValue: value })
+    }
+    setActiveFilters(cleaned)
+    setChips(newChips)
+  }, [])
+
   return {
     activeFilters,
     setFilter,
     removeFilter,
     clearAll,
+    replaceAll,
     filterChips: chips,
     debouncedFilters,
   }
