@@ -44,9 +44,9 @@ export default function WhaapyPage() {
         style={{
           position: 'absolute',
           top: 0,
-          left: 0,
-          width: 'calc(100% + 80px)',
-          height: 'calc(100% + 40px)',
+          left: '-60px',
+          width: 'calc(100% + 60px)',
+          height: '100%',
           border: 'none',
           zoom: 0.65,
         }}
