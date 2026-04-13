@@ -48,7 +48,7 @@
 
   /* Inputs */
   --input-bg: #FFFFFF;
-  --input-border: #CBD5E1;
+  --input-border: rgba(0, 0, 0, 0.1);
   --input-focus-ring: #E8872A;
 
   /* Misc */
@@ -85,8 +85,8 @@
   --glass-blur: 16px;
 
   /* Inputs */
-  --input-bg: #162032;
-  --input-border: rgba(148, 163, 184, 0.2);
+  --input-bg: rgba(255, 255, 255, 0.05);
+  --input-border: rgba(255, 255, 255, 0.1);
 }
 
 /* ============================================================
@@ -384,4 +384,135 @@ button:focus-visible, a:focus-visible {
 
 .dark .kibah-modal-solid {
   background: #142038;
+}
+
+/* ============================================================
+   Form inputs and buttons
+   ============================================================ */
+.kibah-input {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: #1E293B;
+  background: #FFFFFF;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dark .kibah-input {
+  color: #E2E8F0;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.kibah-input:focus {
+  border-color: #E8872A;
+  box-shadow: 0 0 0 3px rgba(232, 135, 42, 0.15);
+}
+
+.kibah-input::placeholder {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+.dark .kibah-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+textarea.kibah-input {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.kibah-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6B7280;
+  margin-bottom: 4px;
+}
+
+.dark .kibah-label {
+  color: #94A3B8;
+}
+
+.kibah-error {
+  color: #F87171;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.kibah-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #FFFFFF;
+  background: #E8872A;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.kibah-btn-primary:hover {
+  background: #D97A1F;
+}
+
+.kibah-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.kibah-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1E293B;
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dark .kibah-btn-secondary {
+  color: #E2E8F0;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.kibah-btn-secondary:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.dark .kibah-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.kibah-btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #EF4444;
+  background: rgba(239, 68, 68, 0.1);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.kibah-btn-danger:hover {
+  background: rgba(239, 68, 68, 0.2);
 }
