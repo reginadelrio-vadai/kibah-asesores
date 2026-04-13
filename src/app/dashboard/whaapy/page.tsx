@@ -42,10 +42,10 @@ export default function WhaapyPage() {
         allow="clipboard-write; microphone"
         title="Whaapy"
         style={{
-          width: '160%',
+          width: '195%',
           height: '100%',
           border: 'none',
-          zoom: 0.65,
+          zoom: 0.5,
         }}
       />
     </div>
