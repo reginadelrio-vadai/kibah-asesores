@@ -45,7 +45,7 @@ export default function WhaapyPage() {
           width: '100%',
           height: '100%',
           border: 'none',
-          zoom: 0.65,
+          zoom: 0.4,
         }}
       />
     </div>
