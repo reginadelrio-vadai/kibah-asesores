@@ -1,7 +1,7 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
-import { ArrowUp, ArrowDown, Loader2 } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { ArrowUp, ArrowDown, Loader2, Check } from 'lucide-react'
 import type { ColumnVisibility } from '@/types'
 import { Toast, type ToastType } from '@/components/ui/Toast'
 
@@ -11,6 +11,15 @@ const FILTER_TYPE_OPTIONS = [
   { value: 'range', label: 'Rango' },
   { value: 'text', label: 'Texto' },
   { value: 'boolean', label: 'Sí/No' },
+]
+
+const COLUMN_GROUPS: { label: string; columns: string[] }[] = [
+  { label: 'Info', columns: ['nombre_kibah', 'nombre_desarrollador', 'unidad', 'disponibilidad', 'fecha_actualizacion'] },
+  { label: 'Ubicación', columns: ['direccion', 'colonia', 'alcaldia'] },
+  { label: 'Precios', columns: ['precio_unidad'] },
+  { label: 'Características', columns: ['m2_totales', 'm2_habitables', 'm2_exteriores', 'm2_roof_garden', 'num_recamaras', 'num_banos', 'estacionamiento', 'bodega', 'amenidades'] },
+  { label: 'Entrega', columns: ['tipo_preventa', 'tipo_entrega', 'fecha_entrega'] },
+  { label: 'Interno', columns: ['contacto_desarrollador', 'pct_comision', 'link_drive', 'id_propiedad', 'created_at'] },
 ]
 
 type EditableColumn = ColumnVisibility & { _dirty?: boolean }
@@ -36,11 +45,9 @@ export function ColumnVisibilityManager() {
     }
   }, [])
 
-  useEffect(() => {
-    fetchColumns()
-  }, [fetchColumns])
+  useEffect(() => { fetchColumns() }, [fetchColumns])
 
-  const hasChanges = columns.some((col, i) => {
+  const isDirty = (col: EditableColumn) => {
     const orig = original.find((o) => o.id === col.id)
     if (!orig) return false
     return (
@@ -48,39 +55,30 @@ export function ColumnVisibilityManager() {
       col.display_label !== orig.display_label ||
       col.display_order !== orig.display_order ||
       col.filter_type !== orig.filter_type
-    )
-  })
-
-  const changedCount = columns.filter((col) => {
-    const orig = original.find((o) => o.id === col.id)
-    if (!orig) return false
-    return (
-      col.visible_to_asesores !== orig.visible_to_asesores ||
-      col.display_label !== orig.display_label ||
-      col.display_order !== orig.display_order ||
-      col.filter_type !== orig.filter_type
-    )
-  }).length
-
-  const updateColumn = (id: string, field: keyof EditableColumn, value: unknown) => {
-    setColumns((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, [field]: value } : c))
     )
   }
 
-  const moveColumn = (index: number, direction: 'up' | 'down') => {
-    const swapIndex = direction === 'up' ? index - 1 : index + 1
-    if (swapIndex < 0 || swapIndex >= columns.length) return
+  const changedCount = columns.filter(isDirty).length
+  const hasChanges = changedCount > 0
 
+  const updateColumn = (id: string, field: keyof EditableColumn, value: unknown) => {
+    setColumns((prev) => prev.map((c) => (c.id === id ? { ...c, [field]: value } : c)))
+  }
+
+  const moveColumn = (id: string, direction: 'up' | 'down') => {
     setColumns((prev) => {
-      const next = [...prev]
-      const aOrder = next[index].display_order
-      const bOrder = next[swapIndex].display_order
-      next[index] = { ...next[index], display_order: bOrder }
-      next[swapIndex] = { ...next[swapIndex], display_order: aOrder }
-      // Re-sort by display_order
-      next.sort((a, b) => a.display_order - b.display_order)
-      return next
+      const sorted = [...prev].sort((a, b) => a.display_order - b.display_order)
+      const idx = sorted.findIndex((c) => c.id === id)
+      const swapIdx = direction === 'up' ? idx - 1 : idx + 1
+      if (swapIdx < 0 || swapIdx >= sorted.length) return prev
+
+      const a = sorted[idx]
+      const b = sorted[swapIdx]
+      return prev.map((c) => {
+        if (c.id === a.id) return { ...c, display_order: b.display_order }
+        if (c.id === b.id) return { ...c, display_order: a.display_order }
+        return c
+      })
     })
   }
 
@@ -126,6 +124,25 @@ export function ColumnVisibilityManager() {
     }
   }
 
+  // Group columns by category (preserving unknown columns at end)
+  const grouped = useMemo(() => {
+    const byName = new Map(columns.map((c) => [c.column_name, c]))
+    const assignedNames = new Set<string>()
+
+    const result: { label: string; items: EditableColumn[] }[] = COLUMN_GROUPS.map((g) => {
+      const items = g.columns
+        .map((name) => byName.get(name))
+        .filter((c): c is EditableColumn => !!c)
+      items.forEach((c) => assignedNames.add(c.column_name))
+      return { label: g.label, items }
+    })
+
+    const unassigned = columns.filter((c) => !assignedNames.has(c.column_name))
+    if (unassigned.length > 0) result.push({ label: 'Otros', items: unassigned })
+
+    return result.filter((g) => g.items.length > 0)
+  }, [columns])
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -136,124 +153,149 @@ export function ColumnVisibilityManager() {
 
   return (
     <div className="pb-20">
-      {/* Column list */}
-      <div className="space-y-2">
-        {columns.map((col, index) => {
-          const isChanged = (() => {
-            const orig = original.find((o) => o.id === col.id)
-            if (!orig) return false
-            return (
-              col.visible_to_asesores !== orig.visible_to_asesores ||
-              col.display_label !== orig.display_label ||
-              col.display_order !== orig.display_order ||
-              col.filter_type !== orig.filter_type
-            )
-          })()
-
-          return (
-            <div
-              key={col.id}
-              className={`flex items-center gap-3 px-4 py-3 rounded-[var(--radius-sm)] border transition-opacity
-                ${isChanged ? 'border-orange/40 bg-orange/5' : 'border-border-primary bg-bg-secondary'}
-                ${!col.visible_to_asesores ? 'opacity-50' : ''}`}
+      {grouped.map((group) => (
+        <div key={group.label}>
+          <div
+            className="flex items-center gap-2 mt-4 mb-2 pb-1 border-b"
+            style={{ borderColor: 'rgba(232, 135, 42, 0.15)' }}
+          >
+            <h3
+              style={{
+                fontSize: '12px',
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                color: '#E8872A',
+              }}
             >
-              {/* Reorder */}
-              <div className="flex flex-col gap-0.5">
-                <button
-                  onClick={() => moveColumn(index, 'up')}
-                  disabled={index === 0}
-                  className="p-0.5 text-text-tertiary hover:text-text-primary disabled:opacity-20 cursor-pointer transition-colors"
-                  title="Subir"
+              {group.label}
+            </h3>
+            <span className="text-[10px] text-text-tertiary">({group.items.length})</span>
+          </div>
+
+          <div className="space-y-1">
+            {group.items.map((col) => {
+              const dirty = isDirty(col)
+              return (
+                <div
+                  key={col.id}
+                  className={`flex items-center gap-3 px-3 rounded-[var(--radius-sm)] border transition-colors
+                    ${dirty ? 'border-orange/40 bg-orange/5' : 'border-border-primary bg-bg-secondary'}`}
+                  style={{ height: '40px' }}
                 >
-                  <ArrowUp className="w-3.5 h-3.5" strokeWidth={1.5} />
-                </button>
-                <button
-                  onClick={() => moveColumn(index, 'down')}
-                  disabled={index === columns.length - 1}
-                  className="p-0.5 text-text-tertiary hover:text-text-primary disabled:opacity-20 cursor-pointer transition-colors"
-                  title="Bajar"
-                >
-                  <ArrowDown className="w-3.5 h-3.5" strokeWidth={1.5} />
-                </button>
-              </div>
+                  {/* Toggle — very clearly on/off */}
+                  <button
+                    onClick={() => updateColumn(col.id, 'visible_to_asesores', !col.visible_to_asesores)}
+                    title={col.visible_to_asesores ? 'Visible para asesores' : 'Oculto para asesores'}
+                    style={{
+                      position: 'relative',
+                      width: '36px',
+                      height: '20px',
+                      borderRadius: '9999px',
+                      flexShrink: 0,
+                      background: col.visible_to_asesores ? '#E8872A' : '#374151',
+                      border: col.visible_to_asesores ? 'none' : '1px solid rgba(255,255,255,0.1)',
+                      cursor: 'pointer',
+                      transition: 'background 0.2s ease',
+                    }}
+                  >
+                    <span
+                      style={{
+                        position: 'absolute',
+                        top: '2px',
+                        left: col.visible_to_asesores ? '18px' : '2px',
+                        width: '14px',
+                        height: '14px',
+                        borderRadius: '50%',
+                        background: '#FFFFFF',
+                        transition: 'left 0.2s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      {col.visible_to_asesores && (
+                        <Check className="w-2.5 h-2.5" style={{ color: '#E8872A' }} strokeWidth={3} />
+                      )}
+                    </span>
+                  </button>
 
-              {/* Toggle visibility */}
-              <button
-                onClick={() => updateColumn(col.id, 'visible_to_asesores', !col.visible_to_asesores)}
-                className={`relative w-9 h-5 rounded-full transition-colors cursor-pointer flex-shrink-0
-                  ${col.visible_to_asesores ? 'bg-orange' : 'bg-bg-tertiary border border-border-primary'}`}
-              >
-                <span
-                  className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform
-                    ${col.visible_to_asesores ? 'translate-x-4' : 'translate-x-0.5'}`}
-                />
-              </button>
+                  {/* Label + technical name */}
+                  <div className="flex-1 min-w-0">
+                    <input
+                      value={col.display_label ?? ''}
+                      onChange={(e) => updateColumn(col.id, 'display_label', e.target.value)}
+                      placeholder={col.column_name}
+                      className="w-full bg-transparent text-[14px] font-medium focus:outline-none"
+                      style={{ color: 'var(--text-primary)', border: 'none', padding: 0 }}
+                    />
+                    <div className="text-[11px] font-mono" style={{ color: '#6B7280' }}>
+                      {col.column_name}
+                    </div>
+                  </div>
 
-              {/* Column name (technical, read-only) */}
-              <span className="text-xs text-text-tertiary font-mono w-40 flex-shrink-0 truncate" title={col.column_name}>
-                {col.column_name}
-              </span>
+                  {/* Filter type */}
+                  <select
+                    value={col.filter_type ?? 'none'}
+                    onChange={(e) => updateColumn(col.id, 'filter_type', e.target.value)}
+                    className="h-7 px-2 text-[11px] rounded-md border border-border-primary
+                      bg-bg-primary text-text-primary appearance-none cursor-pointer w-20 flex-shrink-0
+                      focus:outline-none focus:border-orange"
+                  >
+                    {FILTER_TYPE_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
 
-              {/* Display label (editable) */}
-              <input
-                value={col.display_label ?? ''}
-                onChange={(e) => updateColumn(col.id, 'display_label', e.target.value)}
-                placeholder={col.column_name}
-                className="flex-1 h-8 px-2 text-sm rounded-[var(--radius-sm)] border border-border-primary
-                  bg-bg-primary text-text-primary placeholder:text-text-tertiary
-                  focus:outline-none focus:border-orange focus:ring-1 focus:ring-orange/30 min-w-0"
-              />
-
-              {/* Filter type */}
-              <select
-                value={col.filter_type ?? 'none'}
-                onChange={(e) => updateColumn(col.id, 'filter_type', e.target.value)}
-                className="h-8 px-2 text-xs rounded-[var(--radius-sm)] border border-border-primary
-                  bg-bg-primary text-text-primary appearance-none cursor-pointer w-24 flex-shrink-0
-                  focus:outline-none focus:border-orange focus:ring-1 focus:ring-orange/30"
-              >
-                {FILTER_TYPE_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-            </div>
-          )
-        })}
-      </div>
+                  {/* Reorder */}
+                  <div className="flex items-center gap-0.5 flex-shrink-0">
+                    <button
+                      onClick={() => moveColumn(col.id, 'up')}
+                      className="p-1 text-text-tertiary hover:text-text-primary transition-colors cursor-pointer"
+                      title="Subir"
+                    >
+                      <ArrowUp className="w-3 h-3" strokeWidth={1.5} />
+                    </button>
+                    <button
+                      onClick={() => moveColumn(col.id, 'down')}
+                      className="p-1 text-text-tertiary hover:text-text-primary transition-colors cursor-pointer"
+                      title="Bajar"
+                    >
+                      <ArrowDown className="w-3 h-3" strokeWidth={1.5} />
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      ))}
 
       {/* Sticky save bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-border-primary bg-bg-primary/90 backdrop-blur-md px-6 py-3">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="text-sm text-text-secondary">
-            {hasChanges ? (
-              <span className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-orange" />
+      {hasChanges && (
+        <div
+          className="fixed bottom-0 left-0 right-0 z-30 border-t border-border-primary px-6 py-3 kibah-modal-solid"
+        >
+          <div className="max-w-4xl mx-auto flex items-center justify-between">
+            <div className="text-sm flex items-center gap-2" style={{ color: 'var(--text-secondary)' }}>
+              <span className="w-2 h-2 rounded-full" style={{ background: '#E8872A' }} />
+              <span className="font-medium" style={{ color: '#E8872A' }}>
                 {changedCount} cambio{changedCount !== 1 ? 's' : ''} sin guardar
               </span>
-            ) : (
-              'Sin cambios pendientes'
-            )}
+            </div>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="h-9 px-5 text-sm font-medium rounded-lg bg-orange text-white hover:bg-orange-hover disabled:opacity-40 transition-colors cursor-pointer"
+            >
+              {saving ? 'Guardando...' : 'Guardar cambios'}
+            </button>
           </div>
-          <button
-            onClick={handleSave}
-            disabled={!hasChanges || saving}
-            className="h-9 px-5 text-sm font-medium rounded-[var(--radius-sm)]
-              bg-orange text-white hover:bg-orange-hover
-              disabled:opacity-40 disabled:cursor-not-allowed
-              transition-colors cursor-pointer"
-          >
-            {saving ? 'Guardando...' : 'Guardar cambios'}
-          </button>
         </div>
-      </div>
+      )}
 
-      {/* Toast */}
       {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
+        <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
       )}
     </div>
   )
