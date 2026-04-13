@@ -99,7 +99,9 @@ export interface ConnectedUser {
   calendarName: string | null
 }
 
-export async function getConnectedUsersWithProfiles(): Promise<ConnectedUser[]> {
+export async function getConnectedUsersWithProfiles(
+  options?: { excludeRoles?: string[] }
+): Promise<ConnectedUser[]> {
   const supabase = createAdminClient()
 
   const { data: tokens, error: tokErr } = await supabase
@@ -114,15 +116,23 @@ export async function getConnectedUsersWithProfiles(): Promise<ConnectedUser[]> 
 
   const { data: profiles } = await supabase
     .from('profiles')
-    .select('id, full_name')
+    .select('id, full_name, role')
     .in('id', userIds)
 
+  const excludeRoles = options?.excludeRoles ?? []
+  const allowedIds = new Set(
+    (profiles ?? [])
+      .filter((p) => !excludeRoles.includes(p.role as string))
+      .map((p) => p.id as string)
+  )
   const profileMap = new Map((profiles ?? []).map((p) => [p.id, p.full_name]))
 
-  return tokens.map((t) => ({
-    userId: t.user_id as string,
-    fullName: (profileMap.get(t.user_id as string) as string) ?? 'Sin nombre',
-    calendarEmail: t.calendar_email as string | null,
-    calendarName: t.selected_calendar_name as string | null,
-  }))
+  return tokens
+    .filter((t) => allowedIds.has(t.user_id as string))
+    .map((t) => ({
+      userId: t.user_id as string,
+      fullName: (profileMap.get(t.user_id as string) as string) ?? 'Sin nombre',
+      calendarEmail: t.calendar_email as string | null,
+      calendarName: t.selected_calendar_name as string | null,
+    }))
 }

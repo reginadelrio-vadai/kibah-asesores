@@ -1,32 +1,15 @@
-import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { ZodError } from 'zod'
 import { updateWebhookSchema } from '@/lib/validations/webhook'
 import * as dal from '@/lib/dal/webhooks'
-
-async function verifyAdmin() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'Unauthorized', status: 401 }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile || profile.role !== 'admin') return { error: 'Forbidden', status: 403 }
-  return { user }
-}
+import { requirePermission, isAuthError } from '@/lib/auth/permissions'
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await verifyAdmin()
-  if ('error' in auth) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status })
-  }
+  const auth = await requirePermission('webhooks.manage')
+  if (isAuthError(auth)) return auth
 
   const { id } = await params
 
@@ -51,10 +34,8 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await verifyAdmin()
-  if ('error' in auth) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status })
-  }
+  const auth = await requirePermission('webhooks.manage')
+  if (isAuthError(auth)) return auth
 
   const { id } = await params
 

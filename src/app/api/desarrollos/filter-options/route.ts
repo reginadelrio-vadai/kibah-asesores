@@ -1,14 +1,10 @@
-import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { getDesarrolloFilterOptions } from '@/lib/dal/desarrollos'
+import { requirePermission, isAuthError } from '@/lib/auth/permissions'
 
 export async function GET() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-  if (!profile || profile.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const auth = await requirePermission('desarrollos.view')
+  if (isAuthError(auth)) return auth
 
   try {
     const options = await getDesarrolloFilterOptions()

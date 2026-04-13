@@ -1,21 +1,12 @@
-import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { ZodError } from 'zod'
 import { createDesarrolloSchema } from '@/lib/validations/desarrollo'
 import * as dal from '@/lib/dal/desarrollos'
-
-async function verifyAdmin() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'Unauthorized', status: 401 }
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-  if (!profile || profile.role !== 'admin') return { error: 'Forbidden', status: 403 }
-  return { user }
-}
+import { requirePermission, isAuthError } from '@/lib/auth/permissions'
 
 export async function GET(request: NextRequest) {
-  const auth = await verifyAdmin()
-  if ('error' in auth) return NextResponse.json({ error: auth.error }, { status: auth.status })
+  const auth = await requirePermission('desarrollos.view')
+  if (isAuthError(auth)) return auth
 
   const params = request.nextUrl.searchParams
   const cursor = params.get('cursor') ?? undefined
@@ -40,8 +31,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const auth = await verifyAdmin()
-  if ('error' in auth) return NextResponse.json({ error: auth.error }, { status: auth.status })
+  const auth = await requirePermission('desarrollos.create')
+  if (isAuthError(auth)) return auth
 
   try {
     const body = await request.json()

@@ -33,12 +33,39 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/login', request.url))
       }
 
-      // /dashboard/admin/* → verify role = 'admin'
+      // /dashboard/admin/* → admin or matching role permission
       if (pathname.startsWith('/dashboard/admin')) {
-        if (!profile || profile.role !== 'admin') {
-          return NextResponse.redirect(
-            new URL('/dashboard/propiedades', request.url)
-          )
+        const isAdmin = profile?.role === 'admin'
+
+        // Roles page is always admin-only
+        if (pathname.startsWith('/dashboard/admin/roles')) {
+          if (!isAdmin) {
+            return NextResponse.redirect(new URL('/dashboard/propiedades', request.url))
+          }
+        } else if (!isAdmin) {
+          const ADMIN_PATH_PERMISSIONS: Array<[string, string]> = [
+            ['/dashboard/admin/asesores', 'asesores.view'],
+            ['/dashboard/admin/desarrollos', 'desarrollos.view'],
+            ['/dashboard/admin/columnas', 'columnas.view'],
+            ['/dashboard/admin/webhooks', 'webhooks.view'],
+            ['/dashboard/admin/api-keys', 'apikeys.view'],
+            ['/dashboard/admin/anuncios', 'anuncios.view'],
+            ['/dashboard/admin/propiedades', 'propiedades.view'],
+            ['/dashboard/admin/calendario', 'asesores.view'],
+          ]
+          const match = ADMIN_PATH_PERMISSIONS.find(([p]) => pathname.startsWith(p))
+          if (!match || !profile?.role) {
+            return NextResponse.redirect(new URL('/dashboard/propiedades', request.url))
+          }
+          const { data: role } = await supabase
+            .from('roles')
+            .select('permissions')
+            .eq('name', profile.role)
+            .single()
+          const perms = (role?.permissions as Record<string, boolean> | null) ?? {}
+          if (!perms[match[1]]) {
+            return NextResponse.redirect(new URL('/dashboard/propiedades', request.url))
+          }
         }
       }
     } catch (error) {

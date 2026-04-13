@@ -1,7 +1,7 @@
-import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { z, ZodError } from 'zod'
 import * as dal from '@/lib/dal/users'
+import { requireAnyPermission, requirePermission, isAuthError } from '@/lib/auth/permissions'
 
 const createAsesorSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -10,25 +10,10 @@ const createAsesorSchema = z.object({
   role: z.string().optional(),
 })
 
-async function verifyAdmin() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'Unauthorized', status: 401 }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile || profile.role !== 'admin') return { error: 'Forbidden', status: 403 }
-  return { user }
-}
-
 export async function GET() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  // asesores.view grants read access; anuncios.create also needs to list asesores
+  const auth = await requireAnyPermission(['asesores.view', 'anuncios.create'])
+  if (isAuthError(auth)) return auth
 
   try {
     const asesores = await dal.getAllAsesores()
@@ -40,10 +25,8 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const auth = await verifyAdmin()
-  if ('error' in auth) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status })
-  }
+  const auth = await requirePermission('asesores.create')
+  if (isAuthError(auth)) return auth
 
   try {
     const body = await request.json()

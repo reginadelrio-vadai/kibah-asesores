@@ -1,30 +1,13 @@
-import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { ZodError } from 'zod'
 import { createApiKeySchema } from '@/lib/validations/api-key'
 import * as dal from '@/lib/dal/api-keys'
 import * as apiKeyService from '@/lib/services/api-key-service'
-
-async function verifyAdmin() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'Unauthorized', status: 401 }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile || profile.role !== 'admin') return { error: 'Forbidden', status: 403 }
-  return { user }
-}
+import { requirePermission, isAuthError } from '@/lib/auth/permissions'
 
 export async function GET() {
-  const auth = await verifyAdmin()
-  if ('error' in auth) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status })
-  }
+  const auth = await requirePermission('apikeys.view')
+  if (isAuthError(auth)) return auth
 
   try {
     const keys = await dal.getApiKeys()
@@ -36,15 +19,13 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const auth = await verifyAdmin()
-  if ('error' in auth) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status })
-  }
+  const auth = await requirePermission('apikeys.manage')
+  if (isAuthError(auth)) return auth
 
   try {
     const body = await request.json()
     const validated = createApiKeySchema.parse(body)
-    const result = await apiKeyService.generateApiKey(validated, auth.user.id)
+    const result = await apiKeyService.generateApiKey(validated, auth.userId)
     return NextResponse.json({ data: result }, { status: 201 })
   } catch (err) {
     if (err instanceof ZodError) {
