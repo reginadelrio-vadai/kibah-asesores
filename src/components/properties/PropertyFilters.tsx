@@ -225,6 +225,7 @@ export function PropertyFilters({
   onClearAll,
 }: PropertyFiltersProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [expandedDesktop, setExpandedDesktop] = useState(false)
   const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null)
   const hasFilters = filterChips.length > 0
 
@@ -243,6 +244,9 @@ export function PropertyFilters({
   }
 
   const structuredColumns = filterableColumns.filter((c) => c.filter_type !== 'text')
+  const ESSENTIAL = new Set(['disponibilidad', 'colonia', 'precio_unidad'])
+  const essentialColumns = structuredColumns.filter((c) => ESSENTIAL.has(c.column_name))
+  const extraColumns = structuredColumns.filter((c) => !ESSENTIAL.has(c.column_name))
 
   const filterContent = (
     <div className="flex flex-wrap items-center gap-2">
@@ -274,8 +278,46 @@ export function PropertyFilters({
 
   return (
     <div className="space-y-3">
-      {/* Desktop filters */}
-      <div className="hidden lg:block">{filterContent}</div>
+      {/* Desktop filters — essential row + expandable more */}
+      <div className="hidden lg:block">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" strokeWidth={1.5} />
+            <input
+              type="text"
+              placeholder="Buscar..."
+              value={activeFilters.search ?? ''}
+              onChange={(e) => onSetFilter('search', e.target.value, 'Búsqueda', e.target.value)}
+              className="h-9 pl-9 pr-3 text-sm rounded-[var(--radius-sm)] bg-input-bg border border-input-border
+                text-text-primary focus:outline-none focus:ring-2 focus:ring-input-focus-ring w-[220px]"
+            />
+          </div>
+          {essentialColumns.map((col) => (
+            <FilterInput key={col.id} col={col} activeFilters={activeFilters}
+              selectOptions={getSelectOptions(col.column_name)} onChange={onSetFilter} />
+          ))}
+          {extraColumns.length > 0 && (
+            <button
+              onClick={() => setExpandedDesktop(!expandedDesktop)}
+              className={`flex items-center gap-2 h-9 px-3 text-sm font-medium rounded-[var(--radius-sm)] border transition-colors cursor-pointer
+                ${expandedDesktop ? 'border-orange text-orange bg-orange/5' : 'border-border-primary text-text-secondary hover:text-text-primary hover:bg-bg-tertiary'}`}
+            >
+              <SlidersHorizontal className="w-4 h-4" strokeWidth={1.5} />
+              {expandedDesktop ? 'Menos filtros' : 'Más filtros'}
+            </button>
+          )}
+        </div>
+        {expandedDesktop && extraColumns.length > 0 && (
+          <div className="mt-3 p-4 rounded-[var(--radius-sm)] border border-border-primary bg-bg-secondary/50">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {extraColumns.map((col) => (
+                <FilterInput key={col.id} col={col} activeFilters={activeFilters}
+                  selectOptions={getSelectOptions(col.column_name)} onChange={onSetFilter} />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Mobile filter button + drawer */}
       <div className="lg:hidden">

@@ -37,22 +37,42 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#1B2A4A] via-[#162032] to-[#0F1923]">
-      <div className="w-full max-w-md px-6">
+    <div
+      className="min-h-screen flex items-center justify-center p-4"
+      style={{ background: 'linear-gradient(135deg, #0F1923 0%, #1B2A4A 100%)' }}
+    >
+      <div
+        className="w-full"
+        style={{
+          maxWidth: '420px',
+          padding: '40px',
+          background: 'rgba(27, 42, 74, 0.4)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          border: '0.5px solid rgba(255, 255, 255, 0.1)',
+          borderRadius: '24px',
+          boxShadow: '0 24px 64px rgba(0, 0, 0, 0.4)',
+        }}
+      >
         {/* Logo */}
-        <div className="flex flex-col items-center mb-10">
-          <img src="/images/kibah-logo-white.png" alt="Kibah" style={{ maxWidth: '180px', height: 'auto', objectFit: 'contain' }} className="mb-4" />
-          <p className="text-[#94A3B8] text-sm mt-1">
+        <div className="flex flex-col items-center mb-8">
+          <img
+            src="/images/kibah-logo-white.png"
+            alt="Kibah"
+            style={{ maxWidth: '180px', height: 'auto', objectFit: 'contain' }}
+          />
+          <p className="text-[13px] mt-3" style={{ color: 'rgba(255,255,255,0.5)' }}>
             Plataforma de Asesores
           </p>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label
               htmlFor="email"
-              className="block text-sm font-medium text-[#94A3B8] mb-1.5"
+              className="block text-[13px] font-medium mb-1.5"
+              style={{ color: 'rgba(255,255,255,0.7)' }}
             >
               Email
             </label>
@@ -63,18 +83,28 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
-              className="w-full px-4 py-3 rounded-[var(--radius-sm)] bg-white/5 border border-white/10
-                text-white placeholder-[#64748B] text-sm
-                focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent
-                transition-colors"
               placeholder="tu@email.com"
+              style={{
+                width: '100%',
+                padding: '11px 14px',
+                fontSize: '14px',
+                color: '#FFFFFF',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: '8px',
+                outline: 'none',
+                transition: 'border-color 0.2s',
+              }}
+              onFocus={(e) => { e.target.style.borderColor = '#E8872A' }}
+              onBlur={(e) => { e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)' }}
             />
           </div>
 
           <div>
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-[#94A3B8] mb-1.5"
+              className="block text-[13px] font-medium mb-1.5"
+              style={{ color: 'rgba(255,255,255,0.7)' }}
             >
               Contraseña
             </label>
@@ -85,16 +115,32 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               autoComplete="current-password"
-              className="w-full px-4 py-3 rounded-[var(--radius-sm)] bg-white/5 border border-white/10
-                text-white placeholder-[#64748B] text-sm
-                focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent
-                transition-colors"
               placeholder="••••••••"
+              style={{
+                width: '100%',
+                padding: '11px 14px',
+                fontSize: '14px',
+                color: '#FFFFFF',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: '8px',
+                outline: 'none',
+                transition: 'border-color 0.2s',
+              }}
+              onFocus={(e) => { e.target.style.borderColor = '#E8872A' }}
+              onBlur={(e) => { e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)' }}
             />
           </div>
 
           {error && (
-            <div className="text-sm text-error bg-error/10 border border-error/20 rounded-[var(--radius-sm)] px-4 py-3">
+            <div
+              className="text-[14px] px-4 py-3 rounded-lg"
+              style={{
+                color: '#F87171',
+                background: 'rgba(239, 68, 68, 0.08)',
+                border: '1px solid rgba(239, 68, 68, 0.2)',
+              }}
+            >
               {error}
             </div>
           )}
@@ -102,10 +148,20 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 rounded-[var(--radius-sm)] bg-orange hover:bg-orange-hover
-              text-white font-semibold text-sm
-              disabled:opacity-50 disabled:cursor-not-allowed
-              transition-colors cursor-pointer"
+            className="w-full cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              padding: '12px 16px',
+              fontSize: '14px',
+              fontWeight: 600,
+              color: '#FFFFFF',
+              background: '#E8872A',
+              border: 'none',
+              borderRadius: '8px',
+              transition: 'background 0.2s',
+              marginTop: '8px',
+            }}
+            onMouseEnter={(e) => { if (!loading) (e.target as HTMLButtonElement).style.background = '#D97A1F' }}
+            onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.background = '#E8872A' }}
           >
             {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
           </button>
