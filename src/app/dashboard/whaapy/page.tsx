@@ -30,8 +30,9 @@ export default function WhaapyPage() {
     <div
       className="-m-6"
       style={{
-        width: 'calc(100vw - var(--sidebar-width))',
-        height: 'calc(100vh - var(--topbar-height))',
+        position: 'relative',
+        width: '100%',
+        height: 'calc(100vh - 64px)',
         overflow: 'hidden',
       }}
     >
@@ -40,7 +41,12 @@ export default function WhaapyPage() {
         onError={() => setError(true)}
         allow="clipboard-write; microphone"
         title="Whaapy"
-        className="w-full h-full border-none"
+        style={{
+          width: '100%',
+          height: '100%',
+          border: 'none',
+          zoom: 0.8,
+        }}
       />
     </div>
   )
