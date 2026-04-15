@@ -5,11 +5,11 @@ import { ExternalLink } from 'lucide-react'
 
 const WHAAPY_URL = 'https://app.whaapy.com'
 const IFRAME_WIDTH = 2000
-const IFRAME_HEIGHT = 1000
 
 export default function WhaapyPage() {
   const [error, setError] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
+  const [iframeHeight, setIframeHeight] = useState(1000)
   const [scale, setScale] = useState(1)
 
   useEffect(() => {
@@ -18,7 +18,10 @@ export default function WhaapyPage() {
     const update = () => {
       const w = el.clientWidth
       const h = el.clientHeight
-      setScale(Math.min(w / IFRAME_WIDTH, h / IFRAME_HEIGHT))
+      if (w === 0 || h === 0) return
+      const s = w / IFRAME_WIDTH
+      setScale(s)
+      setIframeHeight(h / s)
     }
     update()
     const ro = new ResizeObserver(update)
@@ -47,12 +50,13 @@ export default function WhaapyPage() {
   return (
     <div
       ref={containerRef}
-      className="-m-6"
       style={{
-        width: '100%',
-        height: 'calc(100vh - 64px)',
+        position: 'fixed',
+        top: 'var(--topbar-height, 64px)',
+        left: 'var(--sidebar-width, 260px)',
+        right: 0,
+        bottom: 0,
         overflow: 'hidden',
-        position: 'relative',
       }}
     >
       <iframe
@@ -61,8 +65,11 @@ export default function WhaapyPage() {
         allow="clipboard-write; microphone"
         title="Whaapy"
         style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
           width: `${IFRAME_WIDTH}px`,
-          height: `${IFRAME_HEIGHT}px`,
+          height: `${iframeHeight}px`,
           border: 'none',
           transform: `scale(${scale})`,
           transformOrigin: 'top left',

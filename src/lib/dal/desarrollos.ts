@@ -34,21 +34,9 @@ export async function getDesarrollos(
 ): Promise<PaginatedResult> {
   const supabase = createAdminClient()
 
-  // Aliased numeric columns (view columns are text — need ::numeric cast
-  // via select aliases so .gte/.lte compare numerically).
-  const NUMERIC_BOUND_COLS = [
-    'precio_min', 'precio_max',
-    'm2_totales_min', 'm2_totales_max',
-    'recamaras_min', 'recamaras_max',
-    'banos_min', 'banos_max',
-    'estacionamientos_min', 'estacionamientos_max',
-  ]
-  const numericSelect = NUMERIC_BOUND_COLS.map((c) => `${c}_num:${c}::numeric`).join(',')
-  const selectStr = `*,${numericSelect}`
-
   let query = supabase
     .from('desarrollos_view')
-    .select(selectStr)
+    .select('*')
     .order('id', { ascending: false })
     .limit(perPage + 1)
 
@@ -64,21 +52,31 @@ export async function getDesarrollos(
   if (filters.bodega) query = query.eq('bodega', filters.bodega)
 
   // Range intersection: filter's [min,max] must overlap desarrollo's [col_min,col_max].
-  // - filter.min set → desarrollo.max >= filter.min  (use aliased col_max_num)
-  // - filter.max set → desarrollo.min <= filter.max  (use aliased col_min_num)
+  // - filter.min set → desarrollo.col_max >= filter.min
+  // - filter.max set → desarrollo.col_min <= filter.max
+  // View columns are text; cast via .filter('col::numeric', ...) and
+  // exclude empty-string rows first so the cast doesn't error per-row.
   const rangePairs: Array<[string, string, number | undefined, number | undefined]> = [
-    ['precio_min_num', 'precio_max_num', filters.precio_min, filters.precio_max],
-    ['m2_totales_min_num', 'm2_totales_max_num', filters.m2_totales_min, filters.m2_totales_max],
-    ['recamaras_min_num', 'recamaras_max_num', filters.recamaras_min, filters.recamaras_max],
-    ['banos_min_num', 'banos_max_num', filters.banos_min, filters.banos_max],
-    ['estacionamientos_min_num', 'estacionamientos_max_num', filters.estacionamientos_min, filters.estacionamientos_max],
+    ['precio_min', 'precio_max', filters.precio_min, filters.precio_max],
+    ['m2_totales_min', 'm2_totales_max', filters.m2_totales_min, filters.m2_totales_max],
+    ['recamaras_min', 'recamaras_max', filters.recamaras_min, filters.recamaras_max],
+    ['banos_min', 'banos_max', filters.banos_min, filters.banos_max],
+    ['estacionamientos_min', 'estacionamientos_max', filters.estacionamientos_min, filters.estacionamientos_max],
   ]
-  for (const [aliasMin, aliasMax, fMin, fMax] of rangePairs) {
-    if (fMin !== undefined && !isNaN(fMin)) {
-      query = query.gte(aliasMax, fMin)
+  for (const [colMin, colMax, fMin, fMax] of rangePairs) {
+    const hasMin = fMin !== undefined && !isNaN(fMin)
+    const hasMax = fMax !== undefined && !isNaN(fMax)
+    if (hasMin) {
+      query = query
+        .not(colMax, 'is', null)
+        .not(colMax, 'eq', '')
+        .filter(`${colMax}::numeric`, 'gte', fMin)
     }
-    if (fMax !== undefined && !isNaN(fMax)) {
-      query = query.lte(aliasMin, fMax)
+    if (hasMax) {
+      query = query
+        .not(colMin, 'is', null)
+        .not(colMin, 'eq', '')
+        .filter(`${colMin}::numeric`, 'lte', fMax)
     }
   }
 

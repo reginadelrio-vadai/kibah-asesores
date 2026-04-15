@@ -21,9 +21,9 @@ export async function GET(request: NextRequest) {
   const sortBy = params.get('sort_by') ?? 'created_at'
   const sortOrder = params.get('sort_order') === 'asc' ? true : false
 
-  // Numeric columns — aliased with ::numeric cast so filtering uses
-  // numeric comparison. The view's underlying columns are text, so plain
-  // .gte/.lte on the text name would compare lexicographically ("80" > "100").
+  // Numeric columns — the view's underlying columns are text. We cast
+  // via .filter('col::numeric', ...) per-filter so empty-string rows are
+  // only cast when the filter applies (after excluding them with .not).
   const NUMERIC_COLS = [
     'precio_unidad',
     'm2_totales',
@@ -35,12 +35,10 @@ export async function GET(request: NextRequest) {
     'estacionamiento',
     'pct_comision',
   ]
-  const numericSelect = NUMERIC_COLS.map((c) => `${c}_num:${c}::numeric`).join(',')
-  const selectStr = `*,${numericSelect}`
 
   let query = supabase
     .from('propiedades_view')
-    .select(selectStr)
+    .select('*')
     .order(sortBy, { ascending: sortOrder })
     .limit(perPage + 1)
 
@@ -68,13 +66,25 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // Range filters — apply on the aliased numeric columns from select
+  // Range filters — only apply if user actually provided a numeric value.
+  // Strict guard: empty string → skip entirely (was causing "invalid input
+  // syntax for type numeric: ''" on the PostgreSQL side).
   for (const key of NUMERIC_COLS) {
-    const min = params.get(`${key}_min`)
-    const max = params.get(`${key}_max`)
-    const alias = `${key}_num`
-    if (min && !isNaN(Number(min))) query = query.gte(alias, Number(min))
-    if (max && !isNaN(Number(max))) query = query.lte(alias, Number(max))
+    const minRaw = params.get(`${key}_min`)
+    const maxRaw = params.get(`${key}_max`)
+    const hasMin = minRaw !== null && minRaw.trim() !== '' && !isNaN(Number(minRaw))
+    const hasMax = maxRaw !== null && maxRaw.trim() !== '' && !isNaN(Number(maxRaw))
+    if (hasMin || hasMax) {
+      // Exclude rows where the column is NULL or empty-string so the
+      // ::numeric cast doesn't error per-row.
+      query = query.not(key, 'is', null).not(key, 'eq', '')
+    }
+    if (hasMin) {
+      query = query.filter(`${key}::numeric`, 'gte', Number(minRaw))
+    }
+    if (hasMax) {
+      query = query.filter(`${key}::numeric`, 'lte', Number(maxRaw))
+    }
   }
 
   // Text search
@@ -93,7 +103,7 @@ export async function GET(request: NextRequest) {
   }
 
   const hasMore = (data?.length ?? 0) > perPage
-  const items = (data ?? []) as unknown as Array<Record<string, unknown>>
+  const items = data ?? []
   if (hasMore) items.pop()
 
   const nextCursor = hasMore && items.length > 0
