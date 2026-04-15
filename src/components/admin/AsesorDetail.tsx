@@ -14,6 +14,11 @@ interface AsesorDetailProps {
   onToast: (message: string, type: ToastType) => void
 }
 
+interface Role {
+  name: string
+  display_name: string
+}
+
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return '—'
   return new Date(dateStr).toLocaleDateString('es-MX', {
@@ -27,6 +32,42 @@ export function AsesorDetail({ asesor, onClose, onToggle, onDelete, onToast }: A
   const [copied, setCopied] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
+  const [roles, setRoles] = useState<Role[]>([])
+  const [currentRole, setCurrentRole] = useState<string>(asesor.role ?? 'asesor')
+  const [savingRole, setSavingRole] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/roles')
+      .then((r) => (r.ok ? r.json() : { data: [] }))
+      .then((json) => {
+        const list: Role[] = (json.data ?? []).filter((r: Role) => r.name !== 'admin')
+        setRoles(list)
+      })
+      .catch(() => {})
+  }, [])
+
+  const handleRoleChange = async (newRole: string) => {
+    if (newRole === currentRole) return
+    setSavingRole(true)
+    try {
+      const res = await fetch(`/api/asesores/${asesor.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: newRole }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        onToast(body.error || 'Error al actualizar rol', 'error')
+        return
+      }
+      setCurrentRole(newRole)
+      onToast('Rol actualizado', 'success')
+    } catch {
+      onToast('Error de conexión', 'error')
+    } finally {
+      setSavingRole(false)
+    }
+  }
 
   const isLocked = resetPassword !== null
 
@@ -129,6 +170,23 @@ export function AsesorDetail({ asesor, onClose, onToggle, onDelete, onToast }: A
               <div>
                 <dt className="text-xs text-text-tertiary">Email</dt>
                 <dd className="text-sm text-text-primary font-medium mt-0.5">{asesor.email}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-text-tertiary mb-1">Rol</dt>
+                <dd>
+                  <select
+                    value={currentRole}
+                    onChange={(e) => handleRoleChange(e.target.value)}
+                    disabled={savingRole || isLocked}
+                    className="kibah-input cursor-pointer"
+                  >
+                    {/* Show current role even if it's admin (non-editable in that case) */}
+                    {currentRole === 'admin' && <option value="admin">Administrador</option>}
+                    {roles.map((r) => (
+                      <option key={r.name} value={r.name}>{r.display_name}</option>
+                    ))}
+                  </select>
+                </dd>
               </div>
               <div className="flex items-center gap-3">
                 <div className="flex-1">

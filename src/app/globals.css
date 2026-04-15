@@ -20,8 +20,8 @@
   --bg-sidebar: #1B2A4A;
 
   /* Text */
-  --text-primary: #0F172A;
-  --text-secondary: #475569;
+  --text-primary: #1B2A4A;
+  --text-secondary: #4A5568;
   --text-tertiary: #94A3B8;
   --text-on-navy: #FFFFFF;
   --text-on-navy-muted: #94A3B8;
@@ -585,4 +585,50 @@ textarea.kibah-input {
 
 .kibah-btn-danger:hover {
   background: rgba(239, 68, 68, 0.2);
+}
+
+/* ============================================================
+   Native select dropdown — readable options in both themes
+   ============================================================ */
+select option {
+  background-color: #FFFFFF;
+  color: #1B2A4A;
+}
+.dark select option {
+  background-color: #1B2A4A;
+  color: #E2E8F0;
+}
+.dark select option:hover,
+.dark select option:checked {
+  background-color: rgba(232, 135, 42, 0.3);
+}
+
+/* ============================================================
+   Expanded filter panel — navy in light, dark in dark
+   ============================================================ */
+.kibah-filter-panel {
+  background: #1B2A4A;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 16px;
+}
+.kibah-filter-panel label {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+.kibah-filter-panel input,
+.kibah-filter-panel select {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #FFFFFF !important;
+}
+.kibah-filter-panel input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+.kibah-filter-panel select option {
+  background: #1B2A4A;
+  color: #E2E8F0;
+}
+.dark .kibah-filter-panel {
+  background: rgba(15, 25, 35, 0.5);
+  border-color: rgba(255, 255, 255, 0.06);
 }

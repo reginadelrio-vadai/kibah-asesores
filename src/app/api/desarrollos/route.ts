@@ -13,14 +13,17 @@ export async function GET(request: NextRequest) {
   const perPage = Math.min(Math.max(parseInt(params.get('per_page') ?? '20') || 20, 1), 50)
 
   const filters: Record<string, string | number> = {}
-  for (const key of ['colonia', 'alcaldia', 'disponibilidad', 'tipo_preventa', 'search']) {
+  for (const key of ['colonia', 'alcaldia', 'disponibilidad', 'tipo_preventa', 'tipo_entrega', 'bodega', 'search']) {
     const v = params.get(key)
     if (v) filters[key] = v
   }
-  const precioMin = params.get('precio_min')
-  const precioMax = params.get('precio_max')
-  if (precioMin) filters.precio_min = parseFloat(precioMin)
-  if (precioMax) filters.precio_max = parseFloat(precioMax)
+  const rangeKeys = ['precio', 'm2_totales', 'recamaras', 'banos', 'estacionamientos']
+  for (const k of rangeKeys) {
+    const min = params.get(`${k}_min`)
+    const max = params.get(`${k}_max`)
+    if (min && !isNaN(Number(min))) filters[`${k}_min`] = Number(min)
+    if (max && !isNaN(Number(max))) filters[`${k}_max`] = Number(max)
+  }
 
   const result = await dal.getDesarrollos(filters, cursor, perPage)
 

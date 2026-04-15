@@ -345,13 +345,7 @@ export function PropertyFilters({
             </button>
 
             {expandedDesktop && (
-              <div
-                className="mt-2 p-4 rounded-[12px] border"
-                style={{
-                  borderColor: 'rgba(255, 255, 255, 0.06)',
-                  background: 'rgba(15, 25, 35, 0.5)',
-                }}
-              >
+              <div className="kibah-filter-panel mt-2">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-3 gap-y-4">
                   {extraColumns.map((col) => (
                     <LabeledFilter

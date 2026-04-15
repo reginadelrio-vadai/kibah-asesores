@@ -66,8 +66,14 @@ export async function GET(request: NextRequest) {
   for (const key of rangeParams) {
     const min = params.get(`${key}_min`)
     const max = params.get(`${key}_max`)
-    if (min) query = query.gte(key, parseFloat(min))
-    if (max) query = query.lte(key, parseFloat(max))
+    // Cast to numeric — the view columns are text, so plain gte/lte
+    // compare lexicographically (e.g. "176" < "50" as strings).
+    if (min !== null && min !== '' && !isNaN(Number(min))) {
+      query = query.filter(`${key}::numeric`, 'gte', Number(min))
+    }
+    if (max !== null && max !== '' && !isNaN(Number(max))) {
+      query = query.filter(`${key}::numeric`, 'lte', Number(max))
+    }
   }
 
   // Text search

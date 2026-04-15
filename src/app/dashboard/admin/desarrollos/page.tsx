@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useState } from 'react'
-import { Plus, Building2, AlertCircle, Search, X } from 'lucide-react'
+import { Plus, Building2, AlertCircle } from 'lucide-react'
 import type { Desarrollo } from '@/types/desarrollo'
 import type { ToastType } from '@/components/ui/Toast'
 import { useDesarrollos } from '@/hooks/useDesarrollos'
@@ -10,6 +10,7 @@ import { DesarrolloGrid } from '@/components/desarrollos/DesarrolloGrid'
 import { DesarrolloTable } from '@/components/desarrollos/DesarrolloTable'
 import { DesarrolloDetail } from '@/components/desarrollos/DesarrolloDetail'
 import { DesarrolloForm } from '@/components/desarrollos/DesarrolloForm'
+import { DesarrolloFilters } from '@/components/desarrollos/DesarrolloFilters'
 import { ViewToggle } from '@/components/desarrollos/ViewToggle'
 import { Toast } from '@/components/ui/Toast'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
@@ -74,21 +75,8 @@ export default function DesarrollosPage() {
         </div>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" strokeWidth={1.5} />
-        <input
-          value={activeFilters.search ?? ''}
-          onChange={(e) => setFilter('search', e.target.value)}
-          placeholder="Buscar desarrollos..."
-          className="w-full h-9 pl-9 pr-8 text-sm rounded-[var(--radius-sm)] border border-border-primary bg-bg-primary text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-orange focus:ring-1 focus:ring-orange/30"
-        />
-        {activeFilters.search && (
-          <button onClick={() => setFilter('search', '')} className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer text-text-tertiary hover:text-text-primary">
-            <X className="w-4 h-4" strokeWidth={1.5} />
-          </button>
-        )}
-      </div>
+      {/* Filters */}
+      <DesarrolloFilters activeFilters={activeFilters} onSetFilter={setFilter} />
 
       {/* Error */}
       {error && (

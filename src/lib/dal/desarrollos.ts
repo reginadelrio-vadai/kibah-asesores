@@ -7,9 +7,19 @@ interface DesarrolloFilters {
   alcaldia?: string
   disponibilidad?: string
   tipo_preventa?: string
+  tipo_entrega?: string
+  bodega?: string
+  search?: string
   precio_min?: number
   precio_max?: number
-  search?: string
+  m2_totales_min?: number
+  m2_totales_max?: number
+  recamaras_min?: number
+  recamaras_max?: number
+  banos_min?: number
+  banos_max?: number
+  estacionamientos_min?: number
+  estacionamientos_max?: number
 }
 
 interface PaginatedResult {
@@ -38,8 +48,28 @@ export async function getDesarrollos(
   if (filters.alcaldia) query = query.eq('alcaldia', filters.alcaldia)
   if (filters.disponibilidad) query = query.eq('disponibilidad', filters.disponibilidad)
   if (filters.tipo_preventa) query = query.eq('tipo_preventa', filters.tipo_preventa)
-  if (filters.precio_min) query = query.gte('precio_min', filters.precio_min)
-  if (filters.precio_max) query = query.lte('precio_max', filters.precio_max)
+  if (filters.tipo_entrega) query = query.eq('tipo_entrega', filters.tipo_entrega)
+  if (filters.bodega) query = query.eq('bodega', filters.bodega)
+
+  // Range filter intersection: filter matches if desarrollo's [min,max] overlaps [filterMin, filterMax]
+  // desarrollo has unit within filter range if desarrollo.max >= filterMin AND desarrollo.min <= filterMax
+  // Cast to numeric because view columns are text.
+  const rangePairs: Array<[string, string, number | undefined, number | undefined]> = [
+    ['precio_min', 'precio_max', filters.precio_min, filters.precio_max],
+    ['m2_totales_min', 'm2_totales_max', filters.m2_totales_min, filters.m2_totales_max],
+    ['recamaras_min', 'recamaras_max', filters.recamaras_min, filters.recamaras_max],
+    ['banos_min', 'banos_max', filters.banos_min, filters.banos_max],
+    ['estacionamientos_min', 'estacionamientos_max', filters.estacionamientos_min, filters.estacionamientos_max],
+  ]
+  for (const [colMin, colMax, fMin, fMax] of rangePairs) {
+    if (fMin !== undefined && !isNaN(fMin)) {
+      query = query.filter(`${colMax}::numeric`, 'gte', fMin)
+    }
+    if (fMax !== undefined && !isNaN(fMax)) {
+      query = query.filter(`${colMin}::numeric`, 'lte', fMax)
+    }
+  }
+
   if (filters.search) {
     query = query.or(
       `nombre_kibah.ilike.%${filters.search}%,colonia.ilike.%${filters.search}%,alcaldia.ilike.%${filters.search}%,nombre_desarrollador.ilike.%${filters.search}%`
@@ -78,11 +108,12 @@ export async function getDesarrolloById(id: number): Promise<Desarrollo | null> 
 export async function getDesarrolloFilterOptions() {
   const supabase = createAdminClient()
 
-  const [colonias, alcaldias, disponibilidades, tipos_preventa, nombres_kibah] = await Promise.all([
+  const [colonias, alcaldias, disponibilidades, tipos_preventa, tipos_entrega, nombres_kibah] = await Promise.all([
     supabase.from('desarrollos_view').select('colonia').not('colonia', 'is', null),
     supabase.from('desarrollos_view').select('alcaldia').not('alcaldia', 'is', null),
     supabase.from('desarrollos_view').select('disponibilidad').not('disponibilidad', 'is', null),
     supabase.from('desarrollos_view').select('tipo_preventa').not('tipo_preventa', 'is', null),
+    supabase.from('desarrollos_view').select('tipo_entrega').not('tipo_entrega', 'is', null),
     supabase.from('desarrollos_view').select('nombre_kibah').not('nombre_kibah', 'is', null),
   ])
 
@@ -91,6 +122,7 @@ export async function getDesarrolloFilterOptions() {
     alcaldias: [...new Set((alcaldias.data ?? []).map((r) => r.alcaldia as string).filter(Boolean))].sort(),
     disponibilidades: [...new Set((disponibilidades.data ?? []).map((r) => r.disponibilidad as string).filter(Boolean))].sort(),
     tipos_preventa: [...new Set((tipos_preventa.data ?? []).map((r) => r.tipo_preventa as string).filter(Boolean))].sort(),
+    tipos_entrega: [...new Set((tipos_entrega.data ?? []).map((r) => r.tipo_entrega as string).filter(Boolean))].sort(),
     nombres_kibah: [...new Set((nombres_kibah.data ?? []).map((r) => r.nombre_kibah as string).filter(Boolean))].sort(),
   }
 }
