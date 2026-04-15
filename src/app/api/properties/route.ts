@@ -21,9 +21,9 @@ export async function GET(request: NextRequest) {
   const sortBy = params.get('sort_by') ?? 'created_at'
   const sortOrder = params.get('sort_order') === 'asc' ? true : false
 
-  // Numeric columns — the view's underlying columns are text. We cast
-  // via .filter('col::numeric', ...) per-filter so empty-string rows are
-  // only cast when the filter applies (after excluding them with .not).
+  // Numeric columns — propiedades_view now exposes these as NUMERIC.
+  // Plain .gte/.lte with Number() works. Empty-string query params must
+  // be guarded before reaching here (comparing numeric col to '' errors).
   const NUMERIC_COLS = [
     'precio_unidad',
     'm2_totales',
@@ -66,24 +66,15 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // Range filters — only apply if user actually provided a numeric value.
-  // Strict guard: empty string → skip entirely (was causing "invalid input
-  // syntax for type numeric: ''" on the PostgreSQL side).
+  // Range filters — strict empty-string guard before applying.
   for (const key of NUMERIC_COLS) {
     const minRaw = params.get(`${key}_min`)
     const maxRaw = params.get(`${key}_max`)
-    const hasMin = minRaw !== null && minRaw.trim() !== '' && !isNaN(Number(minRaw))
-    const hasMax = maxRaw !== null && maxRaw.trim() !== '' && !isNaN(Number(maxRaw))
-    if (hasMin || hasMax) {
-      // Exclude rows where the column is NULL or empty-string so the
-      // ::numeric cast doesn't error per-row.
-      query = query.not(key, 'is', null).not(key, 'eq', '')
+    if (minRaw !== null && minRaw.trim() !== '' && !isNaN(Number(minRaw))) {
+      query = query.gte(key, Number(minRaw))
     }
-    if (hasMin) {
-      query = query.filter(`${key}::numeric`, 'gte', Number(minRaw))
-    }
-    if (hasMax) {
-      query = query.filter(`${key}::numeric`, 'lte', Number(maxRaw))
+    if (maxRaw !== null && maxRaw.trim() !== '' && !isNaN(Number(maxRaw))) {
+      query = query.lte(key, Number(maxRaw))
     }
   }
 

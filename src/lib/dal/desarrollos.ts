@@ -52,10 +52,9 @@ export async function getDesarrollos(
   if (filters.bodega) query = query.eq('bodega', filters.bodega)
 
   // Range intersection: filter's [min,max] must overlap desarrollo's [col_min,col_max].
-  // - filter.min set → desarrollo.col_max >= filter.min
-  // - filter.max set → desarrollo.col_min <= filter.max
-  // View columns are text; cast via .filter('col::numeric', ...) and
-  // exclude empty-string rows first so the cast doesn't error per-row.
+  // - filter.min set → desarrollo.col_max >= filter.min (has units above min)
+  // - filter.max set → desarrollo.col_min <= filter.max (has units below max)
+  // desarrollos_view columns are NUMERIC; plain .gte/.lte works.
   const rangePairs: Array<[string, string, number | undefined, number | undefined]> = [
     ['precio_min', 'precio_max', filters.precio_min, filters.precio_max],
     ['m2_totales_min', 'm2_totales_max', filters.m2_totales_min, filters.m2_totales_max],
@@ -64,19 +63,11 @@ export async function getDesarrollos(
     ['estacionamientos_min', 'estacionamientos_max', filters.estacionamientos_min, filters.estacionamientos_max],
   ]
   for (const [colMin, colMax, fMin, fMax] of rangePairs) {
-    const hasMin = fMin !== undefined && !isNaN(fMin)
-    const hasMax = fMax !== undefined && !isNaN(fMax)
-    if (hasMin) {
-      query = query
-        .not(colMax, 'is', null)
-        .not(colMax, 'eq', '')
-        .filter(`${colMax}::numeric`, 'gte', fMin)
+    if (fMin !== undefined && !isNaN(fMin)) {
+      query = query.gte(colMax, fMin)
     }
-    if (hasMax) {
-      query = query
-        .not(colMin, 'is', null)
-        .not(colMin, 'eq', '')
-        .filter(`${colMin}::numeric`, 'lte', fMax)
+    if (fMax !== undefined && !isNaN(fMax)) {
+      query = query.lte(colMin, fMax)
     }
   }
 
@@ -93,7 +84,7 @@ export async function getDesarrollos(
     return { data: [], nextCursor: null }
   }
 
-  const items = (data ?? []) as unknown as Desarrollo[]
+  const items = (data ?? []) as Desarrollo[]
   const hasMore = items.length > perPage
   if (hasMore) items.pop()
 
