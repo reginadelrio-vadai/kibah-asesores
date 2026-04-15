@@ -594,13 +594,25 @@ select option {
   background-color: #FFFFFF;
   color: #1B2A4A;
 }
+select option:hover,
+select option:focus,
+select option:checked {
+  background-color: rgba(232, 135, 42, 0.15) !important;
+  color: #1B2A4A !important;
+  /* box-shadow inset hack to override OS highlight on Chrome */
+  box-shadow: 0 0 0 100px rgba(232, 135, 42, 0.15) inset !important;
+}
+
 .dark select option {
-  background-color: #1B2A4A;
+  background-color: #142038;
   color: #E2E8F0;
 }
 .dark select option:hover,
+.dark select option:focus,
 .dark select option:checked {
-  background-color: rgba(232, 135, 42, 0.3);
+  background-color: rgba(232, 135, 42, 0.25) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 0 0 100px rgba(232, 135, 42, 0.25) inset !important;
 }
 
 /* ============================================================

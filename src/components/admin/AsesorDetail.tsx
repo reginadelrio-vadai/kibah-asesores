@@ -12,6 +12,7 @@ interface AsesorDetailProps {
   onToggle: (asesor: Profile) => void
   onDelete: (asesor: Profile) => void
   onToast: (message: string, type: ToastType) => void
+  onRoleUpdated?: (id: string, newRole: string) => void
 }
 
 interface Role {
@@ -26,7 +27,7 @@ function formatDate(dateStr: string | null): string {
   })
 }
 
-export function AsesorDetail({ asesor, onClose, onToggle, onDelete, onToast }: AsesorDetailProps) {
+export function AsesorDetail({ asesor, onClose, onToggle, onDelete, onToast, onRoleUpdated }: AsesorDetailProps) {
   const [resetPassword, setResetPassword] = useState<string | null>(null)
   const [resetting, setResetting] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -61,6 +62,7 @@ export function AsesorDetail({ asesor, onClose, onToggle, onDelete, onToast }: A
         return
       }
       setCurrentRole(newRole)
+      onRoleUpdated?.(asesor.id, newRole)
       onToast('Rol actualizado', 'success')
     } catch {
       onToast('Error de conexión', 'error')

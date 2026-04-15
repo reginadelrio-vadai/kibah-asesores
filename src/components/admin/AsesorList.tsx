@@ -65,6 +65,13 @@ export function AsesorList({ onCreateClick, refreshKey }: AsesorListProps) {
     fetchAsesores()
   }
 
+  const handleRoleUpdated = (id: string, newRole: string) => {
+    setAsesores((prev) => prev.map((a) => (a.id === id ? { ...a, role: newRole as Profile['role'] } : a)))
+    if (selected?.id === id) {
+      setSelected((prev) => (prev ? { ...prev, role: newRole as Profile['role'] } : prev))
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -101,10 +108,13 @@ export function AsesorList({ onCreateClick, refreshKey }: AsesorListProps) {
             <div className="flex items-center justify-between gap-3">
               <div className="flex-1 min-w-0">
                 <h3 className="kibah-card-title truncate">{asesor.full_name}</h3>
-                <div className="mt-1.5">
+                <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
                   <span className={`kibah-badge ${asesor.is_active ? 'kibah-badge-active' : 'kibah-badge-inactive'}`}>
                     {asesor.is_active ? 'Activo' : 'Inactivo'}
                   </span>
+                  {asesor.role && (
+                    <span className="kibah-badge kibah-badge-preventa">{asesor.role}</span>
+                  )}
                 </div>
               </div>
               <button
@@ -126,6 +136,7 @@ export function AsesorList({ onCreateClick, refreshKey }: AsesorListProps) {
           onToggle={handleToggle}
           onDelete={handleDelete}
           onToast={showToast}
+          onRoleUpdated={handleRoleUpdated}
         />
       )}
 

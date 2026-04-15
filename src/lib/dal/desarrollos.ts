@@ -34,9 +34,21 @@ export async function getDesarrollos(
 ): Promise<PaginatedResult> {
   const supabase = createAdminClient()
 
+  // Aliased numeric columns (view columns are text — need ::numeric cast
+  // via select aliases so .gte/.lte compare numerically).
+  const NUMERIC_BOUND_COLS = [
+    'precio_min', 'precio_max',
+    'm2_totales_min', 'm2_totales_max',
+    'recamaras_min', 'recamaras_max',
+    'banos_min', 'banos_max',
+    'estacionamientos_min', 'estacionamientos_max',
+  ]
+  const numericSelect = NUMERIC_BOUND_COLS.map((c) => `${c}_num:${c}::numeric`).join(',')
+  const selectStr = `*,${numericSelect}`
+
   let query = supabase
     .from('desarrollos_view')
-    .select('*')
+    .select(selectStr)
     .order('id', { ascending: false })
     .limit(perPage + 1)
 
@@ -51,22 +63,22 @@ export async function getDesarrollos(
   if (filters.tipo_entrega) query = query.eq('tipo_entrega', filters.tipo_entrega)
   if (filters.bodega) query = query.eq('bodega', filters.bodega)
 
-  // Range filter intersection: filter matches if desarrollo's [min,max] overlaps [filterMin, filterMax]
-  // desarrollo has unit within filter range if desarrollo.max >= filterMin AND desarrollo.min <= filterMax
-  // Cast to numeric because view columns are text.
+  // Range intersection: filter's [min,max] must overlap desarrollo's [col_min,col_max].
+  // - filter.min set → desarrollo.max >= filter.min  (use aliased col_max_num)
+  // - filter.max set → desarrollo.min <= filter.max  (use aliased col_min_num)
   const rangePairs: Array<[string, string, number | undefined, number | undefined]> = [
-    ['precio_min', 'precio_max', filters.precio_min, filters.precio_max],
-    ['m2_totales_min', 'm2_totales_max', filters.m2_totales_min, filters.m2_totales_max],
-    ['recamaras_min', 'recamaras_max', filters.recamaras_min, filters.recamaras_max],
-    ['banos_min', 'banos_max', filters.banos_min, filters.banos_max],
-    ['estacionamientos_min', 'estacionamientos_max', filters.estacionamientos_min, filters.estacionamientos_max],
+    ['precio_min_num', 'precio_max_num', filters.precio_min, filters.precio_max],
+    ['m2_totales_min_num', 'm2_totales_max_num', filters.m2_totales_min, filters.m2_totales_max],
+    ['recamaras_min_num', 'recamaras_max_num', filters.recamaras_min, filters.recamaras_max],
+    ['banos_min_num', 'banos_max_num', filters.banos_min, filters.banos_max],
+    ['estacionamientos_min_num', 'estacionamientos_max_num', filters.estacionamientos_min, filters.estacionamientos_max],
   ]
-  for (const [colMin, colMax, fMin, fMax] of rangePairs) {
+  for (const [aliasMin, aliasMax, fMin, fMax] of rangePairs) {
     if (fMin !== undefined && !isNaN(fMin)) {
-      query = query.filter(`${colMax}::numeric`, 'gte', fMin)
+      query = query.gte(aliasMax, fMin)
     }
     if (fMax !== undefined && !isNaN(fMax)) {
-      query = query.filter(`${colMin}::numeric`, 'lte', fMax)
+      query = query.lte(aliasMin, fMax)
     }
   }
 
@@ -83,7 +95,7 @@ export async function getDesarrollos(
     return { data: [], nextCursor: null }
   }
 
-  const items = (data ?? []) as Desarrollo[]
+  const items = (data ?? []) as unknown as Desarrollo[]
   const hasMore = items.length > perPage
   if (hasMore) items.pop()
 
