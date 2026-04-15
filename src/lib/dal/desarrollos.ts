@@ -52,9 +52,10 @@ export async function getDesarrollos(
   if (filters.bodega) query = query.eq('bodega', filters.bodega)
 
   // Range intersection: filter's [min,max] must overlap desarrollo's [col_min,col_max].
-  // - filter.min set → desarrollo.col_max >= filter.min (has units above min)
-  // - filter.max set → desarrollo.col_min <= filter.max (has units below max)
-  // desarrollos_view columns are NUMERIC; plain .gte/.lte works.
+  // - filter.min set → desarrollo.col_max >= filter.min OR col_max IS NULL
+  // - filter.max set → desarrollo.col_min <= filter.max OR col_min IS NULL
+  // NULL bounds (e.g. Tajín III with precio_min NULL, precio_max 5.7M) are
+  // treated as open-ended and should match any filter on that side.
   const rangePairs: Array<[string, string, number | undefined, number | undefined]> = [
     ['precio_min', 'precio_max', filters.precio_min, filters.precio_max],
     ['m2_totales_min', 'm2_totales_max', filters.m2_totales_min, filters.m2_totales_max],
@@ -64,10 +65,10 @@ export async function getDesarrollos(
   ]
   for (const [colMin, colMax, fMin, fMax] of rangePairs) {
     if (fMin !== undefined && !isNaN(fMin)) {
-      query = query.gte(colMax, fMin)
+      query = query.or(`${colMax}.gte.${fMin},${colMax}.is.null`)
     }
     if (fMax !== undefined && !isNaN(fMax)) {
-      query = query.lte(colMin, fMax)
+      query = query.or(`${colMin}.lte.${fMax},${colMin}.is.null`)
     }
   }
 
