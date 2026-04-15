@@ -14,6 +14,7 @@ export const ALL_PERMISSIONS: Record<string, string> = {
   'propiedades.edit': 'Editar propiedades',
   'propiedades.delete': 'Eliminar propiedades',
   'pdf.view': 'Generar PDFs',
+  'carta_propuesta.view': 'Generar Cartas Propuesta',
   'calendario.view': 'Ver calendario',
   'whaapy.view': 'Ver Whaapy',
   'anuncios.view': 'Ver anuncios',
@@ -37,6 +38,7 @@ export const ALL_PERMISSIONS: Record<string, string> = {
 export const PERMISSION_GROUPS: { label: string; keys: string[] }[] = [
   { label: 'Propiedades', keys: ['propiedades.view', 'propiedades.create', 'propiedades.edit', 'propiedades.delete'] },
   { label: 'PDF', keys: ['pdf.view'] },
+  { label: 'Carta Propuesta', keys: ['carta_propuesta.view'] },
   { label: 'Calendario', keys: ['calendario.view'] },
   { label: 'Whaapy', keys: ['whaapy.view'] },
   { label: 'Anuncios', keys: ['anuncios.view', 'anuncios.create'] },

@@ -9,6 +9,7 @@ import {
   Calendar,
   MessageSquare,
   Megaphone,
+  FileSignature,
   Users,
   Landmark,
   Columns3,
@@ -63,6 +64,7 @@ export function Sidebar({ role }: { role: UserRole }) {
   const mainNav: NavItem[] = [
     { label: 'Propiedades', href: '/dashboard/propiedades', icon: <Building2 className="w-5 h-5" strokeWidth={1.5} />, permission: 'propiedades.view' },
     { label: 'PDF', href: '/dashboard/pdf', icon: <FileText className="w-5 h-5" strokeWidth={1.5} />, permission: 'pdf.view' },
+    { label: 'Carta Propuesta', href: '/dashboard/carta-propuesta', icon: <FileSignature className="w-5 h-5" strokeWidth={1.5} />, permission: 'carta_propuesta.view' },
     { label: 'Calendario', href: isAdmin ? '/dashboard/admin/calendario' : '/dashboard/calendario', icon: <Calendar className="w-5 h-5" strokeWidth={1.5} />, permission: 'calendario.view' },
     { label: 'Whaapy', href: '/dashboard/whaapy', icon: <MessageSquare className="w-5 h-5" strokeWidth={1.5} />, permission: 'whaapy.view' },
     { label: 'Anuncios', href: isAdmin ? '/dashboard/admin/anuncios' : '/dashboard/anuncios', icon: <Megaphone className="w-5 h-5" strokeWidth={1.5} />, badge: unreadCount, permission: 'anuncios.view' },
