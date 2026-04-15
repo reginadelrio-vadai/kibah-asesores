@@ -1,17 +1,11 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Download, Pencil, Loader2, Link as LinkIcon } from 'lucide-react'
+import type { Property } from '@/types'
 import { Toast, type ToastType } from '@/components/ui/Toast'
+import { PropertyPicker } from '@/components/carta-propuesta/PropertyPicker'
 import { generateCartaPdf, type CartaPropuestaData } from '@/components/carta-propuesta/generateCartaPdf'
-
-interface Unidad {
-  id: string
-  unidad: string | null
-  direccion: string | null
-  colonia: string | null
-  precio_unidad: number | null
-}
 
 const DIRECTORES = ['Iñaki Gonzalez Gámiz', 'Roberto Martínez Licón']
 
@@ -28,14 +22,7 @@ function parseNumber(s: string): number | '' {
 }
 
 export default function CartaPropuestaPage() {
-  const [desarrollos, setDesarrollos] = useState<string[]>([])
-  const [desarrolloQuery, setDesarrolloQuery] = useState('')
-  const [desarrolloOpen, setDesarrolloOpen] = useState(false)
-  const [selectedDesarrollo, setSelectedDesarrollo] = useState('')
-
-  const [unidades, setUnidades] = useState<Unidad[]>([])
-  const [unidadesLoading, setUnidadesLoading] = useState(false)
-  const [selectedUnidadId, setSelectedUnidadId] = useState('')
+  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
 
   const [director, setDirector] = useState('')
   const [nombreCliente, setNombreCliente] = useState('')
@@ -60,49 +47,17 @@ export default function CartaPropuestaPage() {
     setToast({ message, type })
   }, [])
 
-  // Fetch desarrollos list
-  useEffect(() => {
-    fetch('/api/carta-propuesta/desarrollos')
-      .then((r) => (r.ok ? r.json() : { data: [] }))
-      .then((json) => setDesarrollos(json.data ?? []))
-      .catch(() => {})
-  }, [])
-
-  // Fetch unidades when desarrollo is selected
-  useEffect(() => {
-    if (!selectedDesarrollo) {
-      setUnidades([])
-      setSelectedUnidadId('')
-      return
-    }
-    setUnidadesLoading(true)
-    fetch(`/api/carta-propuesta/unidades?nombre_kibah=${encodeURIComponent(selectedDesarrollo)}`)
-      .then((r) => (r.ok ? r.json() : { data: [] }))
-      .then((json) => setUnidades(json.data ?? []))
-      .catch(() => {})
-      .finally(() => setUnidadesLoading(false))
-  }, [selectedDesarrollo])
-
-  // Pre-fill fields when unidad is selected
-  useEffect(() => {
-    if (!selectedUnidadId) return
-    const u = unidades.find((x) => x.id === selectedUnidadId)
-    if (!u) return
-    setDireccion(u.direccion ?? '')
-    setColonia(u.colonia ?? '')
-    setUnidad(u.unidad ?? '')
-    setValorDepto(typeof u.precio_unidad === 'number' ? u.precio_unidad : '')
-  }, [selectedUnidadId, unidades])
-
-  const filteredDesarrollos = useMemo(() => {
-    const q = desarrolloQuery.trim().toLowerCase()
-    if (!q) return desarrollos.slice(0, 50)
-    return desarrollos.filter((d) => d.toLowerCase().includes(q)).slice(0, 50)
-  }, [desarrollos, desarrolloQuery])
+  const handleSelectProperty = (p: Property) => {
+    setSelectedProperty(p)
+    setDireccion(p.direccion ?? '')
+    setColonia(p.colonia ?? '')
+    setUnidad(p.unidad ?? '')
+    const precio = typeof p.precio_unidad === 'number' ? p.precio_unidad : Number(p.precio_unidad)
+    setValorDepto(!isNaN(precio) && precio > 0 ? precio : '')
+  }
 
   const canGenerate =
-    !!selectedDesarrollo &&
-    !!selectedUnidadId &&
+    !!selectedProperty &&
     !!director &&
     nombreCliente.trim().length > 0 &&
     direccion.trim().length > 0 &&
@@ -165,7 +120,6 @@ export default function CartaPropuestaPage() {
     setPdfBlob(null)
   }
 
-  // Cleanup blob URL on unmount
   useEffect(() => {
     return () => {
       if (pdfUrl) URL.revokeObjectURL(pdfUrl)
@@ -182,76 +136,16 @@ export default function CartaPropuestaPage() {
 
       {!pdfUrl ? (
         <div className="kibah-card p-6 space-y-5 max-w-4xl">
-          {/* Selector de propiedad */}
+          {/* 1. Selector de propiedad */}
           <div>
-            <h2 className="text-sm font-semibold text-text-primary mb-3">Propiedad</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {/* Desarrollo combobox */}
-              <div className="relative">
-                <label className="kibah-label">Desarrollo *</label>
-                <input
-                  type="text"
-                  value={desarrolloOpen ? desarrolloQuery : selectedDesarrollo}
-                  onFocus={() => {
-                    setDesarrolloOpen(true)
-                    setDesarrolloQuery('')
-                  }}
-                  onBlur={() => setTimeout(() => setDesarrolloOpen(false), 150)}
-                  onChange={(e) => setDesarrolloQuery(e.target.value)}
-                  placeholder="Buscar desarrollo..."
-                  className="kibah-input"
-                />
-                {desarrolloOpen && filteredDesarrollos.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-1 z-20 kibah-modal-solid border border-border-primary rounded-[var(--radius-sm)] shadow-xl max-h-60 overflow-y-auto">
-                    {filteredDesarrollos.map((d) => (
-                      <button
-                        key={d}
-                        type="button"
-                        onMouseDown={(e) => {
-                          e.preventDefault()
-                          setSelectedDesarrollo(d)
-                          setDesarrolloQuery(d)
-                          setDesarrolloOpen(false)
-                          setSelectedUnidadId('')
-                        }}
-                        className="w-full text-left px-3 py-2 text-sm text-text-primary hover:bg-bg-tertiary transition-colors cursor-pointer"
-                      >
-                        {d}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Unidad dropdown */}
-              <div>
-                <label className="kibah-label">Unidad *</label>
-                <select
-                  value={selectedUnidadId}
-                  onChange={(e) => setSelectedUnidadId(e.target.value)}
-                  disabled={!selectedDesarrollo || unidadesLoading}
-                  className="kibah-input cursor-pointer"
-                >
-                  <option value="">
-                    {!selectedDesarrollo
-                      ? 'Selecciona un desarrollo primero'
-                      : unidadesLoading
-                      ? 'Cargando unidades...'
-                      : unidades.length === 0
-                      ? 'Sin unidades disponibles'
-                      : 'Selecciona una unidad'}
-                  </option>
-                  {unidades.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.unidad || `(sin etiqueta) ${u.id.slice(0, 6)}`}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+            <h2 className="text-sm font-semibold text-text-primary mb-3">Selecciona una propiedad *</h2>
+            <PropertyPicker
+              selectedId={selectedProperty ? selectedProperty.id : null}
+              onSelect={handleSelectProperty}
+            />
           </div>
 
-          {/* Director de ventas */}
+          {/* 2. Director de ventas */}
           <div>
             <label className="kibah-label">Director de ventas *</label>
             <select value={director} onChange={(e) => setDirector(e.target.value)} className="kibah-input cursor-pointer">
@@ -262,7 +156,7 @@ export default function CartaPropuestaPage() {
             </select>
           </div>
 
-          {/* Cliente */}
+          {/* 3. Cliente */}
           <div>
             <label className="kibah-label">Nombre del Cliente *</label>
             <input
@@ -274,11 +168,11 @@ export default function CartaPropuestaPage() {
             />
           </div>
 
-          {/* Datos de propiedad (prellenados) */}
+          {/* 4. Datos de la propiedad (prellenados) */}
           <div>
             <h2 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-1.5">
               Datos de la propiedad
-              {selectedUnidadId && (
+              {selectedProperty && (
                 <span className="text-[11px] font-normal text-text-tertiary flex items-center gap-1">
                   <LinkIcon className="w-3 h-3" strokeWidth={1.5} />
                   prellenado
@@ -301,7 +195,7 @@ export default function CartaPropuestaPage() {
             </div>
           </div>
 
-          {/* Datos financieros */}
+          {/* 5. Datos financieros */}
           <div>
             <h2 className="text-sm font-semibold text-text-primary mb-3">Datos financieros</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
