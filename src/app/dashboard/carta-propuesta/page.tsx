@@ -1,95 +1,194 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { Download, Pencil, Loader2, Link as LinkIcon } from 'lucide-react'
+import { Download, Pencil, Loader2, Link as LinkIcon, FilePlus2 } from 'lucide-react'
 import type { Property } from '@/types'
 import { Toast, type ToastType } from '@/components/ui/Toast'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { PropertyPicker } from '@/components/carta-propuesta/PropertyPicker'
 import { generateCartaPdf, type CartaPropuestaData } from '@/components/carta-propuesta/generateCartaPdf'
 
 const DIRECTORES = ['Iñaki Gonzalez Gámiz', 'Roberto Martínez Licón']
 
-function fmtNumber(n: number | ''): string {
-  if (n === '' || isNaN(Number(n))) return ''
-  return new Intl.NumberFormat('es-MX', { maximumFractionDigits: 2 }).format(Number(n))
+// Allow digits and a single decimal point. Used for all numeric inputs.
+function sanitizeNumeric(s: string): string {
+  let cleaned = s.replace(/[^\d.]/g, '')
+  const firstDot = cleaned.indexOf('.')
+  if (firstDot !== -1) {
+    cleaned = cleaned.slice(0, firstDot + 1) + cleaned.slice(firstDot + 1).replace(/\./g, '')
+  }
+  return cleaned
 }
 
-function parseNumber(s: string): number | '' {
-  const cleaned = s.replace(/[^\d.]/g, '')
-  if (cleaned === '') return ''
-  const n = Number(cleaned)
-  return isNaN(n) ? '' : n
+// Format a raw numeric string like "5758150.50" → "5,758,150.50" preserving trailing zeros.
+function formatNumericDisplay(raw: string): string {
+  if (!raw) return ''
+  const [intPart, fracPart] = raw.split('.')
+  const n = parseInt(intPart || '0', 10)
+  if (isNaN(n)) return raw
+  const formattedInt = new Intl.NumberFormat('es-MX').format(n)
+  return fracPart !== undefined ? `${formattedInt}.${fracPart}` : formattedInt
+}
+
+function toNumber(raw: string): number {
+  const n = parseFloat(raw)
+  return isNaN(n) ? 0 : n
+}
+
+function MoneyField({
+  label,
+  id,
+  value,
+  onChange,
+  focusedKey,
+  setFocusedKey,
+}: {
+  label: string
+  id: string
+  value: string
+  onChange: (v: string) => void
+  focusedKey: string | null
+  setFocusedKey: (k: string | null) => void
+}) {
+  const focused = focusedKey === id
+  const display = focused ? value : formatNumericDisplay(value)
+  return (
+    <div>
+      <label className="kibah-label">{label}</label>
+      <input
+        type="text"
+        inputMode="decimal"
+        value={display}
+        onFocus={() => setFocusedKey(id)}
+        onBlur={() => setFocusedKey(null)}
+        onChange={(e) => onChange(sanitizeNumeric(e.target.value))}
+        placeholder="0"
+        className="kibah-input"
+      />
+    </div>
+  )
+}
+
+interface FormState {
+  selectedProperty: Property | null
+  director: string
+  nombreCliente: string
+  direccion: string
+  colonia: string
+  unidad: string
+  valorDepto: string
+  apartado: string
+  enganche: string
+  pctEnganche: string
+  pctPago: string
+  mensualidades: string
+  montoMensualidades: string
+  pagoEscritura: string
+}
+
+const EMPTY_FORM: FormState = {
+  selectedProperty: null,
+  director: '',
+  nombreCliente: '',
+  direccion: '',
+  colonia: '',
+  unidad: '',
+  valorDepto: '',
+  apartado: '',
+  enganche: '',
+  pctEnganche: '',
+  pctPago: '',
+  mensualidades: '',
+  montoMensualidades: '',
+  pagoEscritura: '',
+}
+
+function hasAnyData(f: FormState): boolean {
+  return (
+    f.selectedProperty !== null ||
+    f.director !== '' ||
+    f.nombreCliente !== '' ||
+    f.direccion !== '' ||
+    f.colonia !== '' ||
+    f.unidad !== '' ||
+    f.valorDepto !== '' ||
+    f.apartado !== '' ||
+    f.enganche !== '' ||
+    f.pctEnganche !== '' ||
+    f.pctPago !== '' ||
+    f.mensualidades !== '' ||
+    f.montoMensualidades !== '' ||
+    f.pagoEscritura !== ''
+  )
 }
 
 export default function CartaPropuestaPage() {
-  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
-
-  const [director, setDirector] = useState('')
-  const [nombreCliente, setNombreCliente] = useState('')
-  const [direccion, setDireccion] = useState('')
-  const [colonia, setColonia] = useState('')
-  const [unidad, setUnidad] = useState('')
-  const [valorDepto, setValorDepto] = useState<number | ''>('')
-  const [apartado, setApartado] = useState<number | ''>('')
-  const [enganche, setEnganche] = useState<number | ''>('')
-  const [pctEnganche, setPctEnganche] = useState<number | ''>('')
-  const [pctPago, setPctPago] = useState<number | ''>('')
-  const [mensualidades, setMensualidades] = useState<number | ''>('')
-  const [montoMensualidades, setMontoMensualidades] = useState<number | ''>('')
-  const [pagoEscritura, setPagoEscritura] = useState<number | ''>('')
+  const [form, setForm] = useState<FormState>(EMPTY_FORM)
+  const [focusedKey, setFocusedKey] = useState<string | null>(null)
 
   const [generating, setGenerating] = useState(false)
   const [pdfUrl, setPdfUrl] = useState<string | null>(null)
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null)
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null)
+  const [confirmNew, setConfirmNew] = useState(false)
 
   const showToast = useCallback((message: string, type: ToastType) => {
     setToast({ message, type })
   }, [])
 
+  const update = <K extends keyof FormState>(key: K, value: FormState[K]) => {
+    setForm((prev) => ({ ...prev, [key]: value }))
+  }
+
   const handleSelectProperty = (p: Property) => {
-    setSelectedProperty(p)
-    setDireccion(p.direccion ?? '')
-    setColonia(p.colonia ?? '')
-    setUnidad(p.unidad ?? '')
-    const precio = typeof p.precio_unidad === 'number' ? p.precio_unidad : Number(p.precio_unidad)
-    setValorDepto(!isNaN(precio) && precio > 0 ? precio : '')
+    const precioRaw =
+      typeof p.precio_unidad === 'number'
+        ? p.precio_unidad
+        : Number(p.precio_unidad)
+    setForm((prev) => ({
+      ...prev,
+      selectedProperty: p,
+      direccion: p.direccion ?? '',
+      colonia: p.colonia ?? '',
+      unidad: p.unidad ?? '',
+      valorDepto: !isNaN(precioRaw) && precioRaw > 0 ? String(precioRaw) : '',
+    }))
   }
 
   const canGenerate =
-    !!selectedProperty &&
-    !!director &&
-    nombreCliente.trim().length > 0 &&
-    direccion.trim().length > 0 &&
-    colonia.trim().length > 0 &&
-    unidad.trim().length > 0 &&
-    valorDepto !== '' &&
-    apartado !== '' &&
-    enganche !== '' &&
-    pctEnganche !== '' &&
-    pctPago !== '' &&
-    mensualidades !== '' &&
-    montoMensualidades !== '' &&
-    pagoEscritura !== ''
+    form.selectedProperty !== null &&
+    form.director !== '' &&
+    form.nombreCliente.trim() !== '' &&
+    form.direccion.trim() !== '' &&
+    form.colonia.trim() !== '' &&
+    form.unidad.trim() !== '' &&
+    form.valorDepto !== '' &&
+    form.apartado !== '' &&
+    form.enganche !== '' &&
+    form.pctEnganche !== '' &&
+    form.pctPago !== '' &&
+    form.mensualidades !== '' &&
+    form.montoMensualidades !== '' &&
+    form.pagoEscritura !== ''
 
   const handleGenerate = async () => {
     if (!canGenerate) return
     setGenerating(true)
     try {
       const data: CartaPropuestaData = {
-        director_ventas: director,
-        nombre_cliente: nombreCliente.trim(),
-        direccion: direccion.trim(),
-        colonia: colonia.trim(),
-        unidad: unidad.trim(),
-        valor_departamento: Number(valorDepto),
-        cantidad_apartado: Number(apartado),
-        enganche: Number(enganche),
-        pct_enganche: Number(pctEnganche),
-        pct_pago: Number(pctPago),
-        mensualidades: Number(mensualidades),
-        monto_mensualidades: Number(montoMensualidades),
-        pago_escritura: Number(pagoEscritura),
+        director_ventas: form.director,
+        nombre_cliente: form.nombreCliente.trim(),
+        direccion: form.direccion.trim(),
+        colonia: form.colonia.trim(),
+        unidad: form.unidad.trim(),
+        valor_departamento: toNumber(form.valorDepto),
+        cantidad_apartado: toNumber(form.apartado),
+        enganche: toNumber(form.enganche),
+        pct_enganche: toNumber(form.pctEnganche),
+        pct_pago: toNumber(form.pctPago),
+        mensualidades: toNumber(form.mensualidades),
+        monto_mensualidades: toNumber(form.montoMensualidades),
+        pago_escritura: toNumber(form.pagoEscritura),
       }
       const blob = await generateCartaPdf(data)
       if (pdfUrl) URL.revokeObjectURL(pdfUrl)
@@ -106,7 +205,7 @@ export default function CartaPropuestaPage() {
     if (!pdfBlob) return
     const url = pdfUrl ?? URL.createObjectURL(pdfBlob)
     const a = document.createElement('a')
-    const safeName = nombreCliente.trim().replace(/[^a-zA-Z0-9]+/g, '_') || 'Cliente'
+    const safeName = form.nombreCliente.trim().replace(/[^a-zA-Z0-9]+/g, '_') || 'Cliente'
     const d = new Date()
     const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
     a.href = url
@@ -120,6 +219,21 @@ export default function CartaPropuestaPage() {
     setPdfBlob(null)
   }
 
+  const doReset = () => {
+    if (pdfUrl) URL.revokeObjectURL(pdfUrl)
+    setPdfUrl(null)
+    setPdfBlob(null)
+    setForm(EMPTY_FORM)
+  }
+
+  const handleNewCarta = () => {
+    if (hasAnyData(form) || pdfUrl) {
+      setConfirmNew(true)
+    } else {
+      doReset()
+    }
+  }
+
   useEffect(() => {
     return () => {
       if (pdfUrl) URL.revokeObjectURL(pdfUrl)
@@ -129,26 +243,41 @@ export default function CartaPropuestaPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="kibah-page-title">Carta Propuesta</h1>
-        <p className="kibah-page-desc mt-1">Genera una propuesta de compra para tu cliente</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="kibah-page-title">Carta Propuesta</h1>
+          <p className="kibah-page-desc mt-1">Genera una propuesta de compra para tu cliente</p>
+        </div>
+        <button
+          onClick={handleNewCarta}
+          className="kibah-btn-secondary"
+          style={{ padding: '8px 16px', fontSize: '13px' }}
+        >
+          <FilePlus2 className="w-4 h-4" strokeWidth={1.5} />
+          Nueva Carta
+        </button>
       </div>
 
-      {!pdfUrl ? (
+      {/* Form: kept mounted so PropertyPicker selection persists when toggling preview */}
+      <div className={pdfUrl ? 'hidden' : ''}>
         <div className="kibah-card p-6 space-y-5 max-w-4xl">
           {/* 1. Selector de propiedad */}
           <div>
             <h2 className="text-sm font-semibold text-text-primary mb-3">Selecciona una propiedad *</h2>
             <PropertyPicker
-              selectedId={selectedProperty ? selectedProperty.id : null}
+              selectedId={form.selectedProperty ? form.selectedProperty.id : null}
               onSelect={handleSelectProperty}
             />
           </div>
 
-          {/* 2. Director de ventas */}
+          {/* 2. Director */}
           <div>
             <label className="kibah-label">Director de ventas *</label>
-            <select value={director} onChange={(e) => setDirector(e.target.value)} className="kibah-input cursor-pointer">
+            <select
+              value={form.director}
+              onChange={(e) => update('director', e.target.value)}
+              className="kibah-input cursor-pointer"
+            >
               <option value="">Selecciona un director</option>
               {DIRECTORES.map((d) => (
                 <option key={d} value={d}>{d}</option>
@@ -161,18 +290,18 @@ export default function CartaPropuestaPage() {
             <label className="kibah-label">Nombre del Cliente *</label>
             <input
               type="text"
-              value={nombreCliente}
-              onChange={(e) => setNombreCliente(e.target.value)}
+              value={form.nombreCliente}
+              onChange={(e) => update('nombreCliente', e.target.value)}
               placeholder="Nombre completo"
               className="kibah-input"
             />
           </div>
 
-          {/* 4. Datos de la propiedad (prellenados) */}
+          {/* 4. Datos propiedad (prellenados) */}
           <div>
             <h2 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-1.5">
               Datos de la propiedad
-              {selectedProperty && (
+              {form.selectedProperty && (
                 <span className="text-[11px] font-normal text-text-tertiary flex items-center gap-1">
                   <LinkIcon className="w-3 h-3" strokeWidth={1.5} />
                   prellenado
@@ -182,15 +311,15 @@ export default function CartaPropuestaPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
                 <label className="kibah-label">Dirección *</label>
-                <input type="text" value={direccion} onChange={(e) => setDireccion(e.target.value)} className="kibah-input" />
+                <input type="text" value={form.direccion} onChange={(e) => update('direccion', e.target.value)} className="kibah-input" />
               </div>
               <div>
                 <label className="kibah-label">Colonia *</label>
-                <input type="text" value={colonia} onChange={(e) => setColonia(e.target.value)} className="kibah-input" />
+                <input type="text" value={form.colonia} onChange={(e) => update('colonia', e.target.value)} className="kibah-input" />
               </div>
               <div>
                 <label className="kibah-label">Unidad *</label>
-                <input type="text" value={unidad} onChange={(e) => setUnidad(e.target.value)} className="kibah-input" />
+                <input type="text" value={form.unidad} onChange={(e) => update('unidad', e.target.value)} className="kibah-input" />
               </div>
             </div>
           </div>
@@ -199,92 +328,70 @@ export default function CartaPropuestaPage() {
           <div>
             <h2 className="text-sm font-semibold text-text-primary mb-3">Datos financieros</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <label className="kibah-label">Valor del Departamento (MXN) *</label>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={fmtNumber(valorDepto)}
-                  onChange={(e) => setValorDepto(parseNumber(e.target.value))}
-                  placeholder="$0"
-                  className="kibah-input"
-                />
-              </div>
-              <div>
-                <label className="kibah-label">Cantidad Apartado (MXN) *</label>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={fmtNumber(apartado)}
-                  onChange={(e) => setApartado(parseNumber(e.target.value))}
-                  placeholder="$0"
-                  className="kibah-input"
-                />
-              </div>
-              <div>
-                <label className="kibah-label">Enganche (MXN) *</label>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={fmtNumber(enganche)}
-                  onChange={(e) => setEnganche(parseNumber(e.target.value))}
-                  placeholder="$0"
-                  className="kibah-input"
-                />
-              </div>
-              <div>
-                <label className="kibah-label">Porcentaje Enganche (%) *</label>
-                <input
-                  type="number"
-                  value={pctEnganche}
-                  onChange={(e) => setPctEnganche(e.target.value === '' ? '' : Number(e.target.value))}
-                  placeholder="0"
-                  className="kibah-input"
-                />
-              </div>
-              <div>
-                <label className="kibah-label">Porcentaje Pago (%) *</label>
-                <input
-                  type="number"
-                  value={pctPago}
-                  onChange={(e) => setPctPago(e.target.value === '' ? '' : Number(e.target.value))}
-                  placeholder="0"
-                  className="kibah-input"
-                />
-              </div>
-              <div>
-                <label className="kibah-label">Mensualidades *</label>
-                <input
-                  type="number"
-                  step="1"
-                  value={mensualidades}
-                  onChange={(e) => setMensualidades(e.target.value === '' ? '' : Number(e.target.value))}
-                  placeholder="0"
-                  className="kibah-input"
-                />
-              </div>
-              <div>
-                <label className="kibah-label">Monto Mensualidades (MXN) *</label>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={fmtNumber(montoMensualidades)}
-                  onChange={(e) => setMontoMensualidades(parseNumber(e.target.value))}
-                  placeholder="$0"
-                  className="kibah-input"
-                />
-              </div>
-              <div>
-                <label className="kibah-label">Pago a la Escritura (MXN) *</label>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={fmtNumber(pagoEscritura)}
-                  onChange={(e) => setPagoEscritura(parseNumber(e.target.value))}
-                  placeholder="$0"
-                  className="kibah-input"
-                />
-              </div>
+              <MoneyField
+                label="Valor del Departamento (MXN) *"
+                id="valorDepto"
+                value={form.valorDepto}
+                onChange={(v) => update('valorDepto', v)}
+                focusedKey={focusedKey}
+                setFocusedKey={setFocusedKey}
+              />
+              <MoneyField
+                label="Cantidad Apartado (MXN) *"
+                id="apartado"
+                value={form.apartado}
+                onChange={(v) => update('apartado', v)}
+                focusedKey={focusedKey}
+                setFocusedKey={setFocusedKey}
+              />
+              <MoneyField
+                label="Enganche (MXN) *"
+                id="enganche"
+                value={form.enganche}
+                onChange={(v) => update('enganche', v)}
+                focusedKey={focusedKey}
+                setFocusedKey={setFocusedKey}
+              />
+              <MoneyField
+                label="Porcentaje Enganche (%) *"
+                id="pctEnganche"
+                value={form.pctEnganche}
+                onChange={(v) => update('pctEnganche', v)}
+                focusedKey={focusedKey}
+                setFocusedKey={setFocusedKey}
+              />
+              <MoneyField
+                label="Porcentaje Pago (%) *"
+                id="pctPago"
+                value={form.pctPago}
+                onChange={(v) => update('pctPago', v)}
+                focusedKey={focusedKey}
+                setFocusedKey={setFocusedKey}
+              />
+              <MoneyField
+                label="Mensualidades *"
+                id="mensualidades"
+                value={form.mensualidades}
+                onChange={(v) => update('mensualidades', v)}
+                focusedKey={focusedKey}
+                setFocusedKey={setFocusedKey}
+              />
+              <MoneyField
+                label="Monto Mensualidades (MXN) *"
+                id="montoMensualidades"
+                value={form.montoMensualidades}
+                onChange={(v) => update('montoMensualidades', v)}
+                focusedKey={focusedKey}
+                setFocusedKey={setFocusedKey}
+              />
+              <MoneyField
+                label="Pago a la Escritura (MXN) *"
+                id="pagoEscritura"
+                value={form.pagoEscritura}
+                onChange={(v) => update('pagoEscritura', v)}
+                focusedKey={focusedKey}
+                setFocusedKey={setFocusedKey}
+              />
             </div>
           </div>
 
@@ -305,7 +412,10 @@ export default function CartaPropuestaPage() {
             </button>
           </div>
         </div>
-      ) : (
+      </div>
+
+      {/* Preview */}
+      {pdfUrl && (
         <div className="kibah-card p-6 max-w-4xl">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold text-text-primary">Vista previa</h2>
@@ -327,6 +437,20 @@ export default function CartaPropuestaPage() {
             style={{ height: '80vh', background: '#FFFFFF' }}
           />
         </div>
+      )}
+
+      {confirmNew && (
+        <ConfirmDialog
+          title="Nueva Carta"
+          message="¿Empezar una carta nueva? Se perderán los datos actuales."
+          confirmLabel="Empezar de nuevo"
+          variant="danger"
+          onConfirm={() => {
+            doReset()
+            setConfirmNew(false)
+          }}
+          onCancel={() => setConfirmNew(false)}
+        />
       )}
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
