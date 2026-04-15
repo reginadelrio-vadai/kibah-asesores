@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { LogOut } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { clearPermissionsCache } from '@/hooks/usePermissions'
 import { ThemeToggle } from './ThemeToggle'
 
 interface TopbarProps {
@@ -13,9 +14,11 @@ export function Topbar({ userName }: TopbarProps) {
   const router = useRouter()
 
   const handleSignOut = async () => {
+    clearPermissionsCache()
     const supabase = createClient()
     await supabase.auth.signOut()
     router.push('/login')
+    router.refresh()
   }
 
   const initial = userName ? userName.charAt(0).toUpperCase() : 'U'

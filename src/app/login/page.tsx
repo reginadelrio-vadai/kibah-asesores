@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { clearPermissionsCache } from '@/hooks/usePermissions'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -15,6 +16,7 @@ export default function LoginPage() {
     e.preventDefault()
     setError(null)
     setLoading(true)
+    clearPermissionsCache()
 
     const supabase = createClient()
     const { error: authError } = await supabase.auth.signInWithPassword({

@@ -57,7 +57,7 @@ export function Sidebar({ role }: { role: UserRole }) {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
   const { unreadCount } = useUnreadCount()
-  const { can } = usePermissions()
+  const { can, loading: permsLoading } = usePermissions()
 
   const isAdmin = role === 'admin'
 
@@ -79,12 +79,18 @@ export function Sidebar({ role }: { role: UserRole }) {
     { label: 'Roles', href: '/dashboard/admin/roles', icon: <Shield className="w-5 h-5" strokeWidth={1.5} /> },
   ]
 
-  const visibleMain = mainNav.filter((item) => !item.permission || can(item.permission))
-  const visibleAdmin = adminItems.filter((item) => {
-    // Roles page is admin-only, hardcoded (not permission-based)
-    if (item.href === '/dashboard/admin/roles') return isAdmin
-    return !item.permission || can(item.permission)
-  })
+  // Hide nav items until permissions are loaded to avoid showing stale
+  // entries from a previous user briefly after login.
+  const visibleMain = permsLoading
+    ? []
+    : mainNav.filter((item) => !item.permission || can(item.permission))
+  const visibleAdmin = permsLoading
+    ? []
+    : adminItems.filter((item) => {
+        // Roles page is admin-only, hardcoded (not permission-based)
+        if (item.href === '/dashboard/admin/roles') return isAdmin
+        return !item.permission || can(item.permission)
+      })
   const showAdminSection = visibleAdmin.length > 0
 
   const sidebarContent = (
