@@ -112,19 +112,11 @@ export async function generateCartaPdf(data: CartaPropuestaData): Promise<Blob> 
   doc.text('PRESENTE', margin, y)
   y += 7
 
-  doc.setFont('helvetica', 'bold')
-  const asesorLabel = 'Asesor Comercial: '
-  doc.text(asesorLabel, margin, y)
-  doc.setFont('helvetica', 'normal')
-  doc.text(data.nombre_asesor, margin + doc.getTextWidth(asesorLabel), y)
+  doc.text(`Asesor Comercial: ${data.nombre_asesor}`, margin, y)
   y += 6
 
-  doc.setFont('helvetica', 'bold')
-  const directorLabel = 'Director de ventas: '
-  doc.text(directorLabel, margin, y)
-  doc.setFont('helvetica', 'normal')
-  doc.text(data.director_ventas, margin + doc.getTextWidth(directorLabel), y)
-  y += 8
+  doc.text(`Director de ventas: ${data.director_ventas}`, margin, y)
+  y += 10
 
   const valorStr = fmtMoney(data.valor_departamento)
   const apartadoStr = fmtMoney(data.cantidad_apartado)
@@ -170,7 +162,7 @@ export async function generateCartaPdf(data: CartaPropuestaData): Promise<Blob> 
     y += lines.length * 5.2 + 2.5
   }
 
-  y += 3
+  y += 8
 
   // ---------- Documentos section ----------
   doc.setFont('helvetica', 'bold')
@@ -245,7 +237,7 @@ export async function generateCartaPdf(data: CartaPropuestaData): Promise<Blob> 
   doc.setFont('helvetica', 'normal')
 
   // ---------- Signatures ----------
-  y += 12
+  y += 20
   const lineLen = 70
   const leftX = margin + 5
   const rightX = pw - margin - 5 - lineLen
