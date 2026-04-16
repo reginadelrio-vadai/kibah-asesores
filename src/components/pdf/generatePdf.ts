@@ -52,7 +52,8 @@ function imgDims(b64: string): Promise<{ w: number; h: number }> {
 
 export async function generatePdf(
   properties: Property[],
-  imageMap: Record<string, string>
+  imageMap: Record<string, string>,
+  options?: { asesorName?: string; clienteName?: string }
 ): Promise<Blob> {
   const items = await Promise.all(
     properties.map(async (p) => {
@@ -110,6 +111,34 @@ export async function generatePdf(
       doc.setTextColor(LABEL)
       doc.text(fullDate(), pw / 2, ty + 7, { align: 'center' })
       lineY = ty + 12
+
+      // Asesor / Client lines
+      const asesor = options?.asesorName?.trim()
+      const cliente = options?.clienteName?.trim()
+      if (asesor || cliente) {
+        lineY += 3
+        doc.setFontSize(10)
+        doc.setTextColor(BODY)
+        if (asesor) {
+          doc.setFont('helvetica', 'bold')
+          const lbl = 'Asesor Comercial: '
+          doc.text(lbl, mx, lineY)
+          const lblW = doc.getTextWidth(lbl)
+          doc.setFont('helvetica', 'normal')
+          doc.text(asesor, mx + lblW, lineY)
+          lineY += 5
+        }
+        if (cliente) {
+          doc.setFont('helvetica', 'bold')
+          const lbl = 'Cliente: '
+          doc.text(lbl, mx, lineY)
+          const lblW = doc.getTextWidth(lbl)
+          doc.setFont('helvetica', 'normal')
+          doc.text(cliente, mx + lblW, lineY)
+          lineY += 5
+        }
+        lineY += 1
+      }
     }
 
     doc.setDrawColor(ORANGE)

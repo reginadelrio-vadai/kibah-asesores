@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Download, Loader2, AlertTriangle } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 import { usePdfSelection } from '@/hooks/usePdfSelection'
 import { PdfPreview } from './PdfPreview'
 import { PdfPropertySelector } from './PdfPropertySelector'
@@ -13,6 +14,17 @@ export function PdfBuilder() {
   const [imageMap, setImageMap] = useState<Record<string, string>>({})
   const [generating, setGenerating] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null)
+  const [asesorName, setAsesorName] = useState('')
+  const [clienteName, setClienteName] = useState('')
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return
+      supabase.from('profiles').select('full_name').eq('id', user.id).single()
+        .then(({ data }) => { if (data?.full_name) setAsesorName(data.full_name as string) })
+    })
+  }, [])
 
   const selectedIds = useMemo(
     () => new Set(selectedProperties.map((p) => p.id)),
@@ -41,7 +53,10 @@ export function PdfBuilder() {
     if (count === 0) return
     setGenerating(true)
     try {
-      const blob = await generatePdf(selectedProperties, imageMap)
+      const blob = await generatePdf(selectedProperties, imageMap, {
+        asesorName: asesorName.trim() || undefined,
+        clienteName: clienteName.trim() || undefined,
+      })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
@@ -84,6 +99,30 @@ export function PdfBuilder() {
           <p className="text-xs text-amber-600 dark:text-amber-400">El PDF puede tardar en generarse con muchas propiedades.</p>
         </div>
       )}
+
+      {/* Asesor + Client fields */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <label className="kibah-label">Asesor Comercial</label>
+          <input
+            type="text"
+            value={asesorName}
+            onChange={(e) => setAsesorName(e.target.value)}
+            placeholder="Nombre del asesor"
+            className="kibah-input"
+          />
+        </div>
+        <div>
+          <label className="kibah-label">Cliente</label>
+          <input
+            type="text"
+            value={clienteName}
+            onChange={(e) => setClienteName(e.target.value)}
+            placeholder="Nombre del cliente"
+            className="kibah-input"
+          />
+        </div>
+      </div>
 
       {/* Generate button */}
       <button
