@@ -36,11 +36,16 @@ export function capitalize(value: string | null | undefined): string {
   return value.charAt(0).toUpperCase() + value.slice(1)
 }
 
+const ROMAN_SET = new Set(['i','ii','iii','iv','v','vi','vii','viii','ix','x','xi','xii'])
+
 export function toTitleCase(value: string | null | undefined): string {
   if (!value) return '—'
   return value
     .toLowerCase()
     .split(' ')
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .map((w) => {
+      const titled = w.charAt(0).toUpperCase() + w.slice(1)
+      return ROMAN_SET.has(w) ? w.toUpperCase() : titled
+    })
     .join(' ')
 }

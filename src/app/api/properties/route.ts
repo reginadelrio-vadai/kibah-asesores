@@ -78,12 +78,15 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // Text search
+  // Text search — ilike is case-insensitive. To also handle accents,
+  // replace vowels in the query with _ (SQL single-char wildcard) so
+  // "mexico" becomes "m_xic_" matching "México".
   const search = params.get('search')
   if (search) {
-    query = query.or(
-      `nombre_desarrollador.ilike.%${search}%,colonia.ilike.%${search}%,alcaldia.ilike.%${search}%,nombre_kibah.ilike.%${search}%,direccion.ilike.%${search}%,unidad.ilike.%${search}%`
-    )
+    const accent = search.replace(/[aáàä]/gi, '_').replace(/[eéèë]/gi, '_').replace(/[iíìï]/gi, '_').replace(/[oóòö]/gi, '_').replace(/[uúùü]/gi, '_')
+    const cols = ['nombre_desarrollador', 'colonia', 'alcaldia', 'nombre_kibah', 'direccion', 'unidad']
+    const conditions = cols.map((c) => `${c}.ilike.%${accent}%`).join(',')
+    query = query.or(conditions)
   }
 
   const { data, error } = await query
