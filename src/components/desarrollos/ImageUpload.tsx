@@ -17,7 +17,7 @@ export function ImageUpload({ label, currentUrl, onUpload, onRemove, onError }: 
 
   const handleFile = async (file: File) => {
     if (file.size > 10 * 1024 * 1024) {
-      onError('Imagen demasiado grande (máx 10MB)')
+      onError('La imagen supera el tamaño permitido. Verifica que sea en formato JPEG para reducir el peso del archivo.')
       return
     }
 

@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 })
 
     if (file.size > 10 * 1024 * 1024) {
-      return NextResponse.json({ error: 'File too large (max 10MB)' }, { status: 400 })
+      return NextResponse.json({ error: 'La imagen supera el tamaño permitido. Verifica que sea en formato JPEG para reducir el peso del archivo.' }, { status: 400 })
     }
 
     const cloudinaryForm = new FormData()
