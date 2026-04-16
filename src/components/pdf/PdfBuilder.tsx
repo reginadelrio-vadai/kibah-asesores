@@ -1,13 +1,14 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Download, Loader2, AlertTriangle } from 'lucide-react'
+import { Download, Loader2, AlertTriangle, FilePlus2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { usePdfSelection } from '@/hooks/usePdfSelection'
 import { PdfPreview } from './PdfPreview'
 import { PdfPropertySelector } from './PdfPropertySelector'
 import { generatePdf } from './generatePdf'
 import { Toast, type ToastType } from '@/components/ui/Toast'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 
 export function PdfBuilder() {
   const { selectedProperties, count, removeProperty, toggleProperty, clearSelection } = usePdfSelection()
@@ -15,14 +16,20 @@ export function PdfBuilder() {
   const [generating, setGenerating] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null)
   const [asesorName, setAsesorName] = useState('')
+  const [defaultAsesorName, setDefaultAsesorName] = useState('')
   const [clienteName, setClienteName] = useState('')
+  const [confirmNew, setConfirmNew] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) return
       supabase.from('profiles').select('full_name').eq('id', user.id).single()
-        .then(({ data }) => { if (data?.full_name) setAsesorName(data.full_name as string) })
+        .then(({ data }) => {
+          const name = (data?.full_name as string) ?? ''
+          setAsesorName(name)
+          setDefaultAsesorName(name)
+        })
     })
   }, [])
 
@@ -71,10 +78,38 @@ export function PdfBuilder() {
     } finally {
       setGenerating(false)
     }
-  }, [count, selectedProperties, imageMap])
+  }, [count, selectedProperties, imageMap, asesorName, clienteName])
+
+  const hasData = count > 0 || clienteName.trim() !== '' || (asesorName !== defaultAsesorName && asesorName !== '')
+
+  const doReset = useCallback(() => {
+    clearSelection()
+    setAsesorName(defaultAsesorName)
+    setClienteName('')
+  }, [clearSelection, defaultAsesorName])
+
+  const handleNewPdf = useCallback(() => {
+    if (hasData) {
+      setConfirmNew(true)
+    } else {
+      doReset()
+    }
+  }, [hasData, doReset])
 
   return (
     <div className="space-y-6">
+      {/* Top bar with reset button */}
+      <div className="flex items-center justify-end">
+        <button
+          onClick={handleNewPdf}
+          className="kibah-btn-secondary"
+          style={{ padding: '8px 16px', fontSize: '13px' }}
+        >
+          <FilePlus2 className="w-4 h-4" strokeWidth={1.5} />
+          Nuevo PDF
+        </button>
+      </div>
+
       {/* Preview */}
       <PdfPreview
         properties={selectedProperties}
@@ -144,6 +179,17 @@ export function PdfBuilder() {
         <h3 className="text-sm font-semibold text-text-primary mb-3">Agregar propiedades</h3>
         <PdfPropertySelector selectedIds={selectedIds} onToggle={toggleProperty} />
       </div>
+
+      {confirmNew && (
+        <ConfirmDialog
+          title="Nuevo PDF"
+          message="¿Empezar un PDF nuevo? Se perderán las selecciones actuales."
+          confirmLabel="Empezar de nuevo"
+          variant="danger"
+          onConfirm={() => { doReset(); setConfirmNew(false) }}
+          onCancel={() => setConfirmNew(false)}
+        />
+      )}
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>

@@ -10,9 +10,10 @@ const LINE = '#E5E7EB'
 const PLACEHOLDER = '#F9FAFB'
 const WHITE = '#FFFFFF'
 
+const ROMAN = new Set(['i','ii','iii','iv','v','vi','vii','viii','ix','x','xi','xii'])
 function tc(s: string | null | undefined): string {
   if (!s) return ''
-  return s.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+  return s.toLowerCase().split(' ').map(w => ROMAN.has(w) ? w.toUpperCase() : w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
 }
 
 function fmtPrice(v: string | number | null | undefined): string {
