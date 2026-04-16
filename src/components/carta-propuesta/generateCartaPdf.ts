@@ -112,10 +112,20 @@ export async function generateCartaPdf(data: CartaPropuestaData): Promise<Blob> 
   doc.text('PRESENTE', margin, y)
   y += 7
 
-  doc.text(`Asesor Comercial: ${data.nombre_asesor}`, margin, y)
+  doc.setFont('helvetica', 'bold')
+  const asesorLbl = 'Asesor Comercial: '
+  doc.text(asesorLbl, margin, y)
+  const asesorLblW = doc.getTextWidth(asesorLbl)
+  doc.setFont('helvetica', 'normal')
+  doc.text(data.nombre_asesor, margin + asesorLblW, y)
   y += 6
 
-  doc.text(`Director de ventas: ${data.director_ventas}`, margin, y)
+  doc.setFont('helvetica', 'bold')
+  const dirLbl = 'Director de ventas: '
+  doc.text(dirLbl, margin, y)
+  const dirLblW = doc.getTextWidth(dirLbl)
+  doc.setFont('helvetica', 'normal')
+  doc.text(data.director_ventas, margin + dirLblW, y)
   y += 10
 
   const valorStr = fmtMoney(data.valor_departamento)
@@ -249,12 +259,12 @@ export async function generateCartaPdf(data: CartaPropuestaData): Promise<Blob> 
   doc.text(data.nombre_cliente, leftX + lineLen / 2, y, { align: 'center' })
   doc.text(data.nombre_desarrollador, rightX + lineLen / 2, y, { align: 'center' })
 
-  y += 8
+  y += 4
 
   doc.setDrawColor(BODY)
   doc.line(leftX, y, leftX + lineLen, y)
   doc.line(rightX, y, rightX + lineLen, y)
-  y += 5
+  y += 4
 
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(9)
