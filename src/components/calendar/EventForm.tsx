@@ -27,6 +27,17 @@ function isValidEmail(s: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s)
 }
 
+function addOneHour(time: string, date: string): { time: string; date: string } {
+  const [h, m] = time.split(':').map(Number)
+  const newH = h + 1
+  if (newH >= 24) {
+    const d = new Date(date + 'T12:00:00')
+    d.setDate(d.getDate() + 1)
+    return { time: `${String(newH - 24).padStart(2, '0')}:${String(m).padStart(2, '0')}`, date: d.toISOString().split('T')[0] }
+  }
+  return { time: `${String(newH).padStart(2, '0')}:${String(m).padStart(2, '0')}`, date }
+}
+
 interface EventFormProps {
   event?: CalendarEvent | null
   defaultStart?: string
@@ -46,28 +57,21 @@ export function EventForm({ event, defaultStart, defaultEnd, onClose, onSaved, o
     return s.includes('T') ? s.split('T')[1]?.slice(0, 5) || '09:00' : '09:00'
   })
   const [endDate, setEndDate] = useState(() => {
-    const e = event?.end || defaultEnd || ''
-    if (e) return e.split('T')[0]
-    // Default: 1 hour after start
-    const s = defaultStart || ''
-    if (s) {
-      const d = new Date(s)
-      d.setHours(d.getHours() + 1)
-      return d.toISOString().split('T')[0]
-    }
-    return startDate
+    if (event?.end) return event.end.split('T')[0]
+    // For new events: compute start + 1hr
+    const initStart = (defaultStart || '').split('T')[0] || startDate
+    const initTime = (() => {
+      const s = defaultStart || ''
+      return s.includes('T') ? s.split('T')[1]?.slice(0, 5) || '09:00' : '09:00'
+    })()
+    return addOneHour(initTime, initStart).date
   })
   const [endTime, setEndTime] = useState(() => {
-    const e = event?.end || defaultEnd || ''
-    if (e && e.includes('T')) return e.split('T')[1]?.slice(0, 5) || '10:00'
-    // Default: start + 1 hour
-    const s = event?.start || defaultStart || ''
-    if (s && s.includes('T')) {
-      const d = new Date(s)
-      d.setHours(d.getHours() + 1)
-      return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
-    }
-    return '10:00'
+    if (event?.end && event.end.includes('T')) return event.end.split('T')[1]?.slice(0, 5) || '10:00'
+    // For new events: start time + 1hr
+    const s = defaultStart || ''
+    const initTime = s.includes('T') ? s.split('T')[1]?.slice(0, 5) || '09:00' : '09:00'
+    return addOneHour(initTime, startDate).time
   })
   const [description, setDescription] = useState(event?.description ?? '')
   const [location, setLocation] = useState(event?.location ?? '')
@@ -84,16 +88,13 @@ export function EventForm({ event, defaultStart, defaultEnd, onClose, onSaved, o
       : [{ method: 'popup', minutes: 30 }]
   )
 
-  // Auto-adjust end time when start time changes (if user hasn't manually edited end)
   const [endManuallySet, setEndManuallySet] = useState(isEdit)
   const handleStartTimeChange = (newTime: string) => {
     setStartTime(newTime)
     if (!endManuallySet && startDate) {
-      const [h, m] = newTime.split(':').map(Number)
-      const d = new Date(`${startDate}T${newTime}:00`)
-      d.setHours(h + 1, m)
-      setEndTime(`${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`)
-      setEndDate(d.toISOString().split('T')[0])
+      const result = addOneHour(newTime, startDate)
+      setEndTime(result.time)
+      setEndDate(result.date)
     }
   }
 
