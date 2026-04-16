@@ -8,7 +8,7 @@ import {
 import ExcelJS from 'exceljs'
 import { Toast, type ToastType } from '@/components/ui/Toast'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
-import { type CargaType, getColumns, type ColumnDef } from '@/components/carga-masiva/columns'
+import { type CargaType, getColumns, type ColumnDef, DATE_COLUMNS } from '@/components/carga-masiva/columns'
 import { generateTemplate } from '@/components/carga-masiva/generateTemplate'
 
 type Step = 0 | 1 | 2 | 3 | 4
@@ -47,6 +47,7 @@ function normalizeRow(values: Record<string, string>, type: CargaType): Record<s
 function validateRows(rows: RowData[], cols: ColumnDef[], type: CargaType): RowData[] {
   const required = cols.filter((c) => c.required)
   const numericCols = cols.filter((c) => c.type === 'number')
+  const dropdownCols = cols.filter((c) => c.allowedValues && c.allowedValues.length > 0)
   const seen = new Map<string, number>()
 
   return rows.map((r) => {
@@ -58,7 +59,17 @@ function validateRows(rows: RowData[], cols: ColumnDef[], type: CargaType): RowD
       const v = r.values[col.header]?.trim()
       if (v && isNaN(Number(v))) errors.push(`"${col.header}" no es un número válido`)
     }
-    // Duplicate check within file
+    for (const col of dropdownCols) {
+      const v = r.values[col.header]?.trim()
+      if (v && col.allowedValues) {
+        const match = col.allowedValues.find((a) => a.toLowerCase() === v.toLowerCase())
+        if (!match) {
+          errors.push(`"${col.header}": valor no válido '${v}'. Opciones: ${col.allowedValues.join(', ')}`)
+        } else {
+          r.values[col.header] = match
+        }
+      }
+    }
     const key = type === 'propiedades'
       ? `${r.values['Nombre Kibah']?.trim()}|||${r.values['Unidad']?.trim()}`
       : r.values['Nombre Kibah']?.trim() ?? ''
@@ -154,7 +165,18 @@ export default function CargaMasivaPage() {
         let hasData = false
         headers.forEach((h, i) => {
           const cell = row.getCell(i + 1)
-          const v = cell.value !== null && cell.value !== undefined ? String(cell.value).trim() : ''
+          let v = ''
+          if (cell.value !== null && cell.value !== undefined) {
+            // Excel may convert date-like text to Date objects
+            if (cell.value instanceof Date && DATE_COLUMNS.has(h)) {
+              const months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']
+              v = `${months[cell.value.getMonth()]} ${cell.value.getFullYear()}`
+            } else if (cell.value instanceof Date) {
+              v = cell.value.toISOString().slice(0, 10)
+            } else {
+              v = String(cell.value).trim()
+            }
+          }
           if (v) hasData = true
           values[h] = v
         })
