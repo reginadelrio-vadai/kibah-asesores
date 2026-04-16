@@ -34,7 +34,7 @@ function normalizeRow(values: Record<string, string>, type: CargaType): Record<s
   if (disp) out['Disponibilidad'] = disp.charAt(0).toUpperCase() + disp.slice(1).toLowerCase()
 
   if (out['Colonia']) out['Colonia'] = smartTitleCase(out['Colonia'])
-  if (out['Alcaldia']) out['Alcaldia'] = smartTitleCase(out['Alcaldia'])
+  if (out['Alcaldía']) out['Alcaldía'] = smartTitleCase(out['Alcaldía'])
 
   const cols = getColumns(type)
   for (const c of cols) {
