@@ -3,12 +3,12 @@
 import { useCallback, useRef, useState } from 'react'
 import {
   Building, Building2, Download, Upload, CheckCircle2, XCircle,
-  ArrowLeft, Loader2, AlertTriangle, FileSpreadsheet,
+  ArrowLeft, Loader2, AlertTriangle, FileSpreadsheet, RefreshCw,
 } from 'lucide-react'
 import ExcelJS from 'exceljs'
 import { Toast, type ToastType } from '@/components/ui/Toast'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
-import { type CargaType, getColumns, type ColumnDef, DATE_COLUMNS } from '@/components/carga-masiva/columns'
+import { type CargaType, getColumns, type ColumnDef, DATE_COLUMNS, smartTitleCase } from '@/components/carga-masiva/columns'
 import { generateTemplate } from '@/components/carga-masiva/generateTemplate'
 
 type Step = 0 | 1 | 2 | 3 | 4
@@ -30,15 +30,16 @@ function normalizeRow(values: Record<string, string>, type: CargaType): Record<s
   const out = { ...values }
   const preventa = out['Entrega Inmediata/Preventa']
   if (preventa) out['Entrega Inmediata/Preventa'] = preventa.toLowerCase().trim()
-  const alc = out['Alcaldia']
-  if (alc) out['Alcaldia'] = alc.toLowerCase().trim()
   const disp = out['Disponibilidad']
-  if (disp) out['Disponibilidad'] = disp.charAt(0).toUpperCase() + disp.slice(1)
+  if (disp) out['Disponibilidad'] = disp.charAt(0).toUpperCase() + disp.slice(1).toLowerCase()
+
+  if (out['Colonia']) out['Colonia'] = smartTitleCase(out['Colonia'])
+  if (out['Alcaldia']) out['Alcaldia'] = smartTitleCase(out['Alcaldia'])
 
   const cols = getColumns(type)
-  for (const col of cols) {
-    if (col.type === 'number' && out[col.header]) {
-      out[col.header] = cleanNumeric(out[col.header])
+  for (const c of cols) {
+    if (c.type === 'number' && out[c.header]) {
+      out[c.header] = cleanNumeric(out[c.header])
     }
   }
   return out
@@ -117,6 +118,7 @@ export default function CargaMasivaPage() {
   const [parsing, setParsing] = useState(false)
   const [inserting, setInserting] = useState(false)
   const [confirmInsert, setConfirmInsert] = useState(false)
+  const [confirmReset, setConfirmReset] = useState(false)
   const [result, setResult] = useState<{ count: number; lote: string } | null>(null)
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -244,10 +246,16 @@ export default function CargaMasivaPage() {
       const now = new Date()
       const lote = `LOTE-${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`
 
+      // Build header→dbColumn map for columns with dbColumn override
+      const colMap = new Map<string, string>()
+      for (const c of cols) {
+        if (c.dbColumn) colMap.set(c.header, c.dbColumn)
+      }
+
       const items = rows.filter((r) => r.valid).map((r) => {
         const mapped: Record<string, unknown> = {}
         for (const [header, value] of Object.entries(r.values)) {
-          if (value) mapped[header] = value
+          if (value) mapped[colMap.get(header) ?? header] = value
         }
         return mapped
       })
@@ -311,9 +319,19 @@ export default function CargaMasivaPage() {
           <h1 className="kibah-page-title">Carga Masiva — {typeLabel}</h1>
           <p className="kibah-page-desc mt-1">Importa {typeLabel.toLowerCase()} desde un archivo Excel</p>
         </div>
-        <button onClick={() => { setType(null); setStep(0); setRows([]); setResult(null) }} className="kibah-btn-secondary" style={{ padding: '8px 16px', fontSize: '13px' }}>
-          <ArrowLeft className="w-4 h-4" strokeWidth={1.5} /> Cambiar tipo
-        </button>
+        <div className="flex items-center gap-2">
+          {step >= 2 && (
+            <button
+              onClick={() => { rows.length > 0 || result ? setConfirmReset(true) : (() => { setType(null); setStep(0); setRows([]); setResult(null) })() }}
+              className="kibah-btn-secondary" style={{ padding: '8px 16px', fontSize: '13px' }}
+            >
+              <RefreshCw className="w-4 h-4" strokeWidth={1.5} /> Empezar de nuevo
+            </button>
+          )}
+          <button onClick={() => { setType(null); setStep(0); setRows([]); setResult(null) }} className="kibah-btn-secondary" style={{ padding: '8px 16px', fontSize: '13px' }}>
+            <ArrowLeft className="w-4 h-4" strokeWidth={1.5} /> Cambiar tipo
+          </button>
+        </div>
       </div>
 
       {/* Stepper */}
@@ -508,6 +526,17 @@ export default function CargaMasivaPage() {
           confirmLabel="Confirmar"
           onConfirm={handleInsert}
           onCancel={() => setConfirmInsert(false)}
+        />
+      )}
+
+      {confirmReset && (
+        <ConfirmDialog
+          title="Empezar de nuevo"
+          message="¿Empezar de nuevo? Se perderán los datos actuales."
+          confirmLabel="Empezar de nuevo"
+          variant="danger"
+          onConfirm={() => { setConfirmReset(false); setType(null); setStep(0); setRows([]); setResult(null) }}
+          onCancel={() => setConfirmReset(false)}
         />
       )}
 
