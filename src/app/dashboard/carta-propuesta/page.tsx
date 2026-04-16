@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Download, Pencil, Loader2, Link as LinkIcon, FilePlus2 } from 'lucide-react'
 import type { Property } from '@/types'
+import { createClient } from '@/lib/supabase/client'
 import { Toast, type ToastType } from '@/components/ui/Toast'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { PropertyPicker } from '@/components/carta-propuesta/PropertyPicker'
@@ -71,8 +72,10 @@ function MoneyField({
 
 interface FormState {
   selectedProperty: Property | null
+  nombreAsesor: string
   director: string
   nombreCliente: string
+  nombreDesarrollador: string
   direccion: string
   colonia: string
   unidad: string
@@ -86,28 +89,34 @@ interface FormState {
   pagoEscritura: string
 }
 
-const EMPTY_FORM: FormState = {
-  selectedProperty: null,
-  director: '',
-  nombreCliente: '',
-  direccion: '',
-  colonia: '',
-  unidad: '',
-  valorDepto: '',
-  apartado: '',
-  enganche: '',
-  pctEnganche: '',
-  pctPago: '',
-  mensualidades: '',
-  montoMensualidades: '',
-  pagoEscritura: '',
+function makeEmptyForm(asesorName: string): FormState {
+  return {
+    selectedProperty: null,
+    nombreAsesor: asesorName,
+    director: '',
+    nombreCliente: '',
+    nombreDesarrollador: '',
+    direccion: '',
+    colonia: '',
+    unidad: '',
+    valorDepto: '',
+    apartado: '',
+    enganche: '',
+    pctEnganche: '',
+    pctPago: '',
+    mensualidades: '',
+    montoMensualidades: '',
+    pagoEscritura: '',
+  }
 }
 
-function hasAnyData(f: FormState): boolean {
+function hasAnyData(f: FormState, defaultAsesorName: string): boolean {
   return (
     f.selectedProperty !== null ||
+    (f.nombreAsesor !== defaultAsesorName && f.nombreAsesor !== '') ||
     f.director !== '' ||
     f.nombreCliente !== '' ||
+    f.nombreDesarrollador !== '' ||
     f.direccion !== '' ||
     f.colonia !== '' ||
     f.unidad !== '' ||
@@ -123,7 +132,8 @@ function hasAnyData(f: FormState): boolean {
 }
 
 export default function CartaPropuestaPage() {
-  const [form, setForm] = useState<FormState>(EMPTY_FORM)
+  const [asesorName, setAsesorName] = useState('')
+  const [form, setForm] = useState<FormState>(makeEmptyForm(''))
   const [focusedKey, setFocusedKey] = useState<string | null>(null)
 
   const [generating, setGenerating] = useState(false)
@@ -131,6 +141,23 @@ export default function CartaPropuestaPage() {
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null)
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null)
   const [confirmNew, setConfirmNew] = useState(false)
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return
+      supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .single()
+        .then(({ data }) => {
+          const name = (data?.full_name as string) ?? ''
+          setAsesorName(name)
+          setForm((prev) => (prev.nombreAsesor === '' ? { ...prev, nombreAsesor: name } : prev))
+        })
+    })
+  }, [])
 
   const showToast = useCallback((message: string, type: ToastType) => {
     setToast({ message, type })
@@ -145,9 +172,11 @@ export default function CartaPropuestaPage() {
       typeof p.precio_unidad === 'number'
         ? p.precio_unidad
         : Number(p.precio_unidad)
+    const contacto = (p as unknown as Record<string, unknown>).contacto_desarrollador as string | null
     setForm((prev) => ({
       ...prev,
       selectedProperty: p,
+      nombreDesarrollador: contacto ?? '',
       direccion: p.direccion ?? '',
       colonia: p.colonia ?? '',
       unidad: p.unidad ?? '',
@@ -157,8 +186,10 @@ export default function CartaPropuestaPage() {
 
   const canGenerate =
     form.selectedProperty !== null &&
+    form.nombreAsesor.trim() !== '' &&
     form.director !== '' &&
     form.nombreCliente.trim() !== '' &&
+    form.nombreDesarrollador.trim() !== '' &&
     form.direccion.trim() !== '' &&
     form.colonia.trim() !== '' &&
     form.unidad.trim() !== '' &&
@@ -176,8 +207,10 @@ export default function CartaPropuestaPage() {
     setGenerating(true)
     try {
       const data: CartaPropuestaData = {
+        nombre_asesor: form.nombreAsesor.trim(),
         director_ventas: form.director,
         nombre_cliente: form.nombreCliente.trim(),
+        nombre_desarrollador: form.nombreDesarrollador.trim(),
         direccion: form.direccion.trim(),
         colonia: form.colonia.trim(),
         unidad: form.unidad.trim(),
@@ -223,11 +256,11 @@ export default function CartaPropuestaPage() {
     if (pdfUrl) URL.revokeObjectURL(pdfUrl)
     setPdfUrl(null)
     setPdfBlob(null)
-    setForm(EMPTY_FORM)
+    setForm(makeEmptyForm(asesorName))
   }
 
   const handleNewCarta = () => {
-    if (hasAnyData(form) || pdfUrl) {
+    if (hasAnyData(form, asesorName) || pdfUrl) {
       setConfirmNew(true)
     } else {
       doReset()
@@ -270,19 +303,31 @@ export default function CartaPropuestaPage() {
             />
           </div>
 
-          {/* 2. Director */}
-          <div>
-            <label className="kibah-label">Director de ventas *</label>
-            <select
-              value={form.director}
-              onChange={(e) => update('director', e.target.value)}
-              className="kibah-input cursor-pointer"
-            >
-              <option value="">Selecciona un director</option>
-              {DIRECTORES.map((d) => (
-                <option key={d} value={d}>{d}</option>
-              ))}
-            </select>
+          {/* 2. Asesor + Director */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="kibah-label">Nombre del Asesor *</label>
+              <input
+                type="text"
+                value={form.nombreAsesor}
+                onChange={(e) => update('nombreAsesor', e.target.value)}
+                placeholder="Nombre del asesor"
+                className="kibah-input"
+              />
+            </div>
+            <div>
+              <label className="kibah-label">Director de ventas *</label>
+              <select
+                value={form.director}
+                onChange={(e) => update('director', e.target.value)}
+                className="kibah-input cursor-pointer"
+              >
+                <option value="">Selecciona un director</option>
+                {DIRECTORES.map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* 3. Cliente */}
@@ -308,7 +353,7 @@ export default function CartaPropuestaPage() {
                 </span>
               )}
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
                 <label className="kibah-label">Dirección *</label>
                 <input type="text" value={form.direccion} onChange={(e) => update('direccion', e.target.value)} className="kibah-input" />
@@ -320,6 +365,10 @@ export default function CartaPropuestaPage() {
               <div>
                 <label className="kibah-label">Unidad *</label>
                 <input type="text" value={form.unidad} onChange={(e) => update('unidad', e.target.value)} className="kibah-input" />
+              </div>
+              <div>
+                <label className="kibah-label">Nombre del Desarrollador *</label>
+                <input type="text" value={form.nombreDesarrollador} onChange={(e) => update('nombreDesarrollador', e.target.value)} placeholder="Contacto del desarrollador" className="kibah-input" />
               </div>
             </div>
           </div>

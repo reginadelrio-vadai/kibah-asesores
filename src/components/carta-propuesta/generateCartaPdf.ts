@@ -1,8 +1,10 @@
 import { jsPDF } from 'jspdf'
 
 export interface CartaPropuestaData {
+  nombre_asesor: string
   director_ventas: string
   nombre_cliente: string
+  nombre_desarrollador: string
   direccion: string
   colonia: string
   unidad: string
@@ -111,10 +113,17 @@ export async function generateCartaPdf(data: CartaPropuestaData): Promise<Blob> 
   y += 7
 
   doc.setFont('helvetica', 'bold')
-  doc.text('Director de ventas: ', margin, y)
-  const labelW = doc.getTextWidth('Director de ventas: ')
+  const asesorLabel = 'Asesor Comercial: '
+  doc.text(asesorLabel, margin, y)
   doc.setFont('helvetica', 'normal')
-  doc.text(data.director_ventas, margin + labelW, y)
+  doc.text(data.nombre_asesor, margin + doc.getTextWidth(asesorLabel), y)
+  y += 6
+
+  doc.setFont('helvetica', 'bold')
+  const directorLabel = 'Director de ventas: '
+  doc.text(directorLabel, margin, y)
+  doc.setFont('helvetica', 'normal')
+  doc.text(data.director_ventas, margin + doc.getTextWidth(directorLabel), y)
   y += 8
 
   const valorStr = fmtMoney(data.valor_departamento)
@@ -236,16 +245,26 @@ export async function generateCartaPdf(data: CartaPropuestaData): Promise<Blob> 
   doc.setFont('helvetica', 'normal')
 
   // ---------- Signatures ----------
-  y += 18
+  y += 12
   const lineLen = 70
   const leftX = margin + 5
   const rightX = pw - margin - 5 - lineLen
+
+  // Names above signature lines (bold)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(10)
+  doc.setTextColor(NAVY)
+  doc.text(data.nombre_cliente, leftX + lineLen / 2, y, { align: 'center' })
+  doc.text(data.nombre_desarrollador, rightX + lineLen / 2, y, { align: 'center' })
+
+  y += 8
 
   doc.setDrawColor(BODY)
   doc.line(leftX, y, leftX + lineLen, y)
   doc.line(rightX, y, rightX + lineLen, y)
   y += 5
 
+  doc.setFont('helvetica', 'normal')
   doc.setFontSize(9)
   doc.setTextColor(BODY)
   doc.text('Nombre y firma del comprador', leftX + lineLen / 2, y, { align: 'center' })

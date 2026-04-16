@@ -9,7 +9,7 @@ export async function GET() {
   const supabase = createAdminClient()
   const { data, error } = await supabase
     .from('propiedades_view')
-    .select('id, nombre_kibah, nombre_desarrollador, unidad, colonia, direccion, precio_unidad')
+    .select('id, nombre_kibah, nombre_desarrollador, unidad, colonia, direccion, precio_unidad, contacto_desarrollador')
     .order('nombre_kibah', { ascending: true, nullsFirst: false })
     .limit(5000)
 
