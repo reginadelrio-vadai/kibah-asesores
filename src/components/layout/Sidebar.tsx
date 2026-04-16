@@ -16,6 +16,7 @@ import {
   Webhook,
   Key,
   Shield,
+  Upload,
   Menu,
   X,
 } from 'lucide-react'
@@ -77,6 +78,7 @@ export function Sidebar({ role }: { role: UserRole }) {
     { label: 'Webhooks', href: '/dashboard/admin/webhooks', icon: <Webhook className="w-5 h-5" strokeWidth={1.5} />, permission: 'webhooks.view' },
     { label: 'API Keys', href: '/dashboard/admin/api-keys', icon: <Key className="w-5 h-5" strokeWidth={1.5} />, permission: 'apikeys.view' },
     { label: 'Roles', href: '/dashboard/admin/roles', icon: <Shield className="w-5 h-5" strokeWidth={1.5} /> },
+    { label: 'Carga Masiva', href: '/dashboard/admin/carga-masiva', icon: <Upload className="w-5 h-5" strokeWidth={1.5} />, permission: 'carga_masiva.view' },
   ]
 
   // Hide nav items until permissions are loaded to avoid showing stale

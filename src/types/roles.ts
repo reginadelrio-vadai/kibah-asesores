@@ -33,6 +33,7 @@ export const ALL_PERMISSIONS: Record<string, string> = {
   'webhooks.manage': 'Gestionar webhooks',
   'apikeys.view': 'Ver API keys',
   'apikeys.manage': 'Gestionar API keys',
+  'carga_masiva.view': 'Carga Masiva',
 }
 
 export const PERMISSION_GROUPS: { label: string; keys: string[] }[] = [
@@ -47,4 +48,5 @@ export const PERMISSION_GROUPS: { label: string; keys: string[] }[] = [
   { label: 'Columnas', keys: ['columnas.view', 'columnas.edit'] },
   { label: 'Webhooks', keys: ['webhooks.view', 'webhooks.manage'] },
   { label: 'API Keys', keys: ['apikeys.view', 'apikeys.manage'] },
+  { label: 'Carga Masiva', keys: ['carga_masiva.view'] },
 ]
