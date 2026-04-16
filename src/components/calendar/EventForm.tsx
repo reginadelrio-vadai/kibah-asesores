@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { X, Plus } from 'lucide-react'
-import type { CalendarEvent } from '@/lib/google/calendar'
+import { X, Plus, Mail, Bell } from 'lucide-react'
+import type { CalendarEvent, ReminderOverride } from '@/lib/google/calendar'
 
 interface Category {
   id: string
@@ -11,6 +11,21 @@ interface Category {
 }
 
 const QUICK_COLORS = ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EC4899', '#06B6D4', '#EF4444', '#F97316', '#6B7280', '#1B2A4A', '#84CC16', '#E8872A']
+
+const REMINDER_OPTIONS = [
+  { label: '5 min antes', minutes: 5 },
+  { label: '10 min antes', minutes: 10 },
+  { label: '15 min antes', minutes: 15 },
+  { label: '30 min antes', minutes: 30 },
+  { label: '1 hora antes', minutes: 60 },
+  { label: '2 horas antes', minutes: 120 },
+  { label: '1 día antes', minutes: 1440 },
+  { label: '2 días antes', minutes: 2880 },
+]
+
+function isValidEmail(s: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s)
+}
 
 interface EventFormProps {
   event?: CalendarEvent | null
@@ -30,14 +45,57 @@ export function EventForm({ event, defaultStart, defaultEnd, onClose, onSaved, o
     const s = event?.start || defaultStart || ''
     return s.includes('T') ? s.split('T')[1]?.slice(0, 5) || '09:00' : '09:00'
   })
-  const [endDate, setEndDate] = useState(() => (event?.end || defaultEnd || '').split('T')[0] || startDate)
+  const [endDate, setEndDate] = useState(() => {
+    const e = event?.end || defaultEnd || ''
+    if (e) return e.split('T')[0]
+    // Default: 1 hour after start
+    const s = defaultStart || ''
+    if (s) {
+      const d = new Date(s)
+      d.setHours(d.getHours() + 1)
+      return d.toISOString().split('T')[0]
+    }
+    return startDate
+  })
   const [endTime, setEndTime] = useState(() => {
-    const s = event?.end || defaultEnd || ''
-    return s.includes('T') ? s.split('T')[1]?.slice(0, 5) || '10:00' : '10:00'
+    const e = event?.end || defaultEnd || ''
+    if (e && e.includes('T')) return e.split('T')[1]?.slice(0, 5) || '10:00'
+    // Default: start + 1 hour
+    const s = event?.start || defaultStart || ''
+    if (s && s.includes('T')) {
+      const d = new Date(s)
+      d.setHours(d.getHours() + 1)
+      return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+    }
+    return '10:00'
   })
   const [description, setDescription] = useState(event?.description ?? '')
   const [location, setLocation] = useState(event?.location ?? '')
   const [submitting, setSubmitting] = useState(false)
+
+  // Attendees
+  const [attendees, setAttendees] = useState<string[]>(event?.attendees?.map((a) => a.email) ?? [])
+  const [attendeeInput, setAttendeeInput] = useState('')
+
+  // Reminders
+  const [reminders, setReminders] = useState<ReminderOverride[]>(
+    event?.reminders && event.reminders.length > 0
+      ? event.reminders
+      : [{ method: 'popup', minutes: 30 }]
+  )
+
+  // Auto-adjust end time when start time changes (if user hasn't manually edited end)
+  const [endManuallySet, setEndManuallySet] = useState(isEdit)
+  const handleStartTimeChange = (newTime: string) => {
+    setStartTime(newTime)
+    if (!endManuallySet && startDate) {
+      const [h, m] = newTime.split(':').map(Number)
+      const d = new Date(`${startDate}T${newTime}:00`)
+      d.setHours(h + 1, m)
+      setEndTime(`${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`)
+      setEndDate(d.toISOString().split('T')[0])
+    }
+  }
 
   // Categories
   const [categories, setCategories] = useState<Category[]>([])
@@ -76,6 +134,15 @@ export function EventForm({ event, defaultStart, defaultEnd, onClose, onSaved, o
     }
   }
 
+  const addAttendee = () => {
+    const email = attendeeInput.trim().toLowerCase()
+    if (!email) return
+    if (!isValidEmail(email)) { onToast('Email no válido', 'error'); return }
+    if (attendees.includes(email)) { onToast('Ya está en la lista', 'error'); return }
+    setAttendees((prev) => [...prev, email])
+    setAttendeeInput('')
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!title.trim()) { onToast('Titulo es requerido', 'error'); return }
@@ -93,6 +160,8 @@ export function EventForm({ event, defaultStart, defaultEnd, onClose, onSaved, o
       description: description.trim() || undefined,
       location: location.trim() || undefined,
       timeZone: tz,
+      attendees: attendees.length > 0 ? attendees : undefined,
+      reminders: reminders,
     }
     if (cat) {
       payload.categoryId = cat.id
@@ -152,7 +221,7 @@ export function EventForm({ event, defaultStart, defaultEnd, onClose, onSaved, o
                   </button>
                   {categories.map((cat) => (
                     <button key={cat.id} type="button" onClick={() => setSelectedCatId(cat.id)}
-                      className={`h-7 px-2.5 text-[11px] font-medium rounded-full border cursor-pointer transition-colors flex items-center gap-1`}
+                      className="h-7 px-2.5 text-[11px] font-medium rounded-full border cursor-pointer transition-colors flex items-center gap-1"
                       style={selectedCatId === cat.id
                         ? { borderColor: cat.color, backgroundColor: `${cat.color}18`, color: cat.color }
                         : undefined
@@ -202,17 +271,17 @@ export function EventForm({ event, defaultStart, defaultEnd, onClose, onSaved, o
               {!allDay && (
                 <div>
                   <label className="block text-xs font-medium text-text-secondary mb-1">Hora inicio</label>
-                  <input type="time" className={ic} value={startTime} onChange={(e) => setStartTime(e.target.value)} />
+                  <input type="time" className={ic} value={startTime} onChange={(e) => handleStartTimeChange(e.target.value)} />
                 </div>
               )}
               <div>
                 <label className="block text-xs font-medium text-text-secondary mb-1">Fecha fin</label>
-                <input type="date" className={ic} value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+                <input type="date" className={ic} value={endDate} onChange={(e) => { setEndDate(e.target.value); setEndManuallySet(true) }} />
               </div>
               {!allDay && (
                 <div>
                   <label className="block text-xs font-medium text-text-secondary mb-1">Hora fin</label>
-                  <input type="time" className={ic} value={endTime} onChange={(e) => setEndTime(e.target.value)} />
+                  <input type="time" className={ic} value={endTime} onChange={(e) => { setEndTime(e.target.value); setEndManuallySet(true) }} />
                 </div>
               )}
             </div>
@@ -225,6 +294,69 @@ export function EventForm({ event, defaultStart, defaultEnd, onClose, onSaved, o
             <div>
               <label className="block text-xs font-medium text-text-secondary mb-1">Ubicacion</label>
               <input className={ic} value={location} onChange={(e) => setLocation(e.target.value)} />
+            </div>
+
+            {/* Attendees */}
+            <div>
+              <label className="block text-xs font-medium text-text-secondary mb-1 flex items-center gap-1">
+                <Mail className="w-3 h-3" strokeWidth={1.5} /> Invitados
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  className={`${ic} flex-1`}
+                  value={attendeeInput}
+                  onChange={(e) => setAttendeeInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addAttendee() } }}
+                  placeholder="correo@ejemplo.com"
+                />
+                <button type="button" onClick={addAttendee} className="h-9 px-3 text-xs font-medium rounded-[var(--radius-sm)] bg-bg-tertiary text-text-primary hover:bg-border-primary transition-colors cursor-pointer">Agregar</button>
+              </div>
+              {attendees.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {attendees.map((email) => (
+                    <span key={email} className="flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-orange/10 text-orange border border-orange/20">
+                      {email}
+                      <button type="button" onClick={() => setAttendees((prev) => prev.filter((e) => e !== email))} className="hover:text-orange-hover cursor-pointer">
+                        <X className="w-3 h-3" strokeWidth={2} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Reminders */}
+            <div>
+              <label className="block text-xs font-medium text-text-secondary mb-1 flex items-center gap-1">
+                <Bell className="w-3 h-3" strokeWidth={1.5} /> Recordatorios
+              </label>
+              <div className="space-y-1.5">
+                {reminders.map((r, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <select
+                      value={r.minutes}
+                      onChange={(e) => {
+                        const mins = Number(e.target.value)
+                        setReminders((prev) => prev.map((rem, idx) => idx === i ? { method: 'popup', minutes: mins } : rem))
+                      }}
+                      className="h-8 px-2 text-xs rounded-[var(--radius-sm)] border border-border-primary bg-bg-primary text-text-primary cursor-pointer focus:outline-none focus:border-orange"
+                    >
+                      {REMINDER_OPTIONS.map((opt) => (
+                        <option key={opt.minutes} value={opt.minutes}>{opt.label}</option>
+                      ))}
+                    </select>
+                    <button type="button" onClick={() => setReminders((prev) => prev.filter((_, idx) => idx !== i))} className="text-text-tertiary hover:text-red-500 cursor-pointer">
+                      <X className="w-3.5 h-3.5" strokeWidth={1.5} />
+                    </button>
+                  </div>
+                ))}
+                {reminders.length < 5 && (
+                  <button type="button" onClick={() => setReminders((prev) => [...prev, { method: 'popup', minutes: 30 }])}
+                    className="flex items-center gap-1 text-xs text-orange hover:text-orange-hover cursor-pointer">
+                    <Plus className="w-3 h-3" strokeWidth={2} /> Agregar recordatorio
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="flex justify-end gap-3 pt-2 border-t border-border-primary">

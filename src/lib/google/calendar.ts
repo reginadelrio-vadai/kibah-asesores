@@ -1,6 +1,16 @@
 import { google } from 'googleapis'
 import { getOAuth2Client } from './auth'
 
+export interface Attendee {
+  email: string
+  responseStatus?: 'accepted' | 'declined' | 'tentative' | 'needsAction'
+}
+
+export interface ReminderOverride {
+  method: 'popup'
+  minutes: number
+}
+
 export interface CalendarEvent {
   id: string
   title: string
@@ -16,6 +26,8 @@ export interface CalendarEvent {
   categoryColor?: string
   asesorName?: string
   asesorColor?: string
+  attendees?: Attendee[]
+  reminders?: ReminderOverride[]
 }
 
 export interface CalendarListItem {
@@ -59,6 +71,15 @@ export async function getEvents(
     const priv = (ev.extendedProperties?.private as Record<string, string> | undefined) ?? {}
     const catColor = priv.kibah_category_color || null
 
+    const attendees: Attendee[] = (ev.attendees ?? []).map((a) => ({
+      email: a.email!,
+      responseStatus: (a.responseStatus as Attendee['responseStatus']) ?? 'needsAction',
+    }))
+
+    const reminders: ReminderOverride[] = ev.reminders?.useDefault === false
+      ? (ev.reminders.overrides ?? []).map((o) => ({ method: 'popup' as const, minutes: o.minutes! }))
+      : []
+
     return {
       id: ev.id!,
       title: ev.summary || '(Sin titulo)',
@@ -72,6 +93,8 @@ export async function getEvents(
       categoryId: priv.kibah_category_id || undefined,
       categoryName: priv.kibah_category_name || undefined,
       categoryColor: catColor || undefined,
+      attendees: attendees.length > 0 ? attendees : undefined,
+      reminders: reminders.length > 0 ? reminders : undefined,
     }
   })
 }
@@ -87,6 +110,8 @@ interface EventInput {
   categoryId?: string
   categoryName?: string
   categoryColor?: string
+  attendees?: string[]
+  reminders?: ReminderOverride[]
 }
 
 export async function createEvent(
@@ -121,7 +146,21 @@ export async function createEvent(
     }
   }
 
-  const res = await cal.events.insert({ calendarId: selectedCalendarId, requestBody: eventBody })
+  if (data.attendees && data.attendees.length > 0) {
+    eventBody.attendees = data.attendees.map((email) => ({ email }))
+  }
+
+  if (data.reminders && data.reminders.length > 0) {
+    eventBody.reminders = { useDefault: false, overrides: data.reminders }
+  } else {
+    eventBody.reminders = { useDefault: true }
+  }
+
+  const res = await cal.events.insert({
+    calendarId: selectedCalendarId,
+    requestBody: eventBody,
+    sendUpdates: data.attendees?.length ? 'all' : 'none',
+  })
   const ev = res.data
   const allDay = !!ev.start?.date
   return {
@@ -174,7 +213,24 @@ export async function updateEvent(
     }
   }
 
-  const res = await cal.events.patch({ calendarId: selectedCalendarId, eventId, requestBody: eventBody })
+  if (data.attendees !== undefined) {
+    eventBody.attendees = data.attendees.map((email) => ({ email }))
+  }
+
+  if (data.reminders !== undefined) {
+    if (data.reminders.length > 0) {
+      eventBody.reminders = { useDefault: false, overrides: data.reminders }
+    } else {
+      eventBody.reminders = { useDefault: true }
+    }
+  }
+
+  const res = await cal.events.patch({
+    calendarId: selectedCalendarId,
+    eventId,
+    requestBody: eventBody,
+    sendUpdates: data.attendees?.length ? 'all' : 'none',
+  })
   const ev = res.data
   const allDay = !!ev.start?.date
   const priv = (ev.extendedProperties?.private as Record<string, string> | undefined) ?? {}
