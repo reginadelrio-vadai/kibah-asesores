@@ -8,6 +8,7 @@ import { Toast, type ToastType } from '@/components/ui/Toast'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { PropertyPicker } from '@/components/carta-propuesta/PropertyPicker'
 import { generateCartaPdf, type CartaPropuestaData } from '@/components/carta-propuesta/generateCartaPdf'
+import { generateCartaDocx } from '@/components/carta-propuesta/generateCartaDocx'
 
 const DIRECTORES = ['Iñaki Gonzalez Gámiz', 'Roberto Martínez Licón']
 
@@ -246,6 +247,41 @@ export default function CartaPropuestaPage() {
     a.click()
   }
 
+  const buildPayload = (): CartaPropuestaData => ({
+    nombre_asesor: form.nombreAsesor.trim(),
+    director_ventas: form.director,
+    nombre_cliente: form.nombreCliente.trim(),
+    nombre_desarrollador: form.nombreDesarrollador.trim(),
+    direccion: form.direccion.trim(),
+    colonia: form.colonia.trim(),
+    unidad: form.unidad.trim(),
+    valor_departamento: toNumber(form.valorDepto),
+    cantidad_apartado: toNumber(form.apartado),
+    enganche: toNumber(form.enganche),
+    pct_enganche: toNumber(form.pctEnganche),
+    pct_pago: toNumber(form.pctPago),
+    mensualidades: toNumber(form.mensualidades),
+    monto_mensualidades: toNumber(form.montoMensualidades),
+    pago_escritura: toNumber(form.pagoEscritura),
+  })
+
+  const handleDownloadWord = async () => {
+    try {
+      const blob = await generateCartaDocx(buildPayload())
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      const safeName = form.nombreCliente.trim().replace(/[^a-zA-Z0-9]+/g, '_') || 'Cliente'
+      const d = new Date()
+      const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+      a.href = url
+      a.download = `Carta_Propuesta_${safeName}_${dateStr}.docx`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      showToast('Error al generar Word', 'error')
+    }
+  }
+
   const handleEdit = () => {
     if (pdfUrl) URL.revokeObjectURL(pdfUrl)
     setPdfUrl(null)
@@ -472,6 +508,10 @@ export default function CartaPropuestaPage() {
               <button onClick={handleEdit} className="kibah-btn-secondary" style={{ padding: '8px 16px', fontSize: '13px' }}>
                 <Pencil className="w-4 h-4" strokeWidth={1.5} />
                 Editar
+              </button>
+              <button onClick={handleDownloadWord} className="kibah-btn-secondary" style={{ padding: '8px 16px', fontSize: '13px' }}>
+                <Download className="w-4 h-4" strokeWidth={1.5} />
+                Descargar Word
               </button>
               <button onClick={handleDownload} className="kibah-btn-primary" style={{ padding: '8px 16px', fontSize: '13px' }}>
                 <Download className="w-4 h-4" strokeWidth={1.5} />

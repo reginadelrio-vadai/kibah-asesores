@@ -252,25 +252,26 @@ export async function generateCartaPdf(data: CartaPropuestaData): Promise<Blob> 
   const leftX = margin + 5
   const rightX = pw - margin - 5 - lineLen
 
-  // Names above signature lines (bold)
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(10)
-  doc.setTextColor(NAVY)
-  doc.text(data.nombre_cliente, leftX + lineLen / 2, y, { align: 'center' })
-  doc.text(data.nombre_desarrollador, rightX + lineLen / 2, y, { align: 'center' })
-
-  y += 4
-
+  // 1. Signature lines (space above for physical signatures)
   doc.setDrawColor(BODY)
   doc.line(leftX, y, leftX + lineLen, y)
   doc.line(rightX, y, rightX + lineLen, y)
   y += 4
 
+  // 2. Role labels below lines
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(9)
   doc.setTextColor(BODY)
   doc.text('Nombre y firma del comprador', leftX + lineLen / 2, y, { align: 'center' })
-  doc.text('Nombre y firma del vendedor', rightX + lineLen / 2, y, { align: 'center' })
+  doc.text('Nombre y firma del desarrollador', rightX + lineLen / 2, y, { align: 'center' })
+  y += 6
+
+  // 3. Actual names below labels (bold)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(10)
+  doc.setTextColor(NAVY)
+  doc.text(data.nombre_cliente, leftX + lineLen / 2, y, { align: 'center' })
+  doc.text(data.nombre_desarrollador, rightX + lineLen / 2, y, { align: 'center' })
 
   return doc.output('blob')
 }
