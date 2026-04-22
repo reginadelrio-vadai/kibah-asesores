@@ -1,12 +1,21 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ExternalLink } from 'lucide-react'
 
 const WHAAPY_URL = 'https://app.whaapy.com'
+const MOBILE_BREAKPOINT = 768
 
 export default function WhaapyPage() {
   const [error, setError] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   if (error) {
     return (
@@ -31,7 +40,7 @@ export default function WhaapyPage() {
       style={{
         position: 'fixed',
         top: 'var(--topbar-height, 64px)',
-        left: 'var(--sidebar-width, 260px)',
+        left: isMobile ? 0 : 'var(--sidebar-width, 260px)',
         right: 0,
         bottom: 0,
         overflow: 'hidden',
@@ -47,7 +56,7 @@ export default function WhaapyPage() {
           height: '100%',
           border: 'none',
           display: 'block',
-          zoom: 0.9,
+          zoom: isMobile ? 1 : 0.9,
         }}
       />
     </div>
