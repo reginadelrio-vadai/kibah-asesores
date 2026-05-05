@@ -80,6 +80,23 @@ export function EventForm({ event, defaultStart, defaultEnd, onClose, onSaved, o
   // Attendees
   const [attendees, setAttendees] = useState<string[]>(event?.attendees?.map((a) => a.email) ?? [])
   const [attendeeInput, setAttendeeInput] = useState('')
+  const [suggestions, setSuggestions] = useState<string[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+
+  useEffect(() => {
+    if (!showSuggestions) return
+    const ctrl = new AbortController()
+    const timer = setTimeout(() => {
+      fetch(`/api/calendar/invited-contacts?q=${encodeURIComponent(attendeeInput.trim())}`, { signal: ctrl.signal })
+        .then((r) => (r.ok ? r.json() : { data: [] }))
+        .then((json) => {
+          const emails = (json.data ?? []).map((c: { email: string }) => c.email)
+          setSuggestions(emails.filter((e: string) => !attendees.includes(e)))
+        })
+        .catch(() => {})
+    }, 150)
+    return () => { clearTimeout(timer); ctrl.abort() }
+  }, [attendeeInput, attendees, showSuggestions])
 
   // Reminders
   const [reminders, setReminders] = useState<ReminderOverride[]>(
@@ -303,13 +320,36 @@ export function EventForm({ event, defaultStart, defaultEnd, onClose, onSaved, o
                 <Mail className="w-3 h-3" strokeWidth={1.5} /> Invitados
               </label>
               <div className="flex items-center gap-2">
-                <input
-                  className={`${ic} flex-1`}
-                  value={attendeeInput}
-                  onChange={(e) => setAttendeeInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addAttendee() } }}
-                  placeholder="correo@ejemplo.com"
-                />
+                <div className="relative flex-1">
+                  <input
+                    className={ic}
+                    value={attendeeInput}
+                    onFocus={() => setShowSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                    onChange={(e) => { setAttendeeInput(e.target.value); setShowSuggestions(true) }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addAttendee() } }}
+                    placeholder="correo@ejemplo.com"
+                  />
+                  {showSuggestions && suggestions.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 mt-1 z-30 bg-bg-primary border border-border-primary rounded-[var(--radius-sm)] shadow-xl max-h-48 overflow-y-auto">
+                      {suggestions.map((email) => (
+                        <button
+                          key={email}
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault()
+                            setAttendees((prev) => [...prev, email])
+                            setAttendeeInput('')
+                            setShowSuggestions(false)
+                          }}
+                          className="w-full text-left px-3 py-2 text-sm text-text-primary hover:bg-bg-tertiary transition-colors cursor-pointer"
+                        >
+                          {email}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <button type="button" onClick={addAttendee} className="h-9 px-3 text-xs font-medium rounded-[var(--radius-sm)] bg-bg-tertiary text-text-primary hover:bg-border-primary transition-colors cursor-pointer">Agregar</button>
               </div>
               {attendees.length > 0 && (
