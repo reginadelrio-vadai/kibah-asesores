@@ -29,3 +29,9 @@
 - **Causa:** Se asumió que baños/recámaras/estacionamiento eran siempre enteros.
 - **Fix:** Removido `.int()` de num_banos, num_recamaras, estacionamiento en el schema Zod.
 - **Regla:** Solo usar `.int()` cuando el campo sea ESTRICTAMENTE entero. Baños/recámaras/estacionamiento pueden ser decimales (2.5 baños = medio baño).
+
+## 6. Selección del PDF persistía después de descargar (PdfBuilder)
+- **Error:** Tras "Generar y Descargar PDF", la selección quedaba guardada; al volver a /dashboard/pdf reaparecía el PDF ya descargado.
+- **Causa:** `usePdfSelection` persiste la selección en sessionStorage y `handleGenerate` nunca la limpiaba tras la descarga exitosa.
+- **Fix:** Llamar `doReset()` (clearSelection + limpiar asesor/cliente) después de descargar el PDF, dentro del `try` para que un fallo conserve la selección y permita reintentar.
+- **Regla:** Todo estado persistido (sessionStorage/localStorage) que representa un "trabajo en curso" debe limpiarse al completarse el flujo exitosamente; conservarlo solo en caso de error.
