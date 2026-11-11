@@ -119,12 +119,16 @@ export function DesarrolloTable({ desarrollos, loading, onSelect, onEdit, onDele
                 <td className="whitespace-nowrap">{toTitleCase(d.tipo_preventa)}</td>
                 <td className="text-right whitespace-nowrap">
                   <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 md:transition-opacity">
-                    <button onClick={(e) => { e.stopPropagation(); onEdit?.(d) }} className="p-1.5 rounded-[var(--radius-sm)] text-text-secondary hover:text-orange hover:bg-orange/10 transition-colors cursor-pointer" title="Editar">
+                    {onEdit && (
+                    <button onClick={(e) => { e.stopPropagation(); onEdit(d) }} className="p-1.5 rounded-[var(--radius-sm)] text-text-secondary hover:text-orange hover:bg-orange/10 transition-colors cursor-pointer" title="Editar">
                       <Pencil className="w-3.5 h-3.5" strokeWidth={1.5} />
                     </button>
-                    <button onClick={(e) => { e.stopPropagation(); onDelete?.(d) }} className="p-1.5 rounded-[var(--radius-sm)] text-text-secondary hover:text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer" title="Eliminar">
+                    )}
+                    {onDelete && (
+                    <button onClick={(e) => { e.stopPropagation(); onDelete(d) }} className="p-1.5 rounded-[var(--radius-sm)] text-text-secondary hover:text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer" title="Eliminar">
                       <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
                     </button>
+                    )}
                   </div>
                 </td>
               </tr>

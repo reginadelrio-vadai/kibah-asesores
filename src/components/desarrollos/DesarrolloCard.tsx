@@ -65,22 +65,28 @@ export function DesarrolloCard({ desarrollo, onClick, onEdit, onDelete }: Desarr
 
       <div className="p-4">
         {/* Admin actions */}
+        {(onEdit || onDelete) && (
         <div className="flex items-center justify-end gap-1 mb-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+          {onEdit && (
           <button
-            onClick={(e) => { e.stopPropagation(); onEdit?.(desarrollo) }}
+            onClick={(e) => { e.stopPropagation(); onEdit(desarrollo) }}
             className="p-1.5 rounded-[var(--radius-sm)] text-text-secondary hover:text-orange hover:bg-orange/10 transition-colors cursor-pointer"
             title="Editar"
           >
             <Pencil className="w-3.5 h-3.5" strokeWidth={1.5} />
           </button>
+          )}
+          {onDelete && (
           <button
-            onClick={(e) => { e.stopPropagation(); onDelete?.(desarrollo) }}
+            onClick={(e) => { e.stopPropagation(); onDelete(desarrollo) }}
             className="p-1.5 rounded-[var(--radius-sm)] text-text-secondary hover:text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
             title="Eliminar"
           >
             <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
           </button>
+          )}
         </div>
+        )}
 
         {/* Badges */}
         <div className="flex items-center gap-2 mb-2 flex-wrap">

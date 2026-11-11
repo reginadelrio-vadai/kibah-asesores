@@ -6,6 +6,7 @@ import type { Desarrollo } from '@/types/desarrollo'
 import type { ToastType } from '@/components/ui/Toast'
 import { useDesarrollos } from '@/hooks/useDesarrollos'
 import { useDesarrolloFilters } from '@/hooks/useDesarrolloFilters'
+import { usePermissions } from '@/hooks/usePermissions'
 import { DesarrolloGrid } from '@/components/desarrollos/DesarrolloGrid'
 import { DesarrolloTable } from '@/components/desarrollos/DesarrolloTable'
 import { DesarrolloDetail } from '@/components/desarrollos/DesarrolloDetail'
@@ -34,9 +35,18 @@ export default function DesarrollosPage() {
 
   const showToast = useCallback((msg: string, type: ToastType) => setToast({ message: msg, type }), [])
 
+  // Asesores pueden tener solo desarrollos.view: ocultar acciones sin permiso.
+  // (La API también las bloquea; esto solo evita mostrar botones que darían 403.)
+  const { can, loading: permsLoading } = usePermissions()
+  const canCreate = !permsLoading && can('desarrollos.create')
+  const canEdit = !permsLoading && can('desarrollos.edit')
+  const canDelete = !permsLoading && can('desarrollos.delete')
+
   const handleCreate = useCallback(() => { setEditing(null); setFormOpen(true) }, [])
-  const handleEdit = useCallback((d: Desarrollo) => { setEditing(d); setFormOpen(true) }, [])
-  const handleDeleteRequest = useCallback((d: Desarrollo) => setDeleting(d), [])
+  const handleEditBase = useCallback((d: Desarrollo) => { setEditing(d); setFormOpen(true) }, [])
+  const handleDeleteBase = useCallback((d: Desarrollo) => setDeleting(d), [])
+  const handleEdit = canEdit ? handleEditBase : undefined
+  const handleDeleteRequest = canDelete ? handleDeleteBase : undefined
 
   const handleDeleteConfirm = useCallback(async () => {
     if (!deleting) return
@@ -68,9 +78,11 @@ export default function DesarrollosPage() {
           )}
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={handleCreate} className="flex items-center gap-2 h-9 px-4 text-sm font-medium rounded-[var(--radius-sm)] bg-orange text-white hover:bg-orange-hover transition-colors cursor-pointer">
-            <Plus className="w-4 h-4" strokeWidth={1.5} /> Agregar Desarrollo
-          </button>
+          {canCreate && (
+            <button onClick={handleCreate} className="flex items-center gap-2 h-9 px-4 text-sm font-medium rounded-[var(--radius-sm)] bg-orange text-white hover:bg-orange-hover transition-colors cursor-pointer">
+              <Plus className="w-4 h-4" strokeWidth={1.5} /> Agregar Desarrollo
+            </button>
+          )}
           <ViewToggle onChange={setViewMode} />
         </div>
       </div>
@@ -119,8 +131,8 @@ export default function DesarrollosPage() {
         <DesarrolloDetail
           desarrollo={selected}
           onClose={() => setSelected(null)}
-          onEdit={(d) => { setSelected(null); handleEdit(d) }}
-          onDelete={(d) => { setSelected(null); handleDeleteRequest(d) }}
+          onEdit={handleEdit && ((d) => { setSelected(null); handleEdit(d) })}
+          onDelete={handleDeleteRequest && ((d) => { setSelected(null); handleDeleteRequest(d) })}
         />
       )}
 
