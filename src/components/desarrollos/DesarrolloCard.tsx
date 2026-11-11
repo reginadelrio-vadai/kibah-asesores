@@ -1,6 +1,6 @@
 'use client'
 
-import { Bed, Bath, Ruler, Pencil, Trash2 } from 'lucide-react'
+import { Bed, Bath, Ruler, Pencil, Trash2, Layers } from 'lucide-react'
 import type { Desarrollo } from '@/types/desarrollo'
 import { toTitleCase } from '@/lib/utils/format'
 
@@ -104,6 +104,16 @@ export function DesarrolloCard({ desarrollo, onClick, onEdit, onDelete }: Desarr
           {toTitleCase(desarrollo.colonia)}
           {desarrollo.alcaldia ? `, ${toTitleCase(desarrollo.alcaldia)}` : ''}
         </p>
+
+        {/* Unidades (hijas) */}
+        {desarrollo.unidades_count !== undefined && (
+          <p className={`inline-flex items-center gap-1.5 text-xs font-medium mb-2 ${desarrollo.unidades_count > 0 ? 'text-orange' : 'text-text-tertiary'}`}>
+            <Layers className="w-3.5 h-3.5" strokeWidth={1.5} />
+            {desarrollo.unidades_count > 0
+              ? `${desarrollo.unidades_count} unidad${desarrollo.unidades_count !== 1 ? 'es' : ''}`
+              : 'No tiene unidades'}
+          </p>
+        )}
 
         {/* Price */}
         <p className="kibah-card-price mb-3">

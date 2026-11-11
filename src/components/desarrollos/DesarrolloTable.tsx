@@ -42,7 +42,7 @@ function formatRange(min: number | null, max: number | null): string {
 function SkeletonRow() {
   return (
     <tr className="border-b border-border-primary">
-      {Array.from({ length: 7 }).map((_, i) => (
+      {Array.from({ length: 8 }).map((_, i) => (
         <td key={i} className="px-4 py-3"><div className="h-4 bg-bg-tertiary rounded animate-pulse w-3/4" /></td>
       ))}
     </tr>
@@ -58,6 +58,7 @@ export function DesarrolloTable({ desarrollos, loading, onSelect, onEdit, onDele
             <tr>
               <th>Nombre</th>
               <th>Colonia</th>
+              <th>Unidades</th>
               <th>Precio</th>
               <th>Recámaras</th>
               <th>Disponibilidad</th>
@@ -78,6 +79,7 @@ export function DesarrolloTable({ desarrollos, loading, onSelect, onEdit, onDele
           <tr>
             <th>Nombre</th>
             <th>Colonia</th>
+            <th>Unidades</th>
             <th>Precio</th>
             <th>Recámaras</th>
             <th>Disponibilidad</th>
@@ -100,6 +102,13 @@ export function DesarrolloTable({ desarrollos, loading, onSelect, onEdit, onDele
                   </div>
                 </td>
                 <td className="whitespace-nowrap">{toTitleCase(d.colonia)}</td>
+                <td className="whitespace-nowrap">
+                  {d.unidades_count === undefined ? '—' : d.unidades_count > 0 ? (
+                    <span className="font-medium text-orange">{d.unidades_count}</span>
+                  ) : (
+                    <span className="text-xs text-text-tertiary">No tiene unidades</span>
+                  )}
+                </td>
                 <td className="whitespace-nowrap kibah-table-price">{formatPriceShort(d.precio_min, d.precio_max)}</td>
                 <td className="whitespace-nowrap">{formatRange(d.recamaras_min, d.recamaras_max)}</td>
                 <td className="whitespace-nowrap">

@@ -1,10 +1,11 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { X, Pencil, Trash2, MapPin, Ruler, Bed, Bath, Car, Warehouse, Sparkles } from 'lucide-react'
 import type { Desarrollo } from '@/types/desarrollo'
 import { DISPONIBILIDAD_COLORS } from '@/lib/utils/constants'
 import { toTitleCase } from '@/lib/utils/format'
+import { DesarrolloUnidades } from './DesarrolloUnidades'
 
 interface DesarrolloDetailProps {
   desarrollo: Desarrollo
@@ -70,8 +71,16 @@ export function DesarrolloDetail({ desarrollo, onClose, onEdit, onDelete }: Desa
   const images = [desarrollo.imagen_principal, desarrollo.imagen_1, desarrollo.imagen_2, desarrollo.imagen_3]
     .filter((url): url is string => !!url && url.trim().length > 1)
 
+  // Mientras la ficha de una unidad está abierta encima, Esc la cierra a ella y no al desarrollo.
+  const unidadOpenRef = useRef(false)
+  const handleUnidadDetailChange = useCallback((open: boolean) => {
+    unidadOpenRef.current = open
+    // La ficha de la unidad libera el scroll del body al cerrarse; el desarrollo sigue abierto.
+    if (!open) document.body.style.overflow = 'hidden'
+  }, [])
+
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'Escape') onClose()
+    if (e.key === 'Escape' && !unidadOpenRef.current) onClose()
   }, [onClose])
 
   useEffect(() => {
@@ -157,6 +166,8 @@ export function DesarrolloDetail({ desarrollo, onClose, onEdit, onDelete }: Desa
             <Field label="Disponibilidad" value={desarrollo.disponibilidad} />
             <Field label="Tipo Preventa" value={toTitleCase(desarrollo.tipo_preventa)} />
           </Section>
+
+          <DesarrolloUnidades desarrolloId={desarrollo.id} onUnidadDetailChange={handleUnidadDetailChange} />
 
           <Section title="Ubicación">
             <Field label="Dirección (sin número)" value={desarrollo.direccion} />

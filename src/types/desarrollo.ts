@@ -33,4 +33,34 @@ export interface Desarrollo {
   imagen_1: string | null
   imagen_2: string | null
   imagen_3: string | null
+  /** Calculado en el listado: unidades de base_kibah con el mismo Nombre Kibah. */
+  unidades_count?: number
+}
+
+/** Unidad (hija) de un desarrollo, leída de propiedades_view. */
+export interface DesarrolloUnidad {
+  id: number
+  id_propiedad: string
+  unidad: string | null
+  nombre_desarrollador: string | null
+  disponibilidad: string | null
+  precio_unidad: number | string | null
+  m2_totales: number | string | null
+  num_recamaras: number | string | null
+  num_banos: number | string | null
+  estacionamiento: number | string | null
+}
+
+export interface TorreResumen {
+  nombre: string
+  total: number
+  disponibles: number
+}
+
+export interface DesarrolloUnidadesResumen {
+  total: number
+  disponibles: number
+  precio_min: number | null
+  precio_max: number | null
+  torres: TorreResumen[]
 }

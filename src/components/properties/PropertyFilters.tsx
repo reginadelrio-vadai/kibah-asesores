@@ -5,6 +5,7 @@ import { SlidersHorizontal, X, Search } from 'lucide-react'
 import type { ColumnVisibility } from '@/types'
 import type { FilterValue } from '@/hooks/useFilters'
 import { BODEGA_OPTIONS } from '@/lib/utils/constants'
+import { DesarrolloFilter, DESARROLLO_FILTER_KEY, type DesarrolloOption } from './DesarrolloFilter'
 
 interface FilterOptions {
   colonias: string[]
@@ -13,6 +14,8 @@ interface FilterOptions {
   tipos_preventa: string[]
   tipos_entrega: string[]
 }
+
+type FilterOptionsResponse = FilterOptions & { desarrollos?: DesarrolloOption[] }
 
 interface PropertyFiltersProps {
   filterableColumns: ColumnVisibility[]
@@ -249,7 +252,7 @@ export function PropertyFilters({
 }: PropertyFiltersProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [expandedDesktop, setExpandedDesktop] = useState(false)
-  const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null)
+  const [filterOptions, setFilterOptions] = useState<FilterOptionsResponse | null>(null)
   const hasFilters = filterChips.length > 0
 
   useEffect(() => {
@@ -265,6 +268,16 @@ export function PropertyFilters({
     if (key && filterOptions) return filterOptions[key]
     return []
   }
+
+  // Filtro "Desarrollo" (Nombre Kibah): visible si la columna es filtrable para este usuario.
+  const showDesarrolloFilter = filterableColumns.some((c) => c.column_name === DESARROLLO_FILTER_KEY)
+  const desarrolloFilter = (
+    <DesarrolloFilter
+      options={filterOptions?.desarrollos ?? []}
+      value={activeFilters[DESARROLLO_FILTER_KEY]}
+      onChange={onSetFilter}
+    />
+  )
 
   const structuredColumns = filterableColumns.filter((c) => c.filter_type !== 'text')
   const DEFAULT_FILTERS = ['precio_unidad', 'colonia', 'm2_totales']
@@ -306,8 +319,9 @@ export function PropertyFilters({
     <div className="space-y-3">
       {/* Desktop filters — search full width + 3 defaults + expandable more */}
       <div className="hidden lg:block space-y-3">
-        {/* Row 1: Full-width search */}
-        <div className="relative w-full">
+        {/* Row 1: Full-width search (+ filtro por desarrollo) */}
+        <div className="flex gap-3">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" strokeWidth={1.5} />
           <input
             type="text"
@@ -317,6 +331,8 @@ export function PropertyFilters({
             className="h-10 w-full pl-9 pr-3 text-sm rounded-[var(--radius-sm)] bg-input-bg border border-input-border
               text-text-primary focus:outline-none focus:ring-2 focus:ring-input-focus-ring"
           />
+        </div>
+        {showDesarrolloFilter && <div className="w-80 shrink-0">{desarrolloFilter}</div>}
         </div>
 
         {/* Row 2: 3 default filters */}
@@ -411,6 +427,12 @@ export function PropertyFilters({
                       text-text-primary focus:outline-none focus:ring-2 focus:ring-input-focus-ring"
                   />
                 </div>
+                {showDesarrolloFilter && (
+                  <div>
+                    <label className="block text-xs font-medium text-text-secondary mb-1.5">Desarrollo</label>
+                    {desarrolloFilter}
+                  </div>
+                )}
                 {structuredColumns.map((col) => (
                   <div key={col.id}>
                     <label className="block text-xs font-medium text-text-secondary mb-1.5">

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { ZodError } from 'zod'
 import { createPropertySchema } from '@/lib/validations/property'
 import * as propertyService from '@/lib/services/property-service'
+import { escapeIlike } from '@/lib/utils/ilike'
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient()
@@ -64,6 +65,13 @@ export async function GET(request: NextRequest) {
     if (value) {
       query = query.eq(key, value)
     }
+  }
+
+  // Filtro "Desarrollo": igualdad por Nombre Kibah sin distinguir mayúsculas
+  // (misma regla de liga que el detalle de Desarrollos).
+  const nombreKibah = params.get('nombre_kibah')?.trim()
+  if (nombreKibah) {
+    query = query.ilike('nombre_kibah', escapeIlike(nombreKibah))
   }
 
   // Range filters — strict empty-string guard before applying.

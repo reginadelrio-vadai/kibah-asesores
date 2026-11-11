@@ -1,6 +1,6 @@
 'use client'
 
-import { Bed, Bath, Ruler, Pencil, Trash2, FilePlus, FileCheck } from 'lucide-react'
+import { Bed, Bath, Ruler, Pencil, Trash2, FilePlus, FileCheck, Layers } from 'lucide-react'
 import type { Property, UserRole } from '@/types'
 import { formatPrice, displayValue } from '@/lib/utils/format'
 import { capitalize } from '@/lib/utils/format'
@@ -90,15 +90,28 @@ export function PropertyCard({ property, onClick, role, onEdit, onDelete, visibl
         )}
       </div>
 
-      {/* Title */}
+      {/* Title: el desarrollo (padre) al que pertenece la unidad */}
       {show('nombre_kibah') && (
-        <h3 className="kibah-card-title mb-0.5 line-clamp-1">
-          {displayValue(property.nombre_kibah || property.nombre_desarrollador)}
-        </h3>
+        <>
+          <p className="flex items-center gap-1 text-[11px] font-medium uppercase tracking-wider text-orange mb-0.5">
+            <Layers className="w-3 h-3" strokeWidth={1.5} /> Desarrollo
+          </p>
+          <h3 className="kibah-card-title mb-0.5 line-clamp-1">
+            {displayValue(property.nombre_kibah || property.nombre_desarrollador)}
+          </h3>
+        </>
       )}
-      {show('unidad') && property.unidad && (
-        <p className="text-[12px] text-text-tertiary mb-1">{property.unidad}</p>
-      )}
+      {(() => {
+        const unidad = show('unidad') && property.unidad ? `Unidad ${property.unidad}` : null
+        // Torre / nombre comercial, si no es el mismo texto que el título.
+        const torre = show('nombre_desarrollador') && property.nombre_desarrollador && property.nombre_kibah
+          && property.nombre_desarrollador.trim().toLowerCase() !== property.nombre_kibah.trim().toLowerCase()
+          ? property.nombre_desarrollador : null
+        const parts = [unidad, torre].filter(Boolean)
+        return parts.length > 0 ? (
+          <p className="text-[12px] text-text-tertiary mb-1 line-clamp-1">{parts.join(' · ')}</p>
+        ) : null
+      })()}
       {(show('colonia') || show('alcaldia')) && (
         <p className="kibah-card-location mb-3">
           {show('colonia') ? displayValue(property.colonia) : ''}

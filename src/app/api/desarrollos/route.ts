@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { ZodError } from 'zod'
 import { createDesarrolloSchema } from '@/lib/validations/desarrollo'
 import * as dal from '@/lib/dal/desarrollos'
+import * as unidadesDal from '@/lib/dal/desarrollo-unidades'
 import { requirePermission, isAuthError } from '@/lib/auth/permissions'
 
 export async function GET(request: NextRequest) {
@@ -27,8 +28,22 @@ export async function GET(request: NextRequest) {
 
   const result = await dal.getDesarrollos(filters, cursor, perPage)
 
+  // Número de unidades (hijas) por desarrollo para la tarjeta. Si falla, la lista se muestra sin el conteo.
+  let data = result.data
+  try {
+    const counts = await unidadesDal.countUnidadesByNombresKibah(
+      result.data.map((d) => d.nombre_kibah ?? '')
+    )
+    data = result.data.map((d) => ({
+      ...d,
+      unidades_count: d.nombre_kibah?.trim() ? counts[d.nombre_kibah.trim().toLowerCase()] ?? 0 : 0,
+    }))
+  } catch (err) {
+    console.error('Error counting desarrollo unidades:', err instanceof Error ? err.message : err)
+  }
+
   return NextResponse.json({
-    data: result.data,
+    data,
     pagination: { per_page: perPage, next_cursor: result.nextCursor, has_more: !!result.nextCursor },
   })
 }

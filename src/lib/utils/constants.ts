@@ -13,3 +13,12 @@ export const DISPONIBILIDAD_OPTIONS = ['Disponible', 'Apartado', 'Rentado'] as c
 export const TIPO_PREVENTA_OPTIONS = ['preventa', 'entrega inmediata'] as const
 export const TIPO_ENTREGA_OPTIONS = ['Terminado', 'Obra blanca', 'Obra Gris', 'Obra Negra'] as const
 export const BODEGA_OPTIONS = ['Si', 'No'] as const
+
+/** Unidades (hijas) por página en el detalle de un desarrollo. */
+export const UNIDADES_PER_PAGE = 20
+/** Tope de filas que el servidor lee para calcular el resumen de un desarrollo (solo columnas ligeras). */
+export const UNIDADES_RESUMEN_MAX_ROWS = 1000
+/** Etiqueta para unidades cuyo "Nombre Desarrollador" (torre) viene vacío. */
+export const TORRE_SIN_NOMBRE = 'Sin torre'
+/** Espera (ms) antes de buscar unidades mientras se escribe. */
+export const UNIDADES_SEARCH_DEBOUNCE_MS = 300
