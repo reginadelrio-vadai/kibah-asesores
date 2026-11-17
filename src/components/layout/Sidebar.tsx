@@ -16,7 +16,7 @@ import {
   Webhook,
   Key,
   Shield,
-  Upload,
+  // Upload, // ícono de "Carga Masiva" (oculta del menú)
   Menu,
   X,
 } from 'lucide-react'
@@ -73,7 +73,9 @@ export function Sidebar({ role }: { role: UserRole }) {
 
   const adminItems: NavItem[] = [
     { label: 'Desarrollos', href: '/dashboard/admin/desarrollos', icon: <Landmark className="w-5 h-5" strokeWidth={1.5} />, permission: 'desarrollos.view' },
-    { label: 'Carga Masiva', href: '/dashboard/admin/carga-masiva', icon: <Upload className="w-5 h-5" strokeWidth={1.5} />, permission: 'carga_masiva.view' },
+    // Oculto: las unidades ahora se cargan desde cada Desarrollo ("Subir unidades por PDF").
+    // La página /dashboard/admin/carga-masiva sigue existiendo; para volver a mostrarla, descomentar esta línea y el import de Upload.
+    // { label: 'Carga Masiva', href: '/dashboard/admin/carga-masiva', icon: <Upload className="w-5 h-5" strokeWidth={1.5} />, permission: 'carga_masiva.view' },
     { label: 'Columnas', href: '/dashboard/admin/columnas', icon: <Columns3 className="w-5 h-5" strokeWidth={1.5} />, permission: 'columnas.view' },
     { label: 'Asesores', href: '/dashboard/admin/asesores', icon: <Users className="w-5 h-5" strokeWidth={1.5} />, permission: 'asesores.view' },
     { label: 'Roles', href: '/dashboard/admin/roles', icon: <Shield className="w-5 h-5" strokeWidth={1.5} /> },
