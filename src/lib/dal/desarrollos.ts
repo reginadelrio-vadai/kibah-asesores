@@ -2,6 +2,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import type { Desarrollo } from '@/types/desarrollo'
 import { mapDesarrolloToDB } from '@/lib/validations/desarrollo'
 import { getDesarrolloIdsPorPrecio } from '@/lib/dal/desarrollos-precio'
+import { syncLinkDriveDesarrollo, withLinkDriveDesarrollos } from '@/lib/dal/links-drive'
 
 interface DesarrolloFilters {
   colonia?: string
@@ -99,7 +100,7 @@ export async function getDesarrollos(
   if (hasMore) items.pop()
 
   return {
-    data: items,
+    data: await withLinkDriveDesarrollos(items),
     nextCursor: hasMore && items.length > 0 ? String(items[items.length - 1].id) : null,
   }
 }
@@ -113,7 +114,8 @@ export async function getDesarrolloById(id: number): Promise<Desarrollo | null> 
     .single()
 
   if (error) return null
-  return data as Desarrollo
+  const [conLink] = await withLinkDriveDesarrollos([data as Desarrollo])
+  return conLink
 }
 
 export async function getDesarrolloFilterOptions() {
@@ -148,6 +150,8 @@ export async function insertDesarrollo(data: Record<string, unknown>): Promise<D
     .single()
 
   if (error) throw new Error(error.message)
+  // Si ya hay unidades con este Nombre Kibah, heredan el Link Drive del nuevo desarrollo.
+  await syncLinkDriveDesarrollo([data.nombre_kibah as string | undefined])
   return row as Desarrollo
 }
 
@@ -162,6 +166,10 @@ export async function updateDesarrollo(id: number, data: Record<string, unknown>
     .single()
 
   if (error) throw new Error(error.message)
+  // Desarrollos es la fuente del Link Drive: al cambiarlo (o el Nombre Kibah) se copia a sus unidades.
+  if ('link_drive' in data || 'nombre_kibah' in data) {
+    await syncLinkDriveDesarrollo([(row as Record<string, unknown>)['Nombre Kibah'] as string | undefined])
+  }
   return row as Desarrollo
 }
 

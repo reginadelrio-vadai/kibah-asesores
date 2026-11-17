@@ -2,23 +2,29 @@
 
 import { memo, useState } from 'react'
 import { AlertCircle, Info } from 'lucide-react'
-import { BODEGA_OPTIONS, DISPONIBILIDAD_OPTIONS, ENGANCHE_OPTIONS } from '@/lib/utils/constants'
+import { BODEGA_OPTIONS, DISPONIBILIDAD_OPTIONS, PRECIO_LISTA } from '@/lib/utils/constants'
 import {
   erroresFila,
   esVendida,
   patchBodega,
+  precioPrincipalDe,
   type Bodega,
   type Coincidencia,
   type Disponibilidad,
   type FilaRevision,
 } from '@/lib/utils/unidades-pdf'
-import type { EngancheOption } from '@/types/unidades-pdf'
+import type { PrecioColumna, PrecioPrincipal } from '@/types/unidades-pdf'
+
+const priceFormat = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 })
+const nombreColumna = (c: PrecioColumna) => (c === PRECIO_LISTA ? 'Lista' : `Eng ${c}%`)
 
 interface UnidadesPdfTableProps {
   filas: FilaRevision[]
   /** Coincidencia con unidades existentes, por key de fila. */
   coincidencias: Map<string, Coincidencia>
-  precioPrincipal: EngancheOption
+  precioPrincipal: PrecioPrincipal
+  /** Columnas de precio que trae el PDF (las demás se ocultan). */
+  columnasPrecio: PrecioColumna[]
   repetidas: Set<string>
   onChange: (key: string, patch: Partial<FilaRevision>) => void
   onIncluirTodas: (incluir: boolean) => void
@@ -109,15 +115,17 @@ function BodegaCell({ value, m2, pdf, onChange }: {
   )
 }
 
-const Fila = memo(function Fila({ f, c, precioPrincipal, repetidas, onChange }: {
+const Fila = memo(function Fila({ f, c, precioPrincipal, columnasPrecio, repetidas, onChange }: {
   f: FilaRevision
   c: Coincidencia | undefined
-  precioPrincipal: EngancheOption
+  precioPrincipal: PrecioPrincipal
+  columnasPrecio: PrecioColumna[]
   repetidas: Set<string>
   onChange: UnidadesPdfTableProps['onChange']
 }) {
   const set = (patch: Partial<FilaRevision>) => onChange(f.key, patch)
   const errores = f.incluir ? erroresFila(f, precioPrincipal, repetidas, c) : []
+  const precioFinal = precioPrincipalDe(f.precios, precioPrincipal)
   const rowTone = !f.incluir ? 'opacity-45' : errores.length > 0 ? 'bg-error/5' : ''
 
   return (
@@ -176,16 +184,27 @@ const Fila = memo(function Fila({ f, c, precioPrincipal, repetidas, onChange }: 
       <td className="px-1">
         <BodegaCell value={f.bodega} m2={f.bodega_m2} pdf={f.bodegaPdf} onChange={set} />
       </td>
-      {ENGANCHE_OPTIONS.map((eng) => (
-        <td key={eng} className={`px-1 ${eng === precioPrincipal ? 'bg-orange/5' : ''}`}>
+      {columnasPrecio.map((col) => (
+        <td key={col} className={`px-1 ${col === precioPrincipal ? 'bg-orange/5' : ''}`}>
           <NumCell
-            label={`Precio enganche ${eng}%`}
-            value={f.precios[eng]}
-            onChange={(v) => set({ precios: { ...f.precios, [eng]: v } })}
+            label={`Precio ${nombreColumna(col)}`}
+            value={f.precios[col]}
+            onChange={(v) => set({ precios: { ...f.precios, [col]: v } })}
             width="w-28"
           />
         </td>
       ))}
+      <td className="px-2 text-right font-semibold tabular-nums whitespace-nowrap bg-orange/5 text-text-primary">
+        {precioFinal === null ? <span className="text-error">—</span> : priceFormat.format(precioFinal)}
+      </td>
+      <td className="px-1">
+        <TextCell
+          label="Drive propio de la unidad"
+          value={f.link_drive_unidad}
+          onChange={(v) => set({ link_drive_unidad: v })}
+          width="w-44"
+        />
+      </td>
       <td className="px-1">
         <select
           aria-label="Disponibilidad"
@@ -203,7 +222,7 @@ const Fila = memo(function Fila({ f, c, precioPrincipal, repetidas, onChange }: 
 const HEADERS = ['Unidad', 'Nivel', 'Orient.', 'Rec.', 'Baños', 'Int m²', 'Balcón m²', 'Patio m²', 'Total m²', 'Bodega / m²']
 
 /** Tabla editable con lo que Claude leyó del PDF. */
-export function UnidadesPdfTable({ filas, coincidencias, precioPrincipal, repetidas, onChange, onIncluirTodas }: UnidadesPdfTableProps) {
+export function UnidadesPdfTable({ filas, coincidencias, precioPrincipal, columnasPrecio, repetidas, onChange, onIncluirTodas }: UnidadesPdfTableProps) {
   const todas = filas.length > 0 && filas.every((f) => f.incluir)
   const th = 'px-2 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-text-tertiary whitespace-nowrap'
 
@@ -223,17 +242,19 @@ export function UnidadesPdfTable({ filas, coincidencias, precioPrincipal, repeti
             </th>
             <th className={th}>Estado</th>
             {HEADERS.map((h) => <th key={h} className={th}>{h}</th>)}
-            {ENGANCHE_OPTIONS.map((eng) => (
-              <th key={eng} className={`${th} text-right ${eng === precioPrincipal ? '!text-orange' : ''}`}>
-                Eng {eng}%{eng === precioPrincipal ? ' ★' : ''}
+            {columnasPrecio.map((col) => (
+              <th key={col} className={`${th} text-right ${col === precioPrincipal ? '!text-orange' : ''}`}>
+                {nombreColumna(col)}{col === precioPrincipal ? ' ★' : ''}
               </th>
             ))}
+            <th className={`${th} text-right !text-orange`} title="Lo que se guarda en Precio por unidad">→ Precio por unidad</th>
+            <th className={th} title="Vacío = usa el Drive del desarrollo. Se llena solo si la unidad tenía carpeta propia antes.">Drive propio</th>
             <th className={th}>Disponibilidad</th>
           </tr>
         </thead>
         <tbody className="kibah-modal-solid">
           {filas.map((f) => (
-            <Fila key={f.key} f={f} c={coincidencias.get(f.key)} precioPrincipal={precioPrincipal} repetidas={repetidas} onChange={onChange} />
+            <Fila key={f.key} f={f} c={coincidencias.get(f.key)} precioPrincipal={precioPrincipal} columnasPrecio={columnasPrecio} repetidas={repetidas} onChange={onChange} />
           ))}
         </tbody>
       </table>

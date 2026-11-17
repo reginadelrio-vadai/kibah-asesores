@@ -3,7 +3,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import type { Desarrollo } from '@/types/desarrollo'
 import type { UnidadExistente, ImportarUnidadesResponse } from '@/types/unidades-pdf'
 import { mapUnidadPdfToDB, type ImportarUnidadesInput } from '@/lib/validations/unidades-pdf'
-import { UNIDADES_RESUMEN_MAX_ROWS } from '@/lib/utils/constants'
+import { BASE_KIBAH_LINK_DRIVE_DESARROLLO, UNIDADES_RESUMEN_MAX_ROWS } from '@/lib/utils/constants'
+import { syncLinkDriveDesarrollo } from '@/lib/dal/links-drive'
 import { buscarExistente } from '@/lib/utils/unidades-pdf'
 import { escapeIlike } from '@/lib/utils/ilike'
 
@@ -57,6 +58,7 @@ function heredados(d: Desarrollo, torre: string | null): Record<string, string |
     'Entrega Inmediata/Preventa': d.tipo_preventa,
     'Tipo de Entrega': d.tipo_entrega,
     '% Comisión': d.pct_comision === null ? null : String(d.pct_comision),
+    [BASE_KIBAH_LINK_DRIVE_DESARROLLO]: d.link_drive ?? null,
   }
 }
 
@@ -109,6 +111,9 @@ export async function importarUnidades(
     const failed = results.find((r) => r.error)
     if (failed?.error) throw new Error(failed.error.message)
   }
+
+  // Todas (nuevas y actualizadas) quedan con el Link Drive actual del desarrollo.
+  await syncLinkDriveDesarrollo([nombreKibah])
 
   return { insertadas: inserts.length, actualizadas: updates.length }
 }

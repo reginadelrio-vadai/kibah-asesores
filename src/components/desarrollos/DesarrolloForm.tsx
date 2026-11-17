@@ -44,6 +44,7 @@ function buildInitial(d?: Desarrollo | null): FormData {
     imagen_2: s(d.imagen_2), imagen_3: s(d.imagen_3),
     contacto_desarrollador: s(d.contacto_desarrollador),
     pct_comision: s(d.pct_comision), link_maps: s(d.link_maps),
+    link_drive: s(d.link_drive ?? null),
   }
 }
 
@@ -67,6 +68,7 @@ function toPayload(form: FormData) {
     imagen_1: str('imagen_1'), imagen_2: str('imagen_2'), imagen_3: str('imagen_3'),
     contacto_desarrollador: str('contacto_desarrollador'),
     pct_comision: str('pct_comision'), link_maps: form.link_maps?.trim() || '',
+    link_drive: str('link_drive'),
   }
 }
 
@@ -290,6 +292,14 @@ export function DesarrolloForm({ desarrollo, onClose, onSuccess, onToast }: Desa
                   <HelpCircle className="w-3 h-3" strokeWidth={1.5} /> Instrucciones
                 </a>
               </div>
+            </Sec>
+
+            {/* Drive del edificio: lo heredan todas sus unidades */}
+            <Sec title="Drive">
+              <F label="Link Drive del desarrollo" error={errors.link_drive}>
+                <input className={ic('link_drive')} value={form.link_drive ?? ''} onChange={e => set('link_drive', e.target.value)} placeholder="https://drive.google.com/drive/folders/..." />
+              </F>
+              <p className="text-[11px] text-text-tertiary mt-1">Al guardar, se copia a todas las unidades de este desarrollo.</p>
             </Sec>
 
             {/* Interno */}

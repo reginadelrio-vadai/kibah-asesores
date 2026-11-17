@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { Property } from '@/types'
+import { syncLinkDriveDesarrollo, withLinksDriveUnidades } from '@/lib/dal/links-drive'
 
 interface PropertyFilters {
   alcaldia?: string
@@ -78,7 +79,7 @@ export async function getProperties(
   if (hasMore) properties.pop()
 
   return {
-    data: properties,
+    data: await withLinksDriveUnidades(properties),
     nextCursor: hasMore
       ? properties[properties.length - 1].created_at
       : null,
@@ -100,7 +101,8 @@ export async function getPropertyById(
     return null
   }
 
-  return data as Property
+  const [conLinks] = await withLinksDriveUnidades([data as Property])
+  return conLinks
 }
 
 export async function getFilterOptions(): Promise<{
@@ -176,6 +178,8 @@ export async function insertProperty(
     throw new Error(error.message)
   }
 
+  // Hereda el Link Drive de su desarrollo.
+  await syncLinkDriveDesarrollo([(data as Record<string, unknown>)['Nombre Kibah'] as string | undefined])
   return data as Property
 }
 
@@ -196,6 +200,10 @@ export async function updateProperty(
     throw new Error(error.message)
   }
 
+  // Si cambió de desarrollo, toma el Link Drive del nuevo.
+  if ('Nombre Kibah' in dbData) {
+    await syncLinkDriveDesarrollo([(data as Record<string, unknown>)['Nombre Kibah'] as string | undefined])
+  }
   return data as Property
 }
 

@@ -30,6 +30,8 @@ export interface Desarrollo {
   descripcion: string | null
   imagen_principal: string | null
   link_maps: string | null
+  /** Drive del edificio (pagina_web_kibah."Link Drive"); sus unidades lo heredan. */
+  link_drive?: string | null
   imagen_1: string | null
   imagen_2: string | null
   imagen_3: string | null

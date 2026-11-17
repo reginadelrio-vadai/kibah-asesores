@@ -1,5 +1,12 @@
-import { BODEGA_OPTIONS, DISPONIBILIDAD_OPTIONS, ENGANCHE_OPTIONS, TORRE_SIN_NOMBRE } from '@/lib/utils/constants'
-import type { EngancheOption, LecturaPdfResponse, PreciosEnganche, UnidadExistente } from '@/types/unidades-pdf'
+import {
+  BODEGA_OPTIONS,
+  DISPONIBILIDAD_OPTIONS,
+  PRECIO_COLUMNAS,
+  PRECIO_LISTA,
+  PRECIO_MAS_ALTO,
+  TORRE_SIN_NOMBRE,
+} from '@/lib/utils/constants'
+import type { LecturaPdfResponse, PrecioColumna, PrecioPrincipal, PreciosUnidad, UnidadExistente } from '@/types/unidades-pdf'
 
 export type Bodega = (typeof BODEGA_OPTIONS)[number]
 export type Disponibilidad = (typeof DISPONIBILIDAD_OPTIONS)[number]
@@ -24,11 +31,13 @@ export interface FilaRevision {
   bodegaPdf: string | null
   bodega: Bodega | null
   bodega_m2: number | null
-  precios: PreciosEnganche
+  precios: PreciosUnidad
   disponibilidad: Disponibilidad
   /** Estado tal como lo marca el PDF. */
   estadoPdf: string | null
   nota: string | null
+  /** Drive propio de la unidad (se recupera del respaldo si lo tenía). */
+  link_drive_unidad: string | null
 }
 
 // ── Comparación con las unidades que ya existen ───────────────────────
@@ -140,23 +149,44 @@ export function toFilasRevision(res: LecturaPdfResponse, torre: string | null): 
         matchDisponibilidad(u.estado) ?? matchDisponibilidad(existente?.disponibilidad ?? null) ?? DISPONIBILIDAD_OPTIONS[0],
       estadoPdf: u.estado,
       nota: u.nota,
+      link_drive_unidad: res.links_propios[unidad.toLowerCase()] ?? null,
     }
   })
 }
 
-/** Qué esquema de enganche proponer como precio principal: el default si el PDF lo trae, si no el primero que tenga precios. */
-export function precioPrincipalSugerido(filas: FilaRevision[], preferido: EngancheOption): EngancheOption {
-  const tiene = (e: EngancheOption) => filas.some((f) => (f.precios[e] ?? 0) > 0)
-  if (tiene(preferido)) return preferido
-  return ENGANCHE_OPTIONS.find(tiene) ?? preferido
+// ── Precio por unidad ──────────────────────────────────────────────────
+
+/**
+ * Precio que va en "Precio por unidad". Con "max" es el más alto de la fila entre lista y enganches
+ * (el precio de lista, aunque el PDF no tenga esa columna). null si no hay precio válido.
+ */
+export function precioPrincipalDe(precios: PreciosUnidad, opcion: PrecioPrincipal): number | null {
+  const valido = (n: number | null): n is number => n !== null && n > 0
+  if (opcion === PRECIO_MAS_ALTO) {
+    const todos = PRECIO_COLUMNAS.map((c) => precios[c]).filter(valido)
+    return todos.length > 0 ? Math.max(...todos) : null
+  }
+  const p = precios[opcion]
+  return valido(p) ? p : null
+}
+
+export function etiquetaPrecio(opcion: PrecioPrincipal): string {
+  if (opcion === PRECIO_MAS_ALTO) return 'el precio más alto'
+  if (opcion === PRECIO_LISTA) return 'el precio de lista'
+  return `el precio con enganche ${opcion}%`
+}
+
+/** Columnas de precio que trae el PDF (alguna fila tiene valor). Si no trae ninguna, se muestra "lista" para capturarla. */
+export function columnasPrecioConDatos(filas: { precios: PreciosUnidad }[]): PrecioColumna[] {
+  const conDatos = PRECIO_COLUMNAS.filter((c) => filas.some((f) => (f.precios[c] ?? 0) > 0))
+  return conDatos.length > 0 ? conDatos : [PRECIO_LISTA]
 }
 
 /** Problemas que impiden guardar una fila incluida. */
-export function erroresFila(f: FilaRevision, precioPrincipal: EngancheOption, repetidas: Set<string>, c: Coincidencia | undefined): string[] {
+export function erroresFila(f: FilaRevision, precioPrincipal: PrecioPrincipal, repetidas: Set<string>, c: Coincidencia | undefined): string[] {
   const errores: string[] = []
   if (!f.unidad.trim()) errores.push('Falta el número de unidad')
-  const precio = f.precios[precioPrincipal]
-  if (precio === null || precio <= 0) errores.push(`Falta precio con enganche ${precioPrincipal}%`)
+  if (precioPrincipalDe(f.precios, precioPrincipal) === null) errores.push(`Falta ${etiquetaPrecio(precioPrincipal)}`)
   if (repetidas.has(norm(f.unidad))) errores.push('Unidad repetida en el PDF')
   if (c?.ambigua) errores.push('Hay varias unidades con este número; escribe la torre arriba para saber cuál actualizar')
   return errores
@@ -176,7 +206,7 @@ export function unidadesRepetidas(filas: FilaRevision[]): Set<string> {
 }
 
 /** Cuerpo de POST /api/desarrollos/[id]/unidades/importar */
-export function toImportPayload(filas: FilaRevision[], precioPrincipal: EngancheOption, torre: string) {
+export function toImportPayload(filas: FilaRevision[], precioPrincipal: PrecioPrincipal, torre: string) {
   return {
     precio_principal: precioPrincipal,
     torre: torre.trim() || null,
@@ -196,6 +226,7 @@ export function toImportPayload(filas: FilaRevision[], precioPrincipal: Enganche
         bodega_m2: f.bodega_m2,
         precios: f.precios,
         disponibilidad: f.disponibilidad,
+        link_drive_unidad: f.link_drive_unidad?.trim() || null,
       })),
   }
 }

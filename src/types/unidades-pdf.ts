@@ -1,9 +1,13 @@
-import type { ENGANCHE_OPTIONS } from '@/lib/utils/constants'
+import type { ENGANCHE_OPTIONS, PRECIO_COLUMNAS, PRECIO_PRINCIPAL_OPTIONS } from '@/lib/utils/constants'
 
 export type EngancheOption = (typeof ENGANCHE_OPTIONS)[number]
+/** "lista" o un esquema de enganche. */
+export type PrecioColumna = (typeof PRECIO_COLUMNAS)[number]
+/** Qué precio va en "Precio por unidad": "max" (el más alto de la fila) o una columna. */
+export type PrecioPrincipal = (typeof PRECIO_PRINCIPAL_OPTIONS)[number]
 
-/** Precios por esquema de enganche (10/25/50/75%). */
-export type PreciosEnganche = Record<EngancheOption, number | null>
+/** Precios de una unidad: de lista y por esquema de enganche (10/25/50/75%). */
+export type PreciosUnidad = Record<PrecioColumna, number | null>
 
 /** Una unidad tal como Claude la leyó del PDF. */
 export interface UnidadPdf {
@@ -20,7 +24,7 @@ export interface UnidadPdf {
   bodega: string | null
   /** Tamaño de la bodega en m² si el PDF lo trae. */
   bodega_m2: number | null
-  precios: PreciosEnganche
+  precios: PreciosUnidad
   /** Estado si el PDF lo marca (vendido, apartado, disponible…). */
   estado: string | null
   nota: string | null
@@ -50,6 +54,10 @@ export interface UnidadExistente {
 export interface LecturaPdfResponse {
   lectura: LecturaPdf
   existentes: UnidadExistente[]
+  /** Drive del desarrollo: lo heredan todas las unidades. */
+  link_drive_desarrollo: string | null
+  /** Links propios recuperados del respaldo, por número de unidad en minúsculas. */
+  links_propios: Record<string, string>
 }
 
 /** Respuesta de POST /api/desarrollos/[id]/unidades/importar */

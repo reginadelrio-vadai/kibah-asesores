@@ -1,17 +1,19 @@
 'use client'
 
-import { Sparkles } from 'lucide-react'
-import { BODEGA_OPTIONS, ENGANCHE_OPTIONS } from '@/lib/utils/constants'
-import type { Bodega } from '@/lib/utils/unidades-pdf'
-import type { EngancheOption, LecturaPdf } from '@/types/unidades-pdf'
+import { FolderOpen, Sparkles } from 'lucide-react'
+import { BODEGA_OPTIONS, PRECIO_MAS_ALTO, PRECIO_PRINCIPAL_OPTIONS } from '@/lib/utils/constants'
+import { etiquetaPrecio, type Bodega } from '@/lib/utils/unidades-pdf'
+import type { LecturaPdf, PrecioPrincipal } from '@/types/unidades-pdf'
 
 interface UnidadesPdfReviewBarProps {
   lectura: LecturaPdf
   torre: string
   onTorre: (v: string) => void
-  precioPrincipal: EngancheOption
-  onPrecioPrincipal: (v: EngancheOption) => void
+  precioPrincipal: PrecioPrincipal
+  onPrecioPrincipal: (v: PrecioPrincipal) => void
   onBodegaTodas: (v: Bodega) => void
+  linkDriveDesarrollo: string | null
+  linksRecuperados: number
   conteo: { leidas: number; nuevas: number; actualizar: number; omitidas: number; conError: number }
 }
 
@@ -25,7 +27,7 @@ function Count({ label, value, tone }: { label: string; value: number; tone?: st
 }
 
 /** Controles y resumen arriba de la tabla de revisión. */
-export function UnidadesPdfReviewBar({ lectura, torre, onTorre, precioPrincipal, onPrecioPrincipal, onBodegaTodas, conteo }: UnidadesPdfReviewBarProps) {
+export function UnidadesPdfReviewBar({ lectura, torre, onTorre, precioPrincipal, onPrecioPrincipal, onBodegaTodas, linkDriveDesarrollo, linksRecuperados, conteo }: UnidadesPdfReviewBarProps) {
   return (
     <div className="space-y-3">
       <dl className="flex flex-wrap gap-2">
@@ -45,10 +47,14 @@ export function UnidadesPdfReviewBar({ lectura, torre, onTorre, precioPrincipal,
           <span className="text-xs text-text-tertiary">¿Qué precio va en &quot;Precio por unidad&quot;?</span>
           <select
             value={precioPrincipal}
-            onChange={(e) => onPrecioPrincipal(e.target.value as EngancheOption)}
+            onChange={(e) => onPrecioPrincipal(e.target.value as PrecioPrincipal)}
             className="kibah-input mt-1 cursor-pointer"
           >
-            {ENGANCHE_OPTIONS.map((e) => <option key={e} value={e}>Precio con enganche {e}%</option>)}
+            {PRECIO_PRINCIPAL_OPTIONS.map((o) => (
+              <option key={o} value={o}>
+                {o === PRECIO_MAS_ALTO ? 'El más alto de cada unidad (precio de lista)' : etiquetaPrecio(o).replace(/^el p/, 'P')}
+              </option>
+            ))}
           </select>
         </label>
         <div>
@@ -67,6 +73,20 @@ export function UnidadesPdfReviewBar({ lectura, torre, onTorre, precioPrincipal,
             ))}
           </div>
         </div>
+      </div>
+
+      <div className={`flex items-start gap-2 text-xs p-3 rounded-[var(--radius-sm)] border ${linkDriveDesarrollo ? 'border-border-primary text-text-secondary' : 'border-amber-500/30 bg-amber-500/5 text-amber-700 dark:text-amber-400'}`}>
+        <FolderOpen className="w-4 h-4 flex-shrink-0 mt-0.5" strokeWidth={1.5} />
+        <p className="min-w-0">
+          {linkDriveDesarrollo ? (
+            <>Todas las unidades heredan el Drive del desarrollo:{' '}
+              <a href={linkDriveDesarrollo} target="_blank" rel="noopener noreferrer" className="text-orange hover:underline break-all">{linkDriveDesarrollo}</a>
+            </>
+          ) : (
+            <>Este desarrollo no tiene Link Drive. Agrégalo en &quot;Editar&quot; del desarrollo y se copiará a sus unidades.</>
+          )}
+          {linksRecuperados > 0 && <> · {linksRecuperados} unidad(es) con Drive propio (recuperado del respaldo o capturado), ver columna &quot;Drive propio&quot;.</>}
+        </p>
       </div>
 
       {(lectura.observaciones || lectura.columnas_detectadas.length > 0) && (

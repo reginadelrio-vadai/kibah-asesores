@@ -39,8 +39,11 @@ export interface Property {
   tipo_preventa: string | null
   tipo_entrega: string | null
   pct_comision: number | null
+  /** Link efectivo: el propio de la unidad, si no el de su desarrollo. */
   link_drive: string | null
   nombre_kibah: string | null
+  link_drive_desarrollo?: string | null
+  link_drive_unidad?: string | null
 }
 
 export interface ColumnVisibility {

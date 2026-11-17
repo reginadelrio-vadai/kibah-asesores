@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AlertCircle, CheckCircle2, Eye, EyeOff, FileText, Loader2, RotateCcw, X } from 'lucide-react'
 import { useUnidadesPdf } from '@/hooks/useUnidadesPdf'
-import { buscarExistente, erroresFila, unidadesRepetidas } from '@/lib/utils/unidades-pdf'
+import { buscarExistente, columnasPrecioConDatos, erroresFila, etiquetaPrecio, unidadesRepetidas } from '@/lib/utils/unidades-pdf'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { UnidadesPdfDropzone } from './UnidadesPdfDropzone'
 import { UnidadesPdfReviewBar } from './UnidadesPdfReviewBar'
@@ -51,6 +51,8 @@ export function UnidadesPdfModal({ desarrolloId, nombre, torreDefault, onClose, 
   }, [onClose, blockEsc])
 
   const repetidas = useMemo(() => unidadesRepetidas(pdf.filas), [pdf.filas])
+  // Fijas según lo que leyó Claude: no desaparecen si borras una celda al editar.
+  const columnasPrecio = useMemo(() => columnasPrecioConDatos(pdf.lectura?.unidades ?? []), [pdf.lectura])
   // Se recalcula al editar la torre o un número de unidad: misma regla que usa el servidor al guardar.
   const coincidencias = useMemo(
     () => new Map(pdf.filas.map((f) => [f.key, buscarExistente(pdf.existentes, f.unidad, pdf.torre)])),
@@ -131,6 +133,8 @@ export function UnidadesPdfModal({ desarrolloId, nombre, torreDefault, onClose, 
                   precioPrincipal={pdf.precioPrincipal}
                   onPrecioPrincipal={pdf.setPrecioPrincipal}
                   onBodegaTodas={pdf.setBodegaTodas}
+                  linkDriveDesarrollo={pdf.linkDriveDesarrollo}
+                  linksRecuperados={pdf.filas.filter((f) => f.link_drive_unidad).length}
                   conteo={conteo}
                 />
                 <p className="text-xs text-text-tertiary">
@@ -140,6 +144,7 @@ export function UnidadesPdfModal({ desarrolloId, nombre, torreDefault, onClose, 
                 <UnidadesPdfTable
                   filas={pdf.filas}
                   coincidencias={coincidencias}
+                  columnasPrecio={columnasPrecio}
                   precioPrincipal={pdf.precioPrincipal}
                   repetidas={repetidas}
                   onChange={pdf.updateFila}
@@ -180,7 +185,7 @@ export function UnidadesPdfModal({ desarrolloId, nombre, torreDefault, onClose, 
       {confirmOpen && (
         <ConfirmDialog
           title="¿Todo está bien?"
-          message={`Se crearán ${conteo.nuevas} unidades nuevas y se actualizarán ${conteo.actualizar} existentes en ${nombre}. "Precio por unidad" tomará el precio con enganche ${pdf.precioPrincipal}%.${conteo.omitidas ? ` ${conteo.omitidas} fila(s) desmarcadas no se guardan.` : ''}`}
+          message={`Se crearán ${conteo.nuevas} unidades nuevas y se actualizarán ${conteo.actualizar} existentes en ${nombre}. "Precio por unidad" tomará ${etiquetaPrecio(pdf.precioPrincipal)} de cada unidad.${conteo.omitidas ? ` ${conteo.omitidas} fila(s) desmarcadas no se guardan.` : ''}`}
           confirmLabel="Sí, guardar"
           cancelLabel="Seguir revisando"
           onCancel={() => setConfirmOpen(false)}

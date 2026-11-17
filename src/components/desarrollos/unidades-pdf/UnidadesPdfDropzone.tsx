@@ -32,7 +32,7 @@ export function UnidadesPdfDropzone({ onFile }: UnidadesPdfDropzoneProps) {
       <div>
         <p className="text-sm font-semibold text-text-primary">Arrastra aquí el PDF de la lista de precios</p>
         <p className="text-xs text-text-tertiary mt-1">
-          Claude lee la tabla de unidades (departamento, nivel, orientación, m², bodega y precios por enganche).
+          Claude lee la tabla de unidades (departamento, nivel, orientación, m², bodega, precio de lista y precios por enganche).
           <br />Nada se guarda hasta que revises y confirmes. Máximo 4 MB.
         </p>
       </div>

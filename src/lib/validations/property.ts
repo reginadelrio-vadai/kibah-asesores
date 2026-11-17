@@ -32,6 +32,8 @@ export const createPropertySchema = z.object({
   tipo_entrega: z.enum(TIPO_ENTREGA_VALUES).nullable().optional(),
   pct_comision: z.number().nonnegative().nullable().optional(),
   link_drive: z.string().nullable().optional(),
+  /** Drive propio de la unidad; vacío = usa el del desarrollo. */
+  link_drive_unidad: z.string().trim().max(1000).nullable().optional(),
 })
 
 export const updatePropertySchema = createPropertySchema.partial()
@@ -63,6 +65,7 @@ const COLUMN_MAP: Record<string, string> = {
   tipo_entrega: 'Tipo de Entrega',
   pct_comision: '% Comisión',
   link_drive: 'Link Drive',
+  link_drive_unidad: 'Link Drive Unidad',
   nombre_kibah: 'Nombre Kibah',
 }
 

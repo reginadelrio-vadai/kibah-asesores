@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { authorizeUnidadesPdf } from '@/lib/auth/unidades-pdf-auth'
 import { leerUnidadesDePdf, LecturaPdfError } from '@/lib/services/unidades-pdf-service'
 import { getUnidadesExistentes } from '@/lib/dal/unidades-import'
+import { getLinksPropiosRespaldo } from '@/lib/dal/links-drive'
 import { UNIDADES_PDF_MAX_BYTES } from '@/lib/utils/constants'
 import type { LecturaPdfResponse } from '@/types/unidades-pdf'
 
@@ -36,11 +37,13 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   try {
-    const [lectura, existentes] = await Promise.all([
+    const linkDesarrollo = ctx.desarrollo.link_drive ?? null
+    const [lectura, existentes, links_propios] = await Promise.all([
       leerUnidadesDePdf(buffer, ctx.nombreKibah),
       getUnidadesExistentes(ctx.nombreKibah),
+      getLinksPropiosRespaldo(ctx.nombreKibah, linkDesarrollo),
     ])
-    const body: LecturaPdfResponse = { lectura, existentes }
+    const body: LecturaPdfResponse = { lectura, existentes, link_drive_desarrollo: linkDesarrollo, links_propios }
     return NextResponse.json(body)
   } catch (err) {
     if (err instanceof LecturaPdfError) {

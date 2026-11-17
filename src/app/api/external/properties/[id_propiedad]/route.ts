@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import * as apiKeyService from '@/lib/services/api-key-service'
+import { withLinksDriveUnidades } from '@/lib/dal/links-drive'
 
 export async function GET(
   request: NextRequest,
@@ -43,5 +44,6 @@ export async function GET(
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  return NextResponse.json({ data })
+  const [conLinks] = await withLinksDriveUnidades([data as { id: number; link_drive?: string | null }])
+  return NextResponse.json({ data: conLinks })
 }

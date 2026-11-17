@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import {
+  BASE_KIBAH_LINK_DRIVE_UNIDAD,
   BASE_KIBAH_M2_BODEGA,
   BASE_KIBAH_NIVEL,
   BASE_KIBAH_ORIENTACION,
@@ -7,9 +8,11 @@ import {
   BODEGA_OPTIONS,
   DISPONIBILIDAD_OPTIONS,
   ENGANCHE_OPTIONS,
+  PRECIO_PRINCIPAL_OPTIONS,
   UNIDADES_PDF_MAX_ROWS,
 } from '@/lib/utils/constants'
-import type { EngancheOption } from '@/types/unidades-pdf'
+import type { PrecioPrincipal } from '@/types/unidades-pdf'
+import { etiquetaPrecio, precioPrincipalDe } from '@/lib/utils/unidades-pdf'
 
 // ── Lo que Claude devuelve al leer el PDF (structured output) ──────────
 // Sin min/max: los structured outputs no aceptan esas restricciones; se validan después.
@@ -32,7 +35,7 @@ export const lecturaPdfSchema = z.object({
       m2_total: num,
       bodega: z.string().nullable(),
       bodega_m2: num,
-      precios: z.object({ '10': num, '25': num, '50': num, '75': num }),
+      precios: z.object({ lista: num, '10': num, '25': num, '50': num, '75': num }),
       estado: z.string().nullable(),
       nota: z.string().nullable(),
     })
@@ -57,22 +60,23 @@ export const unidadImportSchema = z.object({
   m2_total: optionalNum,
   bodega: z.enum(BODEGA_OPTIONS).nullable(),
   bodega_m2: optionalNum,
-  precios: z.object({ '10': optionalNum, '25': optionalNum, '50': optionalNum, '75': optionalNum }),
+  precios: z.object({ lista: optionalNum, '10': optionalNum, '25': optionalNum, '50': optionalNum, '75': optionalNum }),
   disponibilidad: z.enum(DISPONIBILIDAD_OPTIONS, { message: 'Disponibilidad inválida' }),
+  /** Drive propio de la unidad; null = usa el del desarrollo. */
+  link_drive_unidad: z.string().trim().max(1000).nullable(),
 })
 
 export const importarUnidadesSchema = z
   .object({
-    precio_principal: z.enum(ENGANCHE_OPTIONS, { message: 'Esquema de enganche inválido' }),
+    precio_principal: z.enum(PRECIO_PRINCIPAL_OPTIONS, { message: 'Opción de precio inválida' }),
     torre: z.string().trim().max(200).nullable(),
     unidades: z.array(unidadImportSchema).min(1, 'No hay unidades para importar').max(UNIDADES_PDF_MAX_ROWS),
   })
   .superRefine((data, ctx) => {
     const vistas = new Set<string>()
     data.unidades.forEach((u, i) => {
-      const precio = u.precios[data.precio_principal]
-      if (precio === null || precio <= 0) {
-        ctx.addIssue({ code: 'custom', path: ['unidades', i, 'precios'], message: `Unidad ${u.unidad}: falta el precio con enganche ${data.precio_principal}%` })
+      if (precioPrincipalDe(u.precios, data.precio_principal) === null) {
+        ctx.addIssue({ code: 'custom', path: ['unidades', i, 'precios'], message: `Unidad ${u.unidad}: falta ${etiquetaPrecio(data.precio_principal)}` })
       }
       const key = u.unidad.toLowerCase()
       if (vistas.has(key)) {
@@ -92,7 +96,7 @@ function toText(v: number | string | null): string | null {
 }
 
 /** Columnas de base_kibah (nombres originales, sin comillas) que salen de una fila del PDF. */
-export function mapUnidadPdfToDB(u: UnidadImport, precioPrincipal: EngancheOption): Record<string, string | null> {
+export function mapUnidadPdfToDB(u: UnidadImport, precioPrincipal: PrecioPrincipal): Record<string, string | null> {
   const row: Record<string, string | null> = {
     'Unidad': u.unidad,
     [BASE_KIBAH_NIVEL]: toText(u.nivel),
@@ -105,8 +109,9 @@ export function mapUnidadPdfToDB(u: UnidadImport, precioPrincipal: EngancheOptio
     'M2 Totales': toText(u.m2_total),
     'Bodega': u.bodega,
     [BASE_KIBAH_M2_BODEGA]: toText(u.bodega_m2),
-    'Precio por unidad': toText(u.precios[precioPrincipal]),
+    'Precio por unidad': toText(precioPrincipalDe(u.precios, precioPrincipal)),
     'Disponibilidad': u.disponibilidad,
+    [BASE_KIBAH_LINK_DRIVE_UNIDAD]: u.link_drive_unidad?.trim() || null,
   }
   for (const eng of ENGANCHE_OPTIONS) {
     row[`${BASE_KIBAH_PRECIO_ENG_PREFIX}${eng}%`] = toText(u.precios[eng])

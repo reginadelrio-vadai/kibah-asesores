@@ -32,10 +32,25 @@ export const UNIDADES_PDF_MAX_BYTES = 4 * 1024 * 1024
 export const UNIDADES_PDF_MAX_ROWS = 500
 /** Esquemas de enganche que trae el PDF; cada uno tiene su columna "Precio Eng X%". */
 export const ENGANCHE_OPTIONS = ['10', '25', '50', '75'] as const
-/** Esquema de enganche que se propone como "Precio por unidad" (el usuario lo puede cambiar). */
-export const ENGANCHE_DEFAULT = '10'
+/** Columnas de precio que se leen del PDF: precio de lista + un precio por esquema de enganche. */
+export const PRECIO_LISTA = 'lista'
+export const PRECIO_COLUMNAS = [PRECIO_LISTA, ...ENGANCHE_OPTIONS] as const
+/** Opción "el más alto de la fila" para "Precio por unidad". */
+export const PRECIO_MAS_ALTO = 'max'
+export const PRECIO_PRINCIPAL_OPTIONS = [PRECIO_MAS_ALTO, ...PRECIO_COLUMNAS] as const
+/** Por default "Precio por unidad" es el precio más alto de cada unidad (el precio de lista). */
+export const PRECIO_PRINCIPAL_DEFAULT = PRECIO_MAS_ALTO
 /** Columnas de base_kibah que se crean en sql/007-unidades-pdf.sql. */
 export const BASE_KIBAH_NIVEL = 'Nivel'
 export const BASE_KIBAH_ORIENTACION = 'Orientación'
 export const BASE_KIBAH_M2_BODEGA = 'M2 Bodega'  // sql/008
 export const BASE_KIBAH_PRECIO_ENG_PREFIX = 'Precio Eng '
+
+// ── Links de Drive: Desarrollos es la fuente; las unidades heredan (sql/009) ──
+/** Columna de pagina_web_kibah con el Drive del edificio. */
+export const DESARROLLO_LINK_DRIVE = 'Link Drive'
+/** Columnas de base_kibah: copia del Drive del padre y Drive propio opcional de la unidad. */
+export const BASE_KIBAH_LINK_DRIVE_DESARROLLO = 'Link Drive Desarrollo'
+export const BASE_KIBAH_LINK_DRIVE_UNIDAD = 'Link Drive Unidad'
+/** Respaldo de los links de Drive que tenían las unidades antes de borrarlas (sql/009). */
+export const RESPALDO_LINKS_DRIVE_TABLE = 'respaldo_links_drive_unidades_20261117'

@@ -25,7 +25,9 @@ El PDF suele tener el nombre del desarrollo o torre arriba (ej. "SEVILLA 1") y u
 - Total m2 → m2_total
 - Bodega → bodega: copia EXACTAMENTE el texto de la celda de esa fila en la columna Bodega ("Sí", "No", "1", "0", "B-12", "3.5", "✓", "-"). No lo interpretes ni lo conviertas, y no tomes el valor de otra columna. Si la celda está vacía, null.
 - bodega_m2: el tamaño de la bodega en m² de esa fila, si el PDF lo trae (en la celda de Bodega o en una columna "Bodega m2"). Número sin unidades; si no hay tamaño, null.
-- Eng 10% / Eng 25% / Eng 50% / Eng 75% → precios["10"], precios["25"], precios["50"], precios["75"]: el precio total de la unidad con ese porcentaje de enganche.
+- Precio de lista / Precio / Precio total / Lista → precios["lista"]. Si la tabla tiene una sola columna de precio (sin esquemas de enganche), va aquí.
+- Eng 10% / Eng 25% / Eng 50% / Eng 75% (o "Enganche 10%", "10% eng."...) → precios["10"], precios["25"], precios["50"], precios["75"]: el precio total de la unidad con ese porcentaje de enganche.
+- Las columnas de precio cambian entre PDFs: llena solo las que existan y deja null las demás. No calcules precios que el PDF no trae.
 
 Reglas:
 - Transcribe TODAS las filas de unidades de todas las páginas, en el orden del PDF. No inventes filas ni valores.

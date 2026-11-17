@@ -34,6 +34,7 @@ export const createDesarrolloSchema = z.object({
   imagen_1: z.string().nullable().optional(),
   imagen_2: z.string().nullable().optional(),
   imagen_3: z.string().nullable().optional(),
+  link_drive: z.string().trim().max(1000).nullable().optional(),
 })
 
 export const updateDesarrolloSchema = createDesarrolloSchema.partial()
@@ -73,6 +74,7 @@ const DESARROLLO_COLUMN_MAP: Record<string, string> = {
   imagen_1: 'Imagen 1',
   imagen_2: 'Imagen 2',
   imagen_3: 'Imagen 3',
+  link_drive: 'Link Drive',
 }
 
 export function mapDesarrolloToDB(data: Record<string, unknown>): Record<string, unknown> {

@@ -49,7 +49,7 @@ function buildInitial(property?: Property | null): FormData {
     fecha_entrega: property.fecha_entrega ?? '',
     contacto_desarrollador: property.contacto_desarrollador ?? '',
     pct_comision: property.pct_comision != null ? String(property.pct_comision) : '',
-    link_drive: property.link_drive ?? '',
+    link_drive_unidad: property.link_drive_unidad ?? '',
   }
 }
 
@@ -88,7 +88,7 @@ function toPayload(form: FormData) {
     fecha_entrega: str('fecha_entrega'),
     contacto_desarrollador: str('contacto_desarrollador'),
     pct_comision: num('pct_comision'),
-    link_drive: str('link_drive'),
+    link_drive_unidad: str('link_drive_unidad'),
   }
 }
 
@@ -360,8 +360,8 @@ export function PropertyForm({ property, onClose, onSuccess, onToast }: Property
               <Field label="% Comisión" error={errors.pct_comision}>
                 <input className={inputClass('pct_comision')} type="number" step="any" value={form.pct_comision ?? ''} onChange={(e) => set('pct_comision', e.target.value)} />
               </Field>
-              <Field label="Link Drive" error={errors.link_drive}>
-                <input className={inputClass('link_drive')} value={form.link_drive ?? ''} onChange={(e) => set('link_drive', e.target.value)} placeholder="https://..." />
+              <Field label="Link Drive de la unidad (solo si tiene carpeta propia)" error={errors.link_drive_unidad}>
+                <input className={inputClass('link_drive_unidad')} value={form.link_drive_unidad ?? ''} onChange={(e) => set('link_drive_unidad', e.target.value)} placeholder="Vacío = usa el Drive del desarrollo" />
               </Field>
             </div>
           </Section>

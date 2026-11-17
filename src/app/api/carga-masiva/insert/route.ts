@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requirePermission, isAuthError } from '@/lib/auth/permissions'
+import { syncLinkDriveDesarrollo } from '@/lib/dal/links-drive'
 
 export async function POST(request: NextRequest) {
   const auth = await requirePermission('carga_masiva.view')
@@ -28,6 +29,9 @@ export async function POST(request: NextRequest) {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
+
+    // Unidades nuevas heredan el Link Drive de su desarrollo; desarrollos nuevos se lo pasan a sus unidades.
+    await syncLinkDriveDesarrollo(items.map((i) => i['Nombre Kibah'] as string | undefined))
 
     return NextResponse.json({ success: true, count: items.length, lote })
   } catch (err) {

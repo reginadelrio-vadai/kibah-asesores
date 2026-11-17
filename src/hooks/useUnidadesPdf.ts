@@ -1,16 +1,15 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ENGANCHE_DEFAULT, UNIDADES_PDF_MAX_BYTES } from '@/lib/utils/constants'
+import { PRECIO_PRINCIPAL_DEFAULT, UNIDADES_PDF_MAX_BYTES } from '@/lib/utils/constants'
 import {
   patchBodega,
-  precioPrincipalSugerido,
   toFilasRevision,
   toImportPayload,
   type Bodega,
   type FilaRevision,
 } from '@/lib/utils/unidades-pdf'
-import type { EngancheOption, ImportarUnidadesResponse, LecturaPdf, LecturaPdfResponse, UnidadExistente } from '@/types/unidades-pdf'
+import type { ImportarUnidadesResponse, PrecioPrincipal, LecturaPdf, LecturaPdfResponse, UnidadExistente } from '@/types/unidades-pdf'
 
 export type EtapaPdf = 'select' | 'reading' | 'review' | 'saving' | 'done'
 
@@ -27,7 +26,8 @@ export function useUnidadesPdf(desarrolloId: number, torreDefault: string | null
   const [lectura, setLectura] = useState<LecturaPdf | null>(null)
   const [filas, setFilas] = useState<FilaRevision[]>([])
   const [existentes, setExistentes] = useState<UnidadExistente[]>([])
-  const [precioPrincipal, setPrecioPrincipal] = useState<EngancheOption>(ENGANCHE_DEFAULT)
+  const [linkDriveDesarrollo, setLinkDriveDesarrollo] = useState<string | null>(null)
+  const [precioPrincipal, setPrecioPrincipal] = useState<PrecioPrincipal>(PRECIO_PRINCIPAL_DEFAULT)
   const [torre, setTorre] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [resultado, setResultado] = useState<ImportarUnidadesResponse | null>(null)
@@ -71,9 +71,10 @@ export function useUnidadesPdf(desarrolloId: number, torreDefault: string | null
       const torreInicial = data.lectura.titulo?.trim() || torreDefault || ''
       const nuevasFilas = toFilasRevision(data, torreInicial)
       setExistentes(data.existentes)
+      setLinkDriveDesarrollo(data.link_drive_desarrollo)
       setLectura(data.lectura)
       setFilas(nuevasFilas)
-      setPrecioPrincipal(precioPrincipalSugerido(nuevasFilas, ENGANCHE_DEFAULT))
+      setPrecioPrincipal(PRECIO_PRINCIPAL_DEFAULT)
       setTorre(torreInicial)
       setEtapa('review')
     } catch (err) {
@@ -129,7 +130,7 @@ export function useUnidadesPdf(desarrolloId: number, torreDefault: string | null
   }, [])
 
   return {
-    etapa, pdfUrl, fileName, lectura, filas, existentes, precioPrincipal, torre, error, resultado,
+    etapa, pdfUrl, fileName, lectura, filas, existentes, linkDriveDesarrollo, precioPrincipal, torre, error, resultado,
     leer, updateFila, setIncluirTodas, setBodegaTodas, setPrecioPrincipal, setTorre, guardar, reiniciar,
   }
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { X, Pencil, Trash2, MapPin, Ruler, Bed, Bath, Car, Warehouse, Sparkles, FileUp } from 'lucide-react'
+import { X, Pencil, Trash2, MapPin, Ruler, Bed, Bath, Car, Warehouse, Sparkles, FileUp, FolderOpen } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import type { Desarrollo } from '@/types/desarrollo'
 import { DISPONIBILIDAD_COLORS } from '@/lib/utils/constants'
@@ -194,6 +194,14 @@ export function DesarrolloDetail({ desarrollo, onClose, onEdit, onDelete }: Desa
                 <a href={desarrollo.link_maps} target="_blank" rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 text-sm text-orange hover:underline">
                   <MapPin className="w-3.5 h-3.5" strokeWidth={1.5} /> Ver en Maps
+                </a>
+              </div>
+            )}
+            {desarrollo.link_drive && (
+              <div>
+                <a href={desarrollo.link_drive} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-sm text-orange hover:underline">
+                  <FolderOpen className="w-3.5 h-3.5" strokeWidth={1.5} /> Ver Drive del desarrollo
                 </a>
               </div>
             )}
