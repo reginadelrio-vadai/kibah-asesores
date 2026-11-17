@@ -42,3 +42,9 @@
 - **Fix:** Supabase → Project Settings → General → "Restart project". Después, cerrar sesión y volver a entrar para obtener un token nuevo. Pendiente: aplicar el upgrade de versión que Supabase publique en el dashboard para este incidente (fix definitivo; el reinicio puede ser temporal).
 - **Regla:** Si TODAS las rutas dan 500 pero el login pasa y no hubo deploy, no es código. Diagnóstico rápido en orden: (1) `curl` sin sesión debe dar 401, eso descarta env vars; (2) en Supabase SQL Editor, `select usename, count(*) from pg_stat_activity group by usename` — si no aparece `authenticator`, PostgREST no está conectado; (3) revisar status.supabase.com antes de tocar claves o config; (4) reiniciar el proyecto. Nunca rotar claves ni redesplegar como primer paso: eso no era la causa y habría roto más.
 - **Nota:** Los errores `Cannot read properties of undefined (reading 'M_ID')` en `200.js`/`requests.js` en consola NO son de la app; son de una extensión del navegador que envuelve `fetch`. Ignorarlos.
+
+## 8. Reemplazos de texto multilínea fallaban en silencio por CRLF (2026-11-17)
+- **Error:** Al conectar "Subir unidades por PDF" en `DesarrolloDetail.tsx`, un script de reemplazo (`node -e` con `s.replace("...\n...")`) aplicó solo los cambios de una línea; los multilínea no hicieron nada y no marcó error. `tsc` lo detectó después (`pdfOpenRef` no definido).
+- **Causa:** Algunos archivos del repo tienen finales de línea CRLF (`file` reporta "with CRLF, LF line terminators"); un patrón con `\n` no coincide con `\r\n`.
+- **Fix:** Rehacer esas ediciones con la herramienta Edit, que respeta los finales de línea.
+- **Regla:** Para ediciones multilínea usar Edit, no scripts de reemplazo. Si se usa un script, verificar con `grep` que cada cambio quedó aplicado antes de seguir.

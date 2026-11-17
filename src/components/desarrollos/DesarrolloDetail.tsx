@@ -1,11 +1,14 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { X, Pencil, Trash2, MapPin, Ruler, Bed, Bath, Car, Warehouse, Sparkles } from 'lucide-react'
+import { X, Pencil, Trash2, MapPin, Ruler, Bed, Bath, Car, Warehouse, Sparkles, FileUp } from 'lucide-react'
+import { createPortal } from 'react-dom'
 import type { Desarrollo } from '@/types/desarrollo'
 import { DISPONIBILIDAD_COLORS } from '@/lib/utils/constants'
 import { toTitleCase } from '@/lib/utils/format'
 import { DesarrolloUnidades } from './DesarrolloUnidades'
+import { UnidadesPdfModal } from './unidades-pdf/UnidadesPdfModal'
+import { usePermissions } from '@/hooks/usePermissions'
 
 interface DesarrolloDetailProps {
   desarrollo: Desarrollo
@@ -67,6 +70,11 @@ function IconField({ icon: Icon, label, value }: { icon: React.ComponentType<{ c
 
 export function DesarrolloDetail({ desarrollo, onClose, onEdit, onDelete }: DesarrolloDetailProps) {
   const [mainImage, setMainImage] = useState(desarrollo.imagen_principal)
+  const [pdfOpen, setPdfOpen] = useState(false)
+  const [unidadesKey, setUnidadesKey] = useState(0)
+  const { can, loading: permsLoading } = usePermissions()
+  // Subir unidades crea y actualiza propiedades: requiere ambos permisos y la liga "Nombre Kibah".
+  const canUploadPdf = !permsLoading && !!desarrollo.nombre_kibah?.trim() && can('propiedades.create') && can('propiedades.edit')
 
   const images = [desarrollo.imagen_principal, desarrollo.imagen_1, desarrollo.imagen_2, desarrollo.imagen_3]
     .filter((url): url is string => !!url && url.trim().length > 1)
@@ -80,8 +88,8 @@ export function DesarrolloDetail({ desarrollo, onClose, onEdit, onDelete }: Desa
   }, [])
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'Escape' && !unidadOpenRef.current) onClose()
-  }, [onClose])
+    if (e.key === 'Escape' && !unidadOpenRef.current && !pdfOpen) onClose()
+  }, [onClose, pdfOpen])
 
   useEffect(() => {
     document.addEventListener('keydown', handleKeyDown)
@@ -113,6 +121,13 @@ export function DesarrolloDetail({ desarrollo, onClose, onEdit, onDelete }: Desa
             {desarrollo.nombre_kibah || desarrollo.nombre_desarrollador || '—'}
           </h2>
           <div className="flex items-center gap-2">
+            {canUploadPdf && (
+              <button onClick={() => setPdfOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-text-secondary bg-bg-tertiary rounded-[var(--radius-sm)] hover:text-orange hover:bg-orange/10 transition-colors cursor-pointer">
+                <FileUp className="w-3.5 h-3.5" strokeWidth={1.5} />
+                <span className="max-sm:hidden">Subir unidades por PDF</span>
+                <span className="sm:hidden">PDF</span>
+              </button>
+            )}
             {onEdit && (
               <button onClick={() => { onClose(); onEdit(desarrollo) }} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-text-secondary bg-bg-tertiary rounded-[var(--radius-sm)] hover:text-orange hover:bg-orange/10 transition-colors cursor-pointer">
                 <Pencil className="w-3.5 h-3.5" strokeWidth={1.5} /> Editar
@@ -167,7 +182,7 @@ export function DesarrolloDetail({ desarrollo, onClose, onEdit, onDelete }: Desa
             <Field label="Tipo Preventa" value={toTitleCase(desarrollo.tipo_preventa)} />
           </Section>
 
-          <DesarrolloUnidades desarrolloId={desarrollo.id} onUnidadDetailChange={handleUnidadDetailChange} />
+          <DesarrolloUnidades key={unidadesKey} desarrolloId={desarrollo.id} onUnidadDetailChange={handleUnidadDetailChange} />
 
           <Section title="Ubicación">
             <Field label="Dirección (sin número)" value={desarrollo.direccion} />
@@ -215,6 +230,19 @@ export function DesarrolloDetail({ desarrollo, onClose, onEdit, onDelete }: Desa
         </div>
         <div className="h-4" />
       </div>
+      {pdfOpen && createPortal(
+        // El portal sigue en el árbol de React: sin esto, los clics llegarían al fondo y cerrarían el desarrollo.
+        <div onClick={(e) => e.stopPropagation()}>
+          <UnidadesPdfModal
+            desarrolloId={desarrollo.id}
+            nombre={desarrollo.nombre_kibah || desarrollo.nombre_desarrollador || ''}
+            torreDefault={desarrollo.nombre_desarrollador}
+            onClose={() => setPdfOpen(false)}
+            onImported={() => setUnidadesKey((k) => k + 1)}
+          />
+        </div>,
+        document.body
+      )}
     </div>
   )
 }

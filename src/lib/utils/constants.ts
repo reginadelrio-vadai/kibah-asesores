@@ -22,3 +22,20 @@ export const UNIDADES_RESUMEN_MAX_ROWS = 1000
 export const TORRE_SIN_NOMBRE = 'Sin torre'
 /** Espera (ms) antes de buscar unidades mientras se escribe. */
 export const UNIDADES_SEARCH_DEBOUNCE_MS = 300
+
+// ── Subir unidades por PDF ──────────────────────────────────────
+/** Modelo de Claude que lee las listas de precios en PDF. */
+export const UNIDADES_PDF_MODEL = 'claude-opus-5-5'
+/** Tamaño máximo del PDF (Vercel limita el body de una request a ~4.5 MB). */
+export const UNIDADES_PDF_MAX_BYTES = 4 * 1024 * 1024
+/** Máximo de unidades que se importan de una sola vez. */
+export const UNIDADES_PDF_MAX_ROWS = 500
+/** Esquemas de enganche que trae el PDF; cada uno tiene su columna "Precio Eng X%". */
+export const ENGANCHE_OPTIONS = ['10', '25', '50', '75'] as const
+/** Esquema de enganche que se propone como "Precio por unidad" (el usuario lo puede cambiar). */
+export const ENGANCHE_DEFAULT = '10'
+/** Columnas de base_kibah que se crean en sql/007-unidades-pdf.sql. */
+export const BASE_KIBAH_NIVEL = 'Nivel'
+export const BASE_KIBAH_ORIENTACION = 'Orientación'
+export const BASE_KIBAH_M2_BODEGA = 'M2 Bodega'  // sql/008
+export const BASE_KIBAH_PRECIO_ENG_PREFIX = 'Precio Eng '

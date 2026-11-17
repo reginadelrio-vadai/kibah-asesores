@@ -1,6 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { Desarrollo } from '@/types/desarrollo'
 import { mapDesarrolloToDB } from '@/lib/validations/desarrollo'
+import { getDesarrolloIdsPorPrecio } from '@/lib/dal/desarrollos-precio'
 
 interface DesarrolloFilters {
   colonia?: string
@@ -56,8 +57,16 @@ export async function getDesarrollos(
   // - filter.max set → desarrollo.col_min <= filter.max OR col_min IS NULL
   // NULL bounds (e.g. Tajín III with precio_min NULL, precio_max 5.7M) are
   // treated as open-ended and should match any filter on that side.
+  // Precio: por el precio real de las unidades (ver desarrollos-precio.ts), no por traslape del rango guardado.
+  const precioMin = filters.precio_min !== undefined && !isNaN(filters.precio_min) ? filters.precio_min : undefined
+  const precioMax = filters.precio_max !== undefined && !isNaN(filters.precio_max) ? filters.precio_max : undefined
+  if (precioMin !== undefined || precioMax !== undefined) {
+    const ids = await getDesarrolloIdsPorPrecio(precioMin, precioMax)
+    if (ids.length === 0) return { data: [], nextCursor: null }
+    query = query.in('id', ids)
+  }
+
   const rangePairs: Array<[string, string, number | undefined, number | undefined]> = [
-    ['precio_min', 'precio_max', filters.precio_min, filters.precio_max],
     ['m2_totales_min', 'm2_totales_max', filters.m2_totales_min, filters.m2_totales_max],
     ['recamaras_min', 'recamaras_max', filters.recamaras_min, filters.recamaras_max],
     ['banos_min', 'banos_max', filters.banos_min, filters.banos_max],
