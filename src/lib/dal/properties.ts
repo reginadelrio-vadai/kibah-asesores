@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { Property } from '@/types'
-import { syncLinkDriveDesarrollo, withLinksDriveUnidades } from '@/lib/dal/links-drive'
+import { syncLinkDriveDesarrollo, withColumnasExtraUnidades } from '@/lib/dal/links-drive'
 
 interface PropertyFilters {
   alcaldia?: string
@@ -79,7 +79,7 @@ export async function getProperties(
   if (hasMore) properties.pop()
 
   return {
-    data: await withLinksDriveUnidades(properties),
+    data: await withColumnasExtraUnidades(properties),
     nextCursor: hasMore
       ? properties[properties.length - 1].created_at
       : null,
@@ -101,7 +101,7 @@ export async function getPropertyById(
     return null
   }
 
-  const [conLinks] = await withLinksDriveUnidades([data as Property])
+  const [conLinks] = await withColumnasExtraUnidades([data as Property])
   return conLinks
 }
 

@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import type { Desarrollo } from '@/types/desarrollo'
 import type { UnidadExistente, ImportarUnidadesResponse } from '@/types/unidades-pdf'
 import { mapUnidadPdfToDB, type ImportarUnidadesInput } from '@/lib/validations/unidades-pdf'
-import { BASE_KIBAH_LINK_DRIVE_DESARROLLO, UNIDADES_RESUMEN_MAX_ROWS } from '@/lib/utils/constants'
+import { BASE_KIBAH_LINK_DRIVE_DESARROLLO, BASE_KIBAH_LINK_DRIVE_UNIDAD, UNIDADES_RESUMEN_MAX_ROWS } from '@/lib/utils/constants'
 import { syncLinkDriveDesarrollo } from '@/lib/dal/links-drive'
 import { buscarExistente } from '@/lib/utils/unidades-pdf'
 import { escapeIlike } from '@/lib/utils/ilike'
@@ -82,12 +82,17 @@ export async function importarUnidades(
   const usados = new Set<number>()
 
   for (const u of input.unidades) {
-    const row = { ...mapUnidadPdfToDB(u, input.precio_principal), 'Fecha de Actualización': fecha }
+    const row: Record<string, string | null> = { ...mapUnidadPdfToDB(u, input.precio_principal), 'Fecha de Actualización': fecha }
     const c = buscarExistente(existentes, u.unidad, input.torre)
     if (c.ambigua) { ambiguas.push(u.unidad); continue }
     const id = c.existente?.id
     if (id !== undefined && usados.has(id)) throw new ImportarUnidadesError(`La unidad ${u.unidad} viene dos veces en el PDF`)
-    if (id !== undefined) { usados.add(id); updates.push({ id, row }) }
+    if (id !== undefined) {
+      // Al actualizar, un Drive propio vacío en la revisión no borra el que la unidad ya tenga.
+      if (!row[BASE_KIBAH_LINK_DRIVE_UNIDAD]) delete row[BASE_KIBAH_LINK_DRIVE_UNIDAD]
+      usados.add(id)
+      updates.push({ id, row })
+    }
     else inserts.push({ ...heredados(desarrollo, input.torre), ...row, lote_carga: loteCarga })
   }
 

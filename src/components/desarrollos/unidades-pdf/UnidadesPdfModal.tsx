@@ -5,6 +5,7 @@ import { AlertCircle, CheckCircle2, Eye, EyeOff, FileText, Loader2, RotateCcw, X
 import { useUnidadesPdf } from '@/hooks/useUnidadesPdf'
 import { buscarExistente, columnasPrecioConDatos, erroresFila, etiquetaPrecio, unidadesRepetidas } from '@/lib/utils/unidades-pdf'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import type { OpcionLink } from '@/lib/utils/link-tipo'
 import { UnidadesPdfDropzone } from './UnidadesPdfDropzone'
 import { UnidadesPdfReviewBar } from './UnidadesPdfReviewBar'
 import { UnidadesPdfTable } from './UnidadesPdfTable'
@@ -13,6 +14,9 @@ interface UnidadesPdfModalProps {
   desarrolloId: number
   nombre: string
   torreDefault: string | null
+  /** Links que ya tiene el desarrollo, para escoger cuál heredan las unidades. */
+  opcionesLink: OpcionLink[]
+  canEditDesarrollo: boolean
   onClose: () => void
   /** Se llama tras guardar, para refrescar la lista de unidades. */
   onImported: () => void
@@ -35,7 +39,7 @@ function Leyendo() {
 }
 
 /** Flujo "Subir unidades por PDF": elegir PDF → Claude lo lee → revisar/editar → confirmar → guardar. */
-export function UnidadesPdfModal({ desarrolloId, nombre, torreDefault, onClose, onImported }: UnidadesPdfModalProps) {
+export function UnidadesPdfModal({ desarrolloId, nombre, torreDefault, opcionesLink, canEditDesarrollo, onClose, onImported }: UnidadesPdfModalProps) {
   const pdf = useUnidadesPdf(desarrolloId, torreDefault)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [showPdf, setShowPdf] = useState(true)
@@ -134,6 +138,9 @@ export function UnidadesPdfModal({ desarrolloId, nombre, torreDefault, onClose, 
                   onPrecioPrincipal={pdf.setPrecioPrincipal}
                   onBodegaTodas={pdf.setBodegaTodas}
                   linkDriveDesarrollo={pdf.linkDriveDesarrollo}
+                  canEditDesarrollo={canEditDesarrollo}
+                  opcionesLink={opcionesLink}
+                  onLinkDrive={pdf.setLinkDriveDesarrollo}
                   linksRecuperados={pdf.filas.filter((f) => f.link_drive_unidad).length}
                   conteo={conteo}
                 />

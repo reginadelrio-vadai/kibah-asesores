@@ -3,6 +3,12 @@
 import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import type { Property } from '@/types'
+import { SearchableSelect } from '@/components/ui/SearchableSelect'
+import {
+  LISTA_PRECIOS_NUMBER_FIELDS,
+  LISTA_PRECIOS_TEXT_FIELDS,
+  PropertyListaPreciosFields,
+} from './PropertyListaPreciosFields'
 
 interface PropertyFormProps {
   property?: Property | null
@@ -22,6 +28,7 @@ type FormData = Record<string, string>
 interface FilterOptions {
   colonias: string[]
   alcaldias: string[]
+  nombres_desarrollador: string[]
 }
 
 function buildInitial(property?: Property | null): FormData {
@@ -50,6 +57,9 @@ function buildInitial(property?: Property | null): FormData {
     contacto_desarrollador: property.contacto_desarrollador ?? '',
     pct_comision: property.pct_comision != null ? String(property.pct_comision) : '',
     link_drive_unidad: property.link_drive_unidad ?? '',
+    ...Object.fromEntries(
+      [...LISTA_PRECIOS_TEXT_FIELDS, ...LISTA_PRECIOS_NUMBER_FIELDS].map((k) => [k, property[k] ?? ''])
+    ),
   }
 }
 
@@ -89,6 +99,8 @@ function toPayload(form: FormData) {
     contacto_desarrollador: str('contacto_desarrollador'),
     pct_comision: num('pct_comision'),
     link_drive_unidad: str('link_drive_unidad'),
+    ...Object.fromEntries(LISTA_PRECIOS_TEXT_FIELDS.map((k) => [k, str(k)])),
+    ...Object.fromEntries(LISTA_PRECIOS_NUMBER_FIELDS.map((k) => [k, num(k)])),
   }
 }
 
@@ -97,7 +109,7 @@ export function PropertyForm({ property, onClose, onSuccess, onToast }: Property
   const [form, setForm] = useState<FormData>(buildInitial(property))
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
-  const [filterOptions, setFilterOptions] = useState<FilterOptions>({ colonias: [], alcaldias: [] })
+  const [filterOptions, setFilterOptions] = useState<FilterOptions>({ colonias: [], alcaldias: [], nombres_desarrollador: [] })
   const [coloniaCustom, setColoniaCustom] = useState(false)
   const [alcaldiaCustom, setAlcaldiaCustom] = useState(false)
 
@@ -109,6 +121,7 @@ export function PropertyForm({ property, onClose, onSuccess, onToast }: Property
         const opts: FilterOptions = {
           colonias: data.colonias ?? [],
           alcaldias: data.alcaldias ?? [],
+          nombres_desarrollador: data.nombres_desarrollador ?? [],
         }
         setFilterOptions(opts)
         // If editing and current value isn't in the list, show custom input
@@ -200,7 +213,13 @@ export function PropertyForm({ property, onClose, onSuccess, onToast }: Property
               <input className={inputClass('nombre_kibah')} value={form.nombre_kibah ?? ''} onChange={(e) => set('nombre_kibah', e.target.value)} placeholder="Nombre de la propiedad" />
             </Field>
             <Field label="Nombre Desarrollador" error={errors.nombre_desarrollador}>
-              <input className={inputClass('nombre_desarrollador')} value={form.nombre_desarrollador ?? ''} onChange={(e) => set('nombre_desarrollador', e.target.value)} />
+              <SearchableSelect
+                options={filterOptions.nombres_desarrollador}
+                value={form.nombre_desarrollador ?? ''}
+                onChange={(v) => set('nombre_desarrollador', v)}
+                placeholder="Seleccionar desarrollador"
+                hasError={!!errors.nombre_desarrollador}
+              />
             </Field>
             <div className="grid grid-cols-2 gap-4">
               <Field label="Unidad *" error={errors.unidad}>
@@ -334,6 +353,11 @@ export function PropertyForm({ property, onClose, onSuccess, onToast }: Property
                 {AMENIDADES_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
               </select>
             </Field>
+          </Section>
+
+          {/* Lista de precios del desarrollador */}
+          <Section title="Lista de precios">
+            <PropertyListaPreciosFields form={form} errors={errors} set={set} inputClass={inputClass} />
           </Section>
 
           {/* Entrega */}

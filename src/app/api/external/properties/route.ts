@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import * as apiKeyService from '@/lib/services/api-key-service'
-import { withLinksDriveUnidades } from '@/lib/dal/links-drive'
+import { withColumnasExtraUnidades } from '@/lib/dal/links-drive'
 
 export async function GET(request: NextRequest) {
   // Auth
@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({
     // link_drive = el propio de la unidad o el de su desarrollo (+ link_drive_desarrollo / link_drive_unidad).
-    data: await withLinksDriveUnidades(items as { id: number; link_drive?: string | null }[]),
+    data: await withColumnasExtraUnidades(items as { id: number; link_drive?: string | null }[]),
     pagination: { per_page: perPage, next_cursor: nextCursor, has_more: hasMore },
   })
 }

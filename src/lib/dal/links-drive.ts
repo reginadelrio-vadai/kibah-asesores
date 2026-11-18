@@ -3,7 +3,12 @@ import { escapeIlike } from '@/lib/utils/ilike'
 import {
   BASE_KIBAH_LINK_DRIVE_DESARROLLO,
   BASE_KIBAH_LINK_DRIVE_UNIDAD,
+  BASE_KIBAH_M2_BODEGA,
+  BASE_KIBAH_NIVEL,
+  BASE_KIBAH_ORIENTACION,
+  BASE_KIBAH_PRECIO_ENG_PREFIX,
   DESARROLLO_LINK_DRIVE,
+  ENGANCHE_OPTIONS,
   RESPALDO_LINKS_DRIVE_TABLE,
 } from '@/lib/utils/constants'
 
@@ -67,35 +72,60 @@ export async function syncLinkDriveDesarrollo(nombresKibah: (string | null | und
 
 // ── Unidades ──────────────────────────────────────────────────────────
 
+export interface ColumnasExtraUnidad {
+  nivel: string | null
+  orientacion: string | null
+  m2_bodega: string | null
+  precio_eng_10: string | null
+  precio_eng_25: string | null
+  precio_eng_50: string | null
+  precio_eng_75: string | null
+  link_drive_desarrollo: string | null
+  link_drive_unidad: string | null
+}
+
+/** Columnas de base_kibah que propiedades_view no trae (agregadas en sql/007–009): DB → campo. */
+const COLUMNAS_EXTRA: Record<string, keyof ColumnasExtraUnidad> = {
+  [BASE_KIBAH_NIVEL]: 'nivel',
+  [BASE_KIBAH_ORIENTACION]: 'orientacion',
+  [BASE_KIBAH_M2_BODEGA]: 'm2_bodega',
+  ...Object.fromEntries(
+    ENGANCHE_OPTIONS.map((e) => [`${BASE_KIBAH_PRECIO_ENG_PREFIX}${e}%`, `precio_eng_${e}` as keyof ColumnasExtraUnidad])
+  ),
+  [BASE_KIBAH_LINK_DRIVE_DESARROLLO]: 'link_drive_desarrollo',
+  [BASE_KIBAH_LINK_DRIVE_UNIDAD]: 'link_drive_unidad',
+}
+
+const SIN_EXTRA = Object.fromEntries(Object.values(COLUMNAS_EXTRA).map((k) => [k, null])) as unknown as ColumnasExtraUnidad
+
 /**
- * Agrega link_drive_desarrollo y link_drive_unidad a unidades leídas de propiedades_view,
- * y deja link_drive como el link efectivo: el propio de la unidad, si no el del desarrollo,
- * si no el "Link Drive" viejo.
+ * Agrega a unidades leídas de propiedades_view las columnas nuevas (nivel, orientación, m² bodega,
+ * precios por enganche, links de Drive) con una sola consulta, y deja link_drive como el link
+ * efectivo: el propio de la unidad, si no el del desarrollo, si no el "Link Drive" viejo.
  */
-export async function withLinksDriveUnidades<T extends { id: number; link_drive?: string | null }>(
+export async function withColumnasExtraUnidades<T extends { id: number; link_drive?: string | null }>(
   rows: T[]
-): Promise<(T & { link_drive: string | null; link_drive_desarrollo: string | null; link_drive_unidad: string | null })[]> {
+): Promise<(T & ColumnasExtraUnidad & { link_drive: string | null })[]> {
   if (rows.length === 0) return []
   const supabase = createAdminClient()
   const { data, error } = await supabase
     .from('base_kibah')
-    .select(`id, "${BASE_KIBAH_LINK_DRIVE_DESARROLLO}", "${BASE_KIBAH_LINK_DRIVE_UNIDAD}"`)
+    .select(['id', ...Object.keys(COLUMNAS_EXTRA).map((c) => `"${c}"`)].join(', '))
     .in('id', rows.map((r) => r.id))
-  if (error) console.error('Error leyendo links de Drive de unidades:', error.message)
-  const map = new Map((data ?? []).map((r) => {
-    const row = r as Record<string, unknown>
-    return [row.id as number, { des: text(row[BASE_KIBAH_LINK_DRIVE_DESARROLLO]), uni: text(row[BASE_KIBAH_LINK_DRIVE_UNIDAD]) }]
-  }))
+  if (error) console.error('Error leyendo columnas extra de unidades:', error.message)
+
+  const map = new Map<number, ColumnasExtraUnidad>()
+  for (const r of (data ?? []) as unknown as Record<string, unknown>[]) {
+    const extra = { ...SIN_EXTRA }
+    for (const [col, campo] of Object.entries(COLUMNAS_EXTRA)) extra[campo] = text(r[col])
+    map.set(r.id as number, extra)
+  }
+
   return rows.map((r) => {
-    const l = map.get(r.id)
+    const extra = map.get(r.id) ?? SIN_EXTRA
     const legacy = text(r.link_drive)
     const legacyEsLink = legacy && /^https?:\/\//i.test(legacy) ? legacy : null
-    return {
-      ...r,
-      link_drive_desarrollo: l?.des ?? null,
-      link_drive_unidad: l?.uni ?? null,
-      link_drive: l?.uni ?? l?.des ?? legacyEsLink,
-    }
+    return { ...r, ...extra, link_drive: extra.link_drive_unidad ?? extra.link_drive_desarrollo ?? legacyEsLink }
   })
 }
 

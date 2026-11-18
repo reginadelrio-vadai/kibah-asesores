@@ -164,6 +164,17 @@ export function PropertyDetail({ property, role, onClose, onEdit, onDelete, visi
   if (show('tipo_entrega') && hasValue(property.tipo_entrega)) entregaFields.push({ label: 'Estado de Obra', value: String(property.tipo_entrega) })
   if (show('fecha_entrega') && hasValue(property.fecha_entrega)) entregaFields.push({ label: 'Fecha de Entrega', value: String(property.fecha_entrega) })
 
+  // Lista de precios del desarrollador (precios con la misma visibilidad que "Precio por unidad")
+  const listaFields: { label: string; value: string }[] = []
+  if (hasValue(property.nivel)) listaFields.push({ label: 'Nivel', value: String(property.nivel) })
+  if (hasValue(property.orientacion)) listaFields.push({ label: 'Orientación', value: String(property.orientacion) })
+  if (hasValue(property.m2_bodega)) listaFields.push({ label: 'Bodega', value: formatM2(property.m2_bodega ?? null) })
+  if (show('precio_unidad')) {
+    for (const [label, v] of [['10', property.precio_eng_10], ['25', property.precio_eng_25], ['50', property.precio_eng_50], ['75', property.precio_eng_75]] as const) {
+      if (hasValue(v)) listaFields.push({ label: `Con enganche ${label}%`, value: formatPrice(v ?? null) })
+    }
+  }
+
   // Contacto (admin)
   const contactFields: { label: string; value: React.ReactNode }[] = []
   if (show('contacto_desarrollador') && hasValue(property.contacto_desarrollador)) contactFields.push({ label: 'Contacto Desarrollador', value: String(property.contacto_desarrollador) })
@@ -314,6 +325,16 @@ export function PropertyDetail({ property, role, onClose, onEdit, onDelete, visi
               <SectionTitle title="Entrega" />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
                 {entregaFields.map((f) => <Field key={f.label} label={f.label} value={f.value} />)}
+              </div>
+            </div>
+          )}
+
+          {/* Lista de precios */}
+          {listaFields.length > 0 && (
+            <div className="py-5 border-t" style={{ borderColor: 'rgba(148,163,184,0.15)' }}>
+              <SectionTitle title="Lista de precios" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
+                {listaFields.map((f) => <Field key={f.label} label={f.label} value={f.value} />)}
               </div>
             </div>
           )}

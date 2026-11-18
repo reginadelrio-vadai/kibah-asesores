@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { X, ExternalLink, HelpCircle } from 'lucide-react'
 import type { Desarrollo } from '@/types/desarrollo'
 import { ImageUpload } from './ImageUpload'
+import { LinkDesarrolloSelect } from './LinkDesarrolloSelect'
+import { opcionesLinkDesarrollo } from '@/lib/utils/link-tipo'
 
 interface DesarrolloFormProps {
   desarrollo?: Desarrollo | null
@@ -296,7 +298,19 @@ export function DesarrolloForm({ desarrollo, onClose, onSuccess, onToast }: Desa
 
             {/* Drive del edificio: lo heredan todas sus unidades */}
             <Sec title="Drive">
-              <F label="Link Drive del desarrollo" error={errors.link_drive}>
+              <LinkDesarrolloSelect
+                opciones={opcionesLinkDesarrollo({
+                  link_drive: desarrollo?.link_drive ?? null,
+                  imagen_principal: form.imagen_principal || null,
+                  imagen_1: form.imagen_1 || null,
+                  imagen_2: form.imagen_2 || null,
+                  imagen_3: form.imagen_3 || null,
+                  link_maps: form.link_maps || null,
+                })}
+                value={form.link_drive || null}
+                onChange={(v) => set('link_drive', v ?? '')}
+              />
+              <F label="…o escríbelo a mano" error={errors.link_drive}>
                 <input className={ic('link_drive')} value={form.link_drive ?? ''} onChange={e => set('link_drive', e.target.value)} placeholder="https://drive.google.com/drive/folders/..." />
               </F>
               <p className="text-[11px] text-text-tertiary mt-1">Al guardar, se copia a todas las unidades de este desarrollo.</p>

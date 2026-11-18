@@ -8,6 +8,7 @@ import { DISPONIBILIDAD_COLORS } from '@/lib/utils/constants'
 import { toTitleCase } from '@/lib/utils/format'
 import { DesarrolloUnidades } from './DesarrolloUnidades'
 import { UnidadesPdfModal } from './unidades-pdf/UnidadesPdfModal'
+import { opcionesLinkDesarrollo } from '@/lib/utils/link-tipo'
 import { usePermissions } from '@/hooks/usePermissions'
 
 interface DesarrolloDetailProps {
@@ -245,6 +246,8 @@ export function DesarrolloDetail({ desarrollo, onClose, onEdit, onDelete }: Desa
             desarrolloId={desarrollo.id}
             nombre={desarrollo.nombre_kibah || desarrollo.nombre_desarrollador || ''}
             torreDefault={desarrollo.nombre_desarrollador}
+            opcionesLink={opcionesLinkDesarrollo(desarrollo)}
+            canEditDesarrollo={can('desarrollos.edit')}
             onClose={() => setPdfOpen(false)}
             onImported={() => setUnidadesKey((k) => k + 1)}
           />

@@ -70,6 +70,8 @@ export const importarUnidadesSchema = z
   .object({
     precio_principal: z.enum(PRECIO_PRINCIPAL_OPTIONS, { message: 'Opción de precio inválida' }),
     torre: z.string().trim().max(200).nullable(),
+    /** Si viene, el encargado escogió otro Link Drive para el desarrollo (requiere desarrollos.edit). */
+    link_drive_desarrollo: z.string().trim().max(1000).nullable().optional(),
     unidades: z.array(unidadImportSchema).min(1, 'No hay unidades para importar').max(UNIDADES_PDF_MAX_ROWS),
   })
   .superRefine((data, ctx) => {

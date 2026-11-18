@@ -44,6 +44,14 @@ export interface Property {
   nombre_kibah: string | null
   link_drive_desarrollo?: string | null
   link_drive_unidad?: string | null
+  // Columnas de la lista de precios (sql/007–008); se leen aparte de propiedades_view.
+  nivel?: string | null
+  orientacion?: string | null
+  m2_bodega?: string | null
+  precio_eng_10?: string | null
+  precio_eng_25?: string | null
+  precio_eng_50?: string | null
+  precio_eng_75?: string | null
 }
 
 export interface ColumnVisibility {

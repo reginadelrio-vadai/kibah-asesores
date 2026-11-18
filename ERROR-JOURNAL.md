@@ -48,3 +48,9 @@
 - **Causa:** Algunos archivos del repo tienen finales de línea CRLF (`file` reporta "with CRLF, LF line terminators"); un patrón con `\n` no coincide con `\r\n`.
 - **Fix:** Rehacer esas ediciones con la herramienta Edit, que respeta los finales de línea.
 - **Regla:** Para ediciones multilínea usar Edit, no scripts de reemplazo. Si se usa un script, verificar con `grep` que cada cambio quedó aplicado antes de seguir.
+
+## 9. `npm run build` falla con PageNotFoundError en rutas que no se tocaron (2026-11-17)
+- **Error:** "✓ Compiled successfully" y luego `PageNotFoundError: Cannot find module for page: /api/asesores/[id]` (u otras rutas API al azar) y "Build error occurred".
+- **Causa:** No es de código: corriendo el mismo build otra vez sin cambios pasa. Todo indica que es la caché de `.next` en Windows (archivos bloqueados o un `next dev` abierto al mismo tiempo escribiendo en `.next`). No se confirmó la causa exacta.
+- **Fix:** Volver a correr `npm run build`. Si se repite, cerrar `next dev` y borrar `.next` antes de compilar.
+- **Regla:** Si el build compila pero falla en "Collecting page data" con rutas que no cambiaron, reintentar antes de buscar un bug.

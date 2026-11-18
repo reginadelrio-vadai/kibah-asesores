@@ -27,6 +27,8 @@ export function useUnidadesPdf(desarrolloId: number, torreDefault: string | null
   const [filas, setFilas] = useState<FilaRevision[]>([])
   const [existentes, setExistentes] = useState<UnidadExistente[]>([])
   const [linkDriveDesarrollo, setLinkDriveDesarrollo] = useState<string | null>(null)
+  /** Link que tenía el desarrollo al leer el PDF; si el encargado escoge otro, se guarda en el desarrollo. */
+  const [linkDriveOriginal, setLinkDriveOriginal] = useState<string | null>(null)
   const [precioPrincipal, setPrecioPrincipal] = useState<PrecioPrincipal>(PRECIO_PRINCIPAL_DEFAULT)
   const [torre, setTorre] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -72,6 +74,7 @@ export function useUnidadesPdf(desarrolloId: number, torreDefault: string | null
       const nuevasFilas = toFilasRevision(data, torreInicial)
       setExistentes(data.existentes)
       setLinkDriveDesarrollo(data.link_drive_desarrollo)
+      setLinkDriveOriginal(data.link_drive_desarrollo)
       setLectura(data.lectura)
       setFilas(nuevasFilas)
       setPrecioPrincipal(PRECIO_PRINCIPAL_DEFAULT)
@@ -104,7 +107,10 @@ export function useUnidadesPdf(desarrolloId: number, torreDefault: string | null
       const res = await fetch(`/api/desarrollos/${desarrolloId}/unidades/importar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(toImportPayload(filas, precioPrincipal, torre)),
+        body: JSON.stringify({
+          ...toImportPayload(filas, precioPrincipal, torre),
+          ...(linkDriveDesarrollo !== linkDriveOriginal ? { link_drive_desarrollo: linkDriveDesarrollo } : {}),
+        }),
       })
       if (!res.ok) throw new Error(await readError(res, 'Error al guardar las unidades'))
       setResultado((await res.json()) as ImportarUnidadesResponse)
@@ -115,7 +121,7 @@ export function useUnidadesPdf(desarrolloId: number, torreDefault: string | null
       setEtapa('review')
       return false
     }
-  }, [desarrolloId, filas, precioPrincipal, torre])
+  }, [desarrolloId, filas, precioPrincipal, torre, linkDriveDesarrollo, linkDriveOriginal])
 
   const reiniciar = useCallback(() => {
     abortRef.current?.abort()
@@ -131,6 +137,6 @@ export function useUnidadesPdf(desarrolloId: number, torreDefault: string | null
 
   return {
     etapa, pdfUrl, fileName, lectura, filas, existentes, linkDriveDesarrollo, precioPrincipal, torre, error, resultado,
-    leer, updateFila, setIncluirTodas, setBodegaTodas, setPrecioPrincipal, setTorre, guardar, reiniciar,
+    setLinkDriveDesarrollo, leer, updateFila, setIncluirTodas, setBodegaTodas, setPrecioPrincipal, setTorre, guardar, reiniciar,
   }
 }

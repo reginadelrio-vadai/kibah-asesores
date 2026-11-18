@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 
 async function fetchAllDistinct(
@@ -79,6 +80,26 @@ async function fetchDesarrolloOptions(
     .sort((a, b) => a.nombre_kibah.localeCompare(b.nombre_kibah, 'es'))
 }
 
+/**
+ * "Nombre Desarrollador" para el selector de Nueva propiedad: los de Desarrollos (la fuente)
+ * más las torres que ya existan en unidades. Sin repetir (sin distinguir mayúsculas).
+ */
+async function fetchNombresDesarrollador(
+  supabase: Awaited<ReturnType<typeof createClient>>
+): Promise<string[]> {
+  const admin = createAdminClient()
+  const [{ data: desarrollos }, deUnidades] = await Promise.all([
+    admin.from('desarrollos_view').select('nombre_desarrollador').not('nombre_desarrollador', 'is', null).limit(1000),
+    fetchAllDistinct(supabase, 'nombre_desarrollador'),
+  ])
+  const map = new Map<string, string>()
+  for (const n of [...(desarrollos ?? []).map((d) => String(d.nombre_desarrollador ?? '')), ...deUnidades]) {
+    const v = n.trim()
+    if (v && !map.has(v.toLowerCase())) map.set(v.toLowerCase(), v)
+  }
+  return [...map.values()].sort((a, b) => a.localeCompare(b, 'es'))
+}
+
 export async function GET() {
   const supabase = await createClient()
 
@@ -90,7 +111,7 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const [colonias, alcaldias, disponibilidades, tiposPreventa, tiposEntrega, desarrollos] =
+  const [colonias, alcaldias, disponibilidades, tiposPreventa, tiposEntrega, desarrollos, nombresDesarrollador] =
     await Promise.all([
       fetchAllDistinct(supabase, 'colonia'),
       fetchAllDistinct(supabase, 'alcaldia'),
@@ -98,6 +119,7 @@ export async function GET() {
       fetchAllDistinct(supabase, 'tipo_preventa'),
       fetchAllDistinct(supabase, 'tipo_entrega'),
       fetchDesarrolloOptions(supabase),
+      fetchNombresDesarrollador(supabase),
     ])
 
   const response = NextResponse.json({
@@ -107,6 +129,7 @@ export async function GET() {
     tipos_preventa: tiposPreventa,
     tipos_entrega: tiposEntrega,
     desarrollos,
+    nombres_desarrollador: nombresDesarrollador,
   })
 
   // Cache for 5 minutes

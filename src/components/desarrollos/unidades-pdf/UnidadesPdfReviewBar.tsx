@@ -4,6 +4,8 @@ import { FolderOpen, Sparkles } from 'lucide-react'
 import { BODEGA_OPTIONS, PRECIO_MAS_ALTO, PRECIO_PRINCIPAL_OPTIONS } from '@/lib/utils/constants'
 import { etiquetaPrecio, type Bodega } from '@/lib/utils/unidades-pdf'
 import type { LecturaPdf, PrecioPrincipal } from '@/types/unidades-pdf'
+import type { OpcionLink } from '@/lib/utils/link-tipo'
+import { LinkDesarrolloSelect } from '../LinkDesarrolloSelect'
 
 interface UnidadesPdfReviewBarProps {
   lectura: LecturaPdf
@@ -14,6 +16,10 @@ interface UnidadesPdfReviewBarProps {
   onBodegaTodas: (v: Bodega) => void
   linkDriveDesarrollo: string | null
   linksRecuperados: number
+  /** Solo quien puede editar desarrollos escoge el link. */
+  canEditDesarrollo: boolean
+  opcionesLink: OpcionLink[]
+  onLinkDrive: (v: string | null) => void
   conteo: { leidas: number; nuevas: number; actualizar: number; omitidas: number; conError: number }
 }
 
@@ -27,7 +33,7 @@ function Count({ label, value, tone }: { label: string; value: number; tone?: st
 }
 
 /** Controles y resumen arriba de la tabla de revisión. */
-export function UnidadesPdfReviewBar({ lectura, torre, onTorre, precioPrincipal, onPrecioPrincipal, onBodegaTodas, linkDriveDesarrollo, linksRecuperados, conteo }: UnidadesPdfReviewBarProps) {
+export function UnidadesPdfReviewBar({ lectura, torre, onTorre, precioPrincipal, onPrecioPrincipal, onBodegaTodas, linkDriveDesarrollo, linksRecuperados, canEditDesarrollo, opcionesLink, onLinkDrive, conteo }: UnidadesPdfReviewBarProps) {
   return (
     <div className="space-y-3">
       <dl className="flex flex-wrap gap-2">
@@ -75,6 +81,17 @@ export function UnidadesPdfReviewBar({ lectura, torre, onTorre, precioPrincipal,
         </div>
       </div>
 
+      {canEditDesarrollo && (
+        <div className="p-3 rounded-[var(--radius-sm)] border border-border-primary">
+          <LinkDesarrolloSelect
+            opciones={opcionesLink}
+            value={linkDriveDesarrollo}
+            onChange={onLinkDrive}
+            label="Drive del desarrollo que heredan las unidades (si lo cambias, se guarda en el desarrollo)"
+          />
+        </div>
+      )}
+
       <div className={`flex items-start gap-2 text-xs p-3 rounded-[var(--radius-sm)] border ${linkDriveDesarrollo ? 'border-border-primary text-text-secondary' : 'border-amber-500/30 bg-amber-500/5 text-amber-700 dark:text-amber-400'}`}>
         <FolderOpen className="w-4 h-4 flex-shrink-0 mt-0.5" strokeWidth={1.5} />
         <p className="min-w-0">
@@ -83,7 +100,7 @@ export function UnidadesPdfReviewBar({ lectura, torre, onTorre, precioPrincipal,
               <a href={linkDriveDesarrollo} target="_blank" rel="noopener noreferrer" className="text-orange hover:underline break-all">{linkDriveDesarrollo}</a>
             </>
           ) : (
-            <>Este desarrollo no tiene Link Drive. Agrégalo en &quot;Editar&quot; del desarrollo y se copiará a sus unidades.</>
+            <>Este desarrollo no tiene Link Drive (es opcional, puedes guardar así). Si después lo agregas en &quot;Editar&quot; del desarrollo, se copia solo a todas sus unidades.</>
           )}
           {linksRecuperados > 0 && <> · {linksRecuperados} unidad(es) con Drive propio (recuperado del respaldo o capturado), ver columna &quot;Drive propio&quot;.</>}
         </p>

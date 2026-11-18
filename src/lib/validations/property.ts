@@ -34,6 +34,15 @@ export const createPropertySchema = z.object({
   link_drive: z.string().nullable().optional(),
   /** Drive propio de la unidad; vacío = usa el del desarrollo. */
   link_drive_unidad: z.string().trim().max(1000).nullable().optional(),
+
+  // Lista de precios (sql/007–008)
+  nivel: z.string().trim().max(100).nullable().optional(),
+  orientacion: z.string().trim().max(100).nullable().optional(),
+  m2_bodega: z.number().nonnegative().nullable().optional(),
+  precio_eng_10: z.number().nonnegative().nullable().optional(),
+  precio_eng_25: z.number().nonnegative().nullable().optional(),
+  precio_eng_50: z.number().nonnegative().nullable().optional(),
+  precio_eng_75: z.number().nonnegative().nullable().optional(),
 })
 
 export const updatePropertySchema = createPropertySchema.partial()
@@ -66,6 +75,13 @@ const COLUMN_MAP: Record<string, string> = {
   pct_comision: '% Comisión',
   link_drive: 'Link Drive',
   link_drive_unidad: 'Link Drive Unidad',
+  nivel: 'Nivel',
+  orientacion: 'Orientación',
+  m2_bodega: 'M2 Bodega',
+  precio_eng_10: 'Precio Eng 10%',
+  precio_eng_25: 'Precio Eng 25%',
+  precio_eng_50: 'Precio Eng 50%',
+  precio_eng_75: 'Precio Eng 75%',
   nombre_kibah: 'Nombre Kibah',
 }
 

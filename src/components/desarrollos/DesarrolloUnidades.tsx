@@ -215,6 +215,7 @@ export function DesarrolloUnidades({ desarrolloId, onUnidadDetailChange }: Desar
           desarrolloId={desarrolloId}
           idPropiedad={selected.id_propiedad}
           onClose={() => setSelected(null)}
+          onUpdated={retry}
         />,
         document.body
       )}
